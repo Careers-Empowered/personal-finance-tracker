@@ -1,0 +1,152 @@
+:root {
+  --color-primary: #1a73e8;
+  --color-primary-hover: #1557b0;
+  --color-secondary: #5f6368;
+  --color-background: #f8f9fa;
+  --color-sidebar-bg: #ffffff;
+  --color-text-dark: #202124;
+  --color-text-muted: #5f6368;
+  --color-selected-item-bg: #e8f0fe;
+  --color-selected-item-text: #1a73e8;
+  --color-divider: #e8eaed;
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-background);
+  color: var(--color-text-dark);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Layout */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+/* Sidebar Styling */
+.sidebar {
+  width: 260px;
+  background-color: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-divider);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.sidebar-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-logo-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--color-primary);
+}
+
+.sidebar-logo-text {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--color-text-dark);
+  letter-spacing: -0.5px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--color-text-dark);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sidebar-item:hover {
+  background-color: var(--color-background);
+  color: var(--color-primary);
+}
+
+.sidebar-item.active {
+  background-color: var(--color-selected-item-bg);
+  color: var(--color-selected-item-text);
+  font-weight: 600;
+}
+
+.sidebar-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: inherit;
+}
+
+.sidebar-item-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+/* Page styles */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.page-card {
+  background-color: #ffffff;
+  border: 1px solid var(--color-divider);
+  border-radius: 8px;
+  padding: 2rem;
+}
