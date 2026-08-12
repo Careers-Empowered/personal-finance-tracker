@@ -1,18 +1,12 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../layouts/dashboard/DashboardLayout';
-import Home from '../../features/home/Home';
-import Transaction from '../../features/transaction/Transaction';
+import Dashboard from '../../features/dashboard/Dashboard';
+import Transactions from '../../features/transactions/Transactions';
 import Accounts from '../../features/accounts/Accounts';
-import Budgets from '../../features/budgets/Budgets';
-import Goals from '../../features/goals/Goals';
-import Loans from '../../features/loans/Loans';
-import Subscriptions from '../../features/subscriptions/Subscriptions';
-import Scheduled from '../../features/scheduled/Scheduled';
-import Calendar from '../../features/calendar/Calendar';
-import ActivityLog from '../../features/activity-log/ActivityLog';
-import Summary from '../../features/summary/Summary';
-import EditData from '../../features/edit-data/EditData';
-import Settings from '../../features/settings/Settings';
+import Categories from '../../features/categories/Categories';
+import Import from '../../features/import/Import';
+import Categorization from '../../features/categorization/Categorization';
+import Auth from '../../features/auth/Auth';
 
 export const router = createBrowserRouter([
   {
@@ -21,63 +15,39 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '',
-        element: <Navigate to="/home" replace />,
+        element: <Navigate to="/dashboard" replace />,
       },
       {
-        path: 'home',
-        element: <Home />,
+        path: 'dashboard',
+        element: <Dashboard />,
       },
       {
-        path: 'transaction',
-        element: <Transaction />,
+        path: 'transactions',
+        element: <Transactions />,
       },
       {
         path: 'accounts',
         element: <Accounts />,
       },
       {
-        path: 'budgets',
-        element: <Budgets />,
+        path: 'categories',
+        element: <Categories />,
       },
       {
-        path: 'goals',
-        element: <Goals />,
+        path: 'import',
+        element: <Import />,
       },
       {
-        path: 'loans',
-        element: <Loans />,
+        path: 'categorization',
+        element: <Categorization />,
       },
       {
-        path: 'subscriptions',
-        element: <Subscriptions />,
-      },
-      {
-        path: 'scheduled',
-        element: <Scheduled />,
-      },
-      {
-        path: 'calendar',
-        element: <Calendar />,
-      },
-      {
-        path: 'activity-log',
-        element: <ActivityLog />,
-      },
-      {
-        path: 'summary',
-        element: <Summary />,
-      },
-      {
-        path: 'edit-data',
-        element: <EditData />,
-      },
-      {
-        path: 'settings',
-        element: <Settings />,
+        path: 'auth',
+        element: <Auth />,
       },
       {
         path: '*',
-        element: <Navigate to="/home" replace />,
+        element: <Navigate to="/dashboard" replace />,
       },
     ],
   },
