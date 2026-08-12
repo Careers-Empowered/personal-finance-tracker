@@ -1,0 +1,383 @@
+.calendar-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 28px 32px;
+  background: #f7f8fa;
+  color: #172033;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.calendar-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #172033;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-button,
+.filter-button,
+.nav-arrow,
+.today-button {
+  border: 1px solid #e3e8ef;
+  background: #ffffff;
+  color: #172033;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-button:hover,
+.filter-button:hover,
+.nav-arrow:hover,
+.today-button:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.filter-button {
+  padding: 10px 15px;
+  border-radius: 10px;
+}
+
+.month-navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.nav-arrow {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.month-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 170px;
+}
+
+.month-title strong {
+  font-size: 20px;
+  color: #172033;
+}
+
+.month-title span {
+  color: #7b8494;
+  font-size: 14px;
+}
+
+.today-button {
+  padding: 9px 14px;
+  border-radius: 9px;
+}
+
+.calendar-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border: 1px solid #e3e8ef;
+  border-radius: 14px;
+  background: #e3e8ef;
+}
+
+.expense-summary .summary-label,
+.expense-summary strong {
+  color: #d14343 !important;;
+}
+
+.income-summary .summary-label,
+.income-summary strong {
+  color: #16834b !important;
+}
+
+.balance-summary .summary-label,
+.balance-summary strong {
+  color: #2563eb !important;
+}
+
+.summary-item {
+  padding: 18px;
+  background: #ffffff;
+}
+
+.summary-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #7b8494;
+  font-size: 13px;
+}
+
+.summary-item strong {
+  font-size: 18px;
+  color: #172033;
+}
+
+.calendar-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 20px;
+}
+
+.calendar-section {
+  overflow: hidden;
+  border: 1px solid #e3e8ef;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid #e7ebf0;
+  background: #ffffff;
+}
+
+.weekday {
+  padding: 13px 10px;
+  color: #697386;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-cell {
+  min-height: 110px;
+  border-right: 1px solid #edf0f4;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.calendar-cell:nth-child(7n) {
+  border-right: none;
+}
+
+.calendar-day {
+  display: flex;
+  width: 100%;
+  min-height: 110px;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: #172033;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease;
+}
+
+.calendar-day:hover {
+  background: #f4f8ff;
+}
+
+.calendar-day.selected {
+  background: #eff6ff;
+}
+
+.outside-month {
+  background: #fafbfc;
+}
+
+.day-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.calendar-day.selected .day-number {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.calendar-day.today .day-number {
+  border: 2px solid #2563eb;
+  color: #2563eb;
+}
+
+.calendar-day.selected.today .day-number {
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.day-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.income {
+  color: #16834b;
+}
+
+.expense {
+  color: #d14343;
+}
+
+.day-amounts span {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.transaction-count {
+  margin-top: auto;
+  color: #98a1af;
+  font-size: 10px;
+}
+
+.transaction-panel {
+  min-height: 350px;
+  padding: 20px;
+  border: 1px solid #e3e8ef;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.panel-label {
+  color: #8a94a4;
+  font-size: 12px;
+}
+
+.panel-header h2 {
+  margin: 5px 0 20px;
+  font-size: 18px;
+  color: #172033;
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #edf0f4;
+  border-radius: 12px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.transaction-item:hover {
+  border-color: #cfe0ff;
+  background: #f8fbff;
+}
+
+.transaction-icon {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f0f5ff;
+  color: #2563eb;
+}
+
+.transaction-info {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transaction-info strong {
+  overflow: hidden;
+  font-size: 13px;
+  color: #172033;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-info span {
+  color: #8a94a4;
+  font-size: 11px;
+}
+
+.floating-add-button {
+  position: fixed;
+  right: 30px;
+  bottom: 30px;
+  display: flex;
+  width: 54px;
+  height: 54px;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 28px;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+}
+
+.floating-add-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.3);
+}
+
+@media (max-width: 1000px) {
+  .calendar-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .calendar-page {
+    padding: 20px 15px;
+  }
+
+  .calendar-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-cell,
+  .calendar-day {
+    min-height: 80px;
+  }
+
+  .transaction-panel {
+    min-height: auto;
+  }
+}

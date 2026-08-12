@@ -1,7 +1,75 @@
-import React from 'react';
+import CalendarHeader from "./components/CalendarHeader";
+import MonthNavigation from "./components/MonthNavigation";
+import CalendarSummary from "./components/CalendarSummary";
+import CalendarGrid from "./components/CalendarGrid";
+import TransactionPanel from "./components/TransactionPanel";
 
-const Calendar: React.FC = () => {
-  return <div className="page-container" />;
-};
+import { useCalendar } from "./hooks/useCalendar";
 
-export default Calendar;
+import "./styles/calendar.css";
+
+function CalendarPage() {
+  const {
+    currentDate,
+    selectedDate,
+    monthTransactions,
+    selectedTransactions,
+    goToPreviousMonth,
+    goToNextMonth,
+    goToToday,
+    selectDate,
+  } = useCalendar();
+
+  const handleSearch = () => {
+    console.log("Search clicked");
+  };
+
+  const handleFilter = () => {
+    console.log("Filter clicked");
+  };
+
+  return (
+    <div className="calendar-page">
+      <CalendarHeader
+        onSearch={handleSearch}
+        onFilter={handleFilter}
+      />
+
+      <MonthNavigation
+        currentDate={currentDate}
+        onPrevious={goToPreviousMonth}
+        onNext={goToNextMonth}
+        onToday={goToToday}
+      />
+
+      <CalendarSummary
+        transactions={monthTransactions}
+      />
+
+      <main className="calendar-main">
+        <section className="calendar-section">
+          <CalendarGrid
+            currentDate={currentDate}
+            transactions={monthTransactions}
+            selectedDate={selectedDate}
+            onSelectDate={selectDate}
+          />
+        </section>
+
+        <TransactionPanel
+          selectedDate={selectedDate}
+          transactions={selectedTransactions}
+        />
+      </main>
+
+      <button
+        className="floating-add-button"
+        aria-label="Add transaction"
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+export default CalendarPage;
