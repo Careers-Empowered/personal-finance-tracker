@@ -31,7 +31,7 @@ const secondaryButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-function FileUpload({ onFileSelected }: FileUploadProps) {
+function FileUpload({ onFileSelected, onPreview }: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -84,6 +84,9 @@ function FileUpload({ onFileSelected }: FileUploadProps) {
       return;
     }
 
+    if (onPreview) {
+      onPreview();
+    }
     // Preview functionality will be implemented later.
     console.log("Preview file:", selectedFile.name);
   };
