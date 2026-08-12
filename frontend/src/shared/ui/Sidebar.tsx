@@ -1,6 +1,5 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { brand } from '../../brand/config/brand';
 
 interface NavItem {
   name: string;
@@ -160,13 +159,11 @@ const Sidebar: React.FC = () => {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <div className="sidebar-logo-container">
-          <svg className="sidebar-logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
-            <line x1="12" y1="4" x2="12" y2="20" />
-            <line x1="2" y1="12" x2="22" y2="12" />
-          </svg>
-          <span className="sidebar-logo-text">{brand.name}</span>
+        <div className="sidebar-logo-container" style={{ padding: '0.25rem 0' }}>
+          <div className="logo-logo" style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
+            <span style={{ color: '#ffffff', fontSize: '1.2rem', fontWeight: 700, fontFamily: 'var(--font-logo)' }}>Careers</span>
+            <span style={{ color: 'var(--color-primary)', fontSize: '1.55rem', fontWeight: 800, letterSpacing: '-0.5px', fontFamily: 'var(--font-logo)' }}>Empowered</span>
+          </div>
         </div>
       </div>
       <nav className="sidebar-nav">
