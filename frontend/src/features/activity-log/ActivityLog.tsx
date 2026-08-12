@@ -1,7 +1,3 @@
-import React from 'react';
-
-const ActivityLog: React.FC = () => {
-  return <div className="page-container" />;
-};
+import ActivityLog from './components/ActivityLog';
 
 export default ActivityLog;
