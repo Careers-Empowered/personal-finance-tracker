@@ -41,9 +41,9 @@
 .filter-button:hover,
 .nav-arrow:hover,
 .today-button:hover {
-  border-color: #2563eb;
-  background: #eff6ff;
-  color: #2563eb;
+  border-color: #df8b2b;
+  background: #fff4e5;
+  color: #c87518;
 }
 
 .icon-button {
@@ -103,21 +103,6 @@
   background: #e3e8ef;
 }
 
-.expense-summary .summary-label,
-.expense-summary strong {
-  color: #d14343 !important;;
-}
-
-.income-summary .summary-label,
-.income-summary strong {
-  color: #16834b !important;
-}
-
-.balance-summary .summary-label,
-.balance-summary strong {
-  color: #2563eb !important;
-}
-
 .summary-item {
   padding: 18px;
   background: #ffffff;
@@ -133,6 +118,23 @@
 .summary-item strong {
   font-size: 18px;
   color: #172033;
+}
+
+
+
+.expense-summary .summary-label,
+.expense-summary strong {
+  color: #d14343 !important;
+}
+
+.income-summary .summary-label,
+.income-summary strong {
+  color: #16834b !important;
+}
+
+.balance-summary .summary-label,
+.balance-summary strong {
+  color: #df8b2b !important;
 }
 
 .calendar-main {
@@ -193,13 +195,16 @@
   transition: background 0.2s ease;
 }
 
+
 .calendar-day:hover {
-  background: #f4f8ff;
+  background: #fff8ef;
 }
 
+
 .calendar-day.selected {
-  background: #eff6ff;
+  background: #fff4e5;
 }
+
 
 .outside-month {
   background: #fafbfc;
@@ -217,22 +222,29 @@
   font-weight: 600;
 }
 
+
+
 .calendar-day.selected .day-number {
-  background: #2563eb;
+  background: #df8b2b;
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 2px 6px rgba(223, 139, 43, 0.25);
 }
 
+
+
 .calendar-day.today .day-number {
-  border: 2px solid #2563eb;
-  color: #2563eb;
+  border: 2px solid #df8b2b;
+  color: #c87518;
 }
+
+
 
 .calendar-day.selected.today .day-number {
   border: none;
-  background: #2563eb;
+  background: #df8b2b;
   color: #ffffff;
 }
+
 
 .day-amounts {
   display: flex;
@@ -259,6 +271,7 @@
   font-size: 10px;
 }
 
+
 .transaction-panel {
   min-height: 350px;
   padding: 20px;
@@ -278,6 +291,7 @@
   color: #172033;
 }
 
+
 .transaction-list {
   display: flex;
   flex-direction: column;
@@ -296,9 +310,10 @@
 }
 
 .transaction-item:hover {
-  border-color: #cfe0ff;
-  background: #f8fbff;
+  border-color: #f0c98f;
+  background: #fffaf3;
 }
+
 
 .transaction-icon {
   display: flex;
@@ -307,8 +322,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: #f0f5ff;
-  color: #2563eb;
+  background: #fff4e5;
+  color: #c87518;
 }
 
 .transaction-info {
@@ -332,6 +347,7 @@
   font-size: 11px;
 }
 
+
 .floating-add-button {
   position: fixed;
   right: 30px;
@@ -343,19 +359,30 @@
   justify-content: center;
   border: none;
   border-radius: 50%;
-  background: #2563eb;
+  background: #df8b2b;
   color: #ffffff;
   cursor: pointer;
   font-size: 28px;
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 6px 18px rgba(223, 139, 43, 0.25);
   transition: all 0.2s ease;
 }
 
 .floating-add-button:hover {
-  background: #1d4ed8;
+  background: #c87518;
   transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 8px 22px rgba(223, 139, 43, 0.3);
 }
+
+.icon-button:focus-visible,
+.filter-button:focus-visible,
+.nav-arrow:focus-visible,
+.today-button:focus-visible,
+.calendar-day:focus-visible,
+.floating-add-button:focus-visible {
+  outline: 2px solid #df8b2b;
+  outline-offset: 2px;
+}
+
 
 @media (max-width: 1000px) {
   .calendar-main {
