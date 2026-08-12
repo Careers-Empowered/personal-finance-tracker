@@ -1,15 +1,28 @@
 :root {
-  --color-primary: #1a73e8;
-  --color-primary-hover: #1557b0;
-  --color-secondary: #5f6368;
-  --color-background: #f8f9fa;
-  --color-sidebar-bg: #ffffff;
-  --color-text-dark: #202124;
-  --color-text-muted: #5f6368;
-  --color-selected-item-bg: #e8f0fe;
-  --color-selected-item-text: #1a73e8;
-  --color-divider: #e8eaed;
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Brand Colours */
+  --color-primary: #d38333;
+  --color-primary-hover: #b86f29;
+  --color-secondary: #6b6b6b;
+
+  --color-background: #f5f5f5;
+  --color-sidebar-bg: #231f20; /* Charcoal */
+  --color-sidebar-divider: #2d2a2b;
+
+  --color-text-dark: #231f20;
+  --color-text-muted: #6b6b6b;
+
+  --color-selected-item-bg: #d38333;
+  --color-selected-item-text: #ffffff;
+
+  --color-divider: #e5e5e5;
+
+  --color-orange: #d38333;
+  --color-charcoal: #231f20;
+
+  /* Brand Typography */
+  --font-logo: "DM Sans", sans-serif;
+  --font-heading: "Source Sans 3", sans-serif;
+  --font-body: "Poppins", sans-serif;
 }
 
 * {
@@ -19,7 +32,7 @@
 }
 
 body {
-  font-family: var(--font-family);
+  font-family: var(--font-body);
   background-color: var(--color-background);
   color: var(--color-text-dark);
   -webkit-font-smoothing: antialiased;
@@ -49,7 +62,7 @@ a {
 .sidebar {
   width: 260px;
   background-color: var(--color-sidebar-bg);
-  border-right: 1px solid var(--color-divider);
+  border-right: 1px solid var(--color-sidebar-divider);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -61,7 +74,7 @@ a {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  border-bottom: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--color-sidebar-divider);
 }
 
 .sidebar-logo-container {
@@ -77,9 +90,10 @@ a {
 }
 
 .sidebar-logo-text {
+  font-family: var(--font-logo);
   font-weight: 700;
   font-size: 1.25rem;
-  color: var(--color-text-dark);
+  color: #ffffff;
   letter-spacing: -0.5px;
 }
 
@@ -97,18 +111,21 @@ a {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  color: var(--color-text-dark);
+  color: #bdc3c7; /* light grey link text inside charcoal sidebar */
   border-radius: 8px;
+  font-family: var(--font-body);
   font-size: 0.95rem;
   font-weight: 500;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
   cursor: pointer;
   user-select: none;
 }
 
 .sidebar-item:hover {
-  background-color: var(--color-background);
-  color: var(--color-primary);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
 }
 
 .sidebar-item.active {
@@ -132,15 +149,17 @@ a {
   fill: currentColor;
 }
 
-/* Page styles */
+/* Page Styles */
 .page-container {
   max-width: 1200px;
   margin: 0 auto;
 }
 
 .page-title {
+  font-family: var(--font-heading);
   font-size: 1.75rem;
   font-weight: 600;
+  color: var(--color-charcoal);
   margin-bottom: 1rem;
 }
 
