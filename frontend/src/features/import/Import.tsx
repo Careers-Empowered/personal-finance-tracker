@@ -8,26 +8,91 @@
 
 
 import { useState } from "react";
+
 import FileUpload from "./components/FileUpload";
 import FilePreview from "./components/FilePreview";
+import ImportValidation from "./components/ImportValidation";
+
+import type {
+  ImportedTransaction,
+  ValidatedTransaction,
+} from "./types/import";
 
 function Import() {
   const [file, setFile] = useState<File | null>(null);
-  const [step, setStep] = useState<"upload" | "preview">("upload");
+
+  const [transactions, setTransactions] =
+    useState<ImportedTransaction[]>([]);
+
+  const [step, setStep] = useState<
+    "upload" | "preview" | "validation"
+  >("upload");
+
+  const handleFileSelected = (selectedFile: File) => {
+    setFile(selectedFile);
+    setTransactions([]);
+    setStep("upload");
+  };
+
+  const handlePreview = () => {
+    if (!file) {
+      alert("Please select a file first.");
+      return;
+    }
+
+    setStep("preview");
+  };
+
+  const handleConfirmMapping = (
+    mappedTransactions: ImportedTransaction[]
+  ) => {
+    console.log("Mapped transactions:", mappedTransactions);
+
+    setTransactions(mappedTransactions);
+    setStep("validation");
+  };
+
+  const handleContinue = (
+    validatedTransactions: ValidatedTransaction[]
+  ) => {
+    console.log(
+      "Validated transactions:",
+      validatedTransactions
+    );
+
+    alert(
+      `${validatedTransactions.length} valid transactions are ready for duplicate detection.`
+    );
+  };
 
   return (
     <main className="page-container">
       <h1 className="page-title">Import</h1>
 
+      {/* STEP 1: FILE UPLOAD */}
       {step === "upload" && (
         <FileUpload
-          onFileSelected={(f) => setFile(f)}
-          onPreview={() => setStep("preview")}
+          onFileSelected={handleFileSelected}
+          onPreview={handlePreview}
         />
       )}
 
+      {/* STEP 2: FILE PREVIEW + MAPPING */}
       {step === "preview" && file && (
-        <FilePreview file={file} onBack={() => setStep("upload")} />
+        <FilePreview
+          file={file}
+          onBack={() => setStep("upload")}
+          onConfirmMapping={handleConfirmMapping}
+        />
+      )}
+
+      {/* STEP 3: VALIDATION */}
+      {step === "validation" && (
+        <ImportValidation
+          transactions={transactions}
+          onBack={() => setStep("preview")}
+          onContinue={handleContinue}
+        />
       )}
     </main>
   );
