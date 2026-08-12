@@ -67,6 +67,14 @@ const Accounts: React.FC = () => {
     }
   };
 
+  // Handler for Set Primary
+  const handleSetPrimary = (id: string) => {
+    setAccounts(prev => prev.map(acc => ({
+      ...acc,
+      isPrimary: acc.id === id
+    })));
+  };
+
   return (
     <div className="accounts-container">
       <div className="accounts-header">
@@ -94,6 +102,7 @@ const Accounts: React.FC = () => {
             account={account} 
             onEdit={handleOpenEditModal}
             onAdjustBalance={handleOpenAdjustBalance}
+            onSetPrimary={handleSetPrimary}
             onDelete={handleDeleteAccount}
           />
         ))}

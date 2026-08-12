@@ -29,16 +29,24 @@ const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, onSave, ac
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const accountData = {
-      name,
-      currency,
-      balance: accountToEdit ? accountToEdit.balance : balance, // only set balance if new
-    };
-
+    
     if (accountToEdit) {
-      onSave({ ...accountData, id: accountToEdit.id });
+      onSave({
+        ...accountToEdit,
+        name,
+        currency,
+        updatedAt: new Date().toISOString()
+      });
     } else {
-      onSave(accountData);
+      onSave({
+        name,
+        currency,
+        balance,
+        userId: 'user-123',
+        isPrimary: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      } as Omit<Account, 'id'>);
     }
     onClose();
   };
