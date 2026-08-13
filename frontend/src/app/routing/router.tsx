@@ -7,7 +7,7 @@ import Categories from '../../features/categories/Categories';
 import Import from '../../features/import/Import';
 import Categorization from '../../features/categorization/Categorization';
 import Auth from '../../features/auth/Auth';
-
+import SLMManualTest from '../../features/categorization/SLMManualTest';
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -49,6 +49,10 @@ export const router = createBrowserRouter([
         path: '*',
         element: <Navigate to="/dashboard" replace />,
       },
+      {
+  path: 'slm-test',
+  element: <SLMManualTest />,
+},
     ],
   },
 ]);
