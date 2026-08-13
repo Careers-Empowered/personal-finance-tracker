@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 interface PrimaryCurrencyModalProps {
   isOpen: boolean;
@@ -7,7 +7,12 @@ interface PrimaryCurrencyModalProps {
   onSave: (currency: string) => void;
 }
 
-const PrimaryCurrencyModal: React.FC<PrimaryCurrencyModalProps> = ({ isOpen, onClose, currentCurrency, onSave }) => {
+const PrimaryCurrencyModal: React.FC<PrimaryCurrencyModalProps> = ({
+  isOpen,
+  onClose,
+  currentCurrency,
+  onSave,
+}) => {
   const [currency, setCurrency] = useState(currentCurrency);
 
   useEffect(() => {
@@ -31,10 +36,10 @@ const PrimaryCurrencyModal: React.FC<PrimaryCurrencyModalProps> = ({ isOpen, onC
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="primaryCurrency">Primary Currency</label>
-            <select 
-              id="primaryCurrency" 
-              className="form-control" 
-              value={currency} 
+            <select
+              id="primaryCurrency"
+              className="form-control"
+              value={currency}
               onChange={(e) => setCurrency(e.target.value)}
             >
               <option value="USD">USD ($)</option>
@@ -44,12 +49,28 @@ const PrimaryCurrencyModal: React.FC<PrimaryCurrencyModalProps> = ({ isOpen, onC
               <option value="JPY">JPY (¥)</option>
             </select>
           </div>
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            This currency will be used to display your total net worth and combined balances. (Conversion rates in this mock version are 1:1 for simplicity).
+          <p
+            style={{
+              color: "var(--color-text-muted)",
+              fontSize: "0.9rem",
+              marginBottom: "1.5rem",
+            }}
+          >
+            Changing this will only recalculate the{" "}
+            <strong>Total Balance</strong> at the top into your chosen currency.
+            Individual accounts will keep their own respective currencies.
           </p>
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Save Changes</button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Save Changes
+            </button>
           </div>
         </form>
       </div>
