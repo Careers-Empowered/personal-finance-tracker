@@ -7,6 +7,7 @@
 // export default Import;
 
 
+
 import { useState } from "react";
 
 import FileUpload from "./components/FileUpload";
@@ -20,7 +21,7 @@ import type {
   ImportedTransaction,
   ValidatedTransaction,
 } from "./types/import";
-
+import { suggestCategoryByRules } from "./categorization/ruleCategorizationService";
 function Import() {
   const [file, setFile] = useState<File | null>(null);
 
@@ -106,14 +107,11 @@ function Import() {
     onBack={() => setStep("preview")}
     onContinue={handleValidationContinue}
     onCategorize={async (transaction) => {
-      console.log("Categorizing transaction:", transaction);
-
-      return {
-        category: "Food",
-        source: "RULE",
-        confidence: 0.95,
-      };
-    }}
+  return suggestCategoryByRules(
+    transaction.title,
+    transaction.type
+  );
+}}
   />
 
       )}
