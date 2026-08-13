@@ -15,7 +15,7 @@ const Accounts: React.FC = () => {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
-  
+
   // Track which account is being edited/adjusted
   const [selectedAccount, setSelectedAccount] = useState<Account | undefined>(undefined);
 
@@ -89,9 +89,9 @@ const Accounts: React.FC = () => {
 
       <div className="accounts-grid">
         {accounts.map(account => (
-          <AccountCard 
-            key={account.id} 
-            account={account} 
+          <AccountCard
+            key={account.id}
+            account={account}
             onEdit={handleOpenEditModal}
             onAdjustBalance={handleOpenAdjustBalance}
             onDelete={handleDeleteAccount}
@@ -100,9 +100,9 @@ const Accounts: React.FC = () => {
       </div>
 
       {/* Modals */}
-      <AccountModal 
-        isOpen={isAccountModalOpen} 
-        onClose={() => setIsAccountModalOpen(false)} 
+      <AccountModal
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
         onSave={handleSaveAccount}
         accountToEdit={selectedAccount}
       />

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CategorySuggestionService } from './services/slmService';
 import { MockCategoryProvider } from './services/mockCategoryProvider';
 import { QwenProvider } from './services/qwenProvider';
+import type { Category } from './services/categoryProvider';
+import AcceptOverride from './AcceptOverride';
 
 const categoryProvider = new MockCategoryProvider();
 const qwenProvider = new QwenProvider();
@@ -14,6 +16,7 @@ const suggestionService = new CategorySuggestionService(
 export default function SLMManualTest() {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [result, setResult] = useState<{
     categoryId: string;
@@ -22,6 +25,12 @@ export default function SLMManualTest() {
   } | null>(null);
 
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    categoryProvider.getCategories().then((data) => {
+      setCategories(data);
+    });
+  }, []);
 
   const handleSuggest = async () => {
     setResult(null);
@@ -160,6 +169,14 @@ export default function SLMManualTest() {
             <strong>Source:</strong>{' '}
             {result.source}
           </p>
+
+          <AcceptOverride
+            suggestedCategory={result}
+            categories={categories}
+            onDecision={(decision) => {
+              console.log('User decision:', decision);
+            }}
+          />
         </div>
       )}
 

@@ -39,7 +39,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'categorization',
-        element: <Categorization />,
+        element: <SLMManualTest />,
       },
       {
         path: 'auth',

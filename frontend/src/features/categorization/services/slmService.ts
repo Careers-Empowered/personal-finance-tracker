@@ -3,8 +3,7 @@ import type { SLMProvider } from './qwenProvider';
 import { redactTransactionDescription } from './redactionService';
 import type { CategorySuggestion } from '../types/suggestion';
 
-const SLM_ENABLED =
-  import.meta.env.VITE_ENABLE_SLM_CATEGORY_SUGGESTION === 'true';
+const SLM_ENABLED = true;
 
 export class CategorySuggestionService {
   constructor(
