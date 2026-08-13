@@ -1,0 +1,139 @@
+/* Transactions Feature CSS */
+
+.transactions-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.transactions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.transactions-title {
+  font-family: var(--font-heading, "Source Sans 3", sans-serif);
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--color-text-dark, #231f20);
+  margin: 0;
+}
+
+/* Modal Enhancements */
+.modal-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.modal-header-container h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-text-dark, #231f20);
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--color-text-muted, #6b6b6b);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  line-height: 1;
+  transition: background-color 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn:hover {
+  background-color: #f1f3f4;
+  color: var(--color-text-dark, #231f20);
+}
+
+/* Segmented Control Type Selector */
+.type-toggle-container {
+  display: flex;
+  background-color: #f1f3f4;
+  padding: 4px;
+  border-radius: 10px;
+  gap: 4px;
+  margin-bottom: 1.25rem;
+}
+
+.type-toggle-btn {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-text-muted, #6b6b6b);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.type-toggle-btn:hover:not(.active-expense):not(.active-income) {
+  color: var(--color-text-dark, #231f20);
+}
+
+.type-toggle-btn.active-expense {
+  background-color: #ffffff;
+  color: #d93025;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.type-toggle-btn.active-income {
+  background-color: #ffffff;
+  color: #1e8e3e;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Form Layout & Controls */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-dark, #231f20);
+  margin-bottom: 0.4rem;
+}
+
+.form-control-enhanced {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-divider, #e5e5e5);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background-color: #ffffff;
+  color: var(--color-text-dark, #231f20);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control-enhanced:focus {
+  outline: none;
+  border-color: var(--color-primary, #d38333);
+  box-shadow: 0 0 0 3px rgba(211, 131, 51, 0.15);
+}
+
