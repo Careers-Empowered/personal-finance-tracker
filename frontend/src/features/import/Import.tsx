@@ -102,10 +102,20 @@ function Import() {
       {/* STEP 3: VALIDATION */}
       {step === "validation" && (
         <ImportValidation
-          transactions={transactions}
-          onBack={() => setStep("preview")}
-          onContinue={handleValidationContinue}
-        />
+    transactions={transactions}
+    onBack={() => setStep("preview")}
+    onContinue={handleValidationContinue}
+    onCategorize={async (transaction) => {
+      console.log("Categorizing transaction:", transaction);
+
+      return {
+        category: "Food",
+        source: "RULE",
+        confidence: 0.95,
+      };
+    }}
+  />
+
       )}
 
       {step === "duplicate" && (
