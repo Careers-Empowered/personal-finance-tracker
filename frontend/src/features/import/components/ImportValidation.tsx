@@ -8,6 +8,8 @@ import type {
 
 import { validateTransactions } from "../utils/transactionValidation";
 
+import { markDuplicateTransactions } from "../utils/duplicateDetection";
+
 interface ImportValidationProps {
   transactions: ImportedTransaction[];
   onContinue: (
@@ -46,9 +48,12 @@ function ImportValidation({
   onBack,
 }: ImportValidationProps) {
   const [validatedRows, setValidatedRows] =
-    useState<ValidatedTransaction[]>(
-      () => validateTransactions(transactions)
-    );
+    useState<ValidatedTransaction[]>(() => {
+      const validated =
+        validateTransactions(transactions);
+
+      return markDuplicateTransactions(validated);
+    });
 
   const [editingRow, setEditingRow] =
     useState<number | null>(null);
@@ -131,6 +136,16 @@ function ImportValidation({
     );
 
     onContinue(validRows);
+  };
+
+  const isDuplicateRow = (
+    row: ValidatedTransaction
+  ): boolean => {
+    return row.errors.some(
+      (error) =>
+        error.field === "transaction" &&
+        error.message.includes("duplicate")
+    );
   };
 
   return (
@@ -244,12 +259,20 @@ function ImportValidation({
               {row.excluded ? (
                 <span
                   style={{
-                    color:
-                      "var(--color-text-muted)",
+                    color: "var(--color-text-muted)",
                     fontWeight: 600,
                   }}
                 >
                   Excluded
+                </span>
+              ) : isDuplicateRow(row) ? (
+                <span
+                  style={{
+                    color: "#b26a00",
+                    fontWeight: 600,
+                  }}
+                >
+                  ⚠ Duplicate
                 </span>
               ) : row.isValid ? (
                 <span

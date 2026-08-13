@@ -13,6 +13,8 @@ import FileUpload from "./components/FileUpload";
 import FilePreview from "./components/FilePreview";
 import ImportValidation from "./components/ImportValidation";
 
+import DuplicateDetection from "./components/DuplicateDetection";
+
 import type {
   ImportedTransaction,
   ValidatedTransaction,
@@ -24,8 +26,11 @@ function Import() {
   const [transactions, setTransactions] =
     useState<ImportedTransaction[]>([]);
 
+  const [validatedTransactions, setValidatedTransactions] =
+    useState<ValidatedTransaction[]>([]);
+
   const [step, setStep] = useState<
-    "upload" | "preview" | "validation"
+    "upload" | "preview" | "validation" | "duplicate"
   >("upload");
 
   const handleFileSelected = (selectedFile: File) => {
@@ -52,17 +57,16 @@ function Import() {
     setStep("validation");
   };
 
-  const handleContinue = (
-    validatedTransactions: ValidatedTransaction[]
+  const handleValidationContinue = (
+    validTransactions: ValidatedTransaction[]
   ) => {
     console.log(
       "Validated transactions:",
-      validatedTransactions
+      validTransactions
     );
 
-    alert(
-      `${validatedTransactions.length} valid transactions are ready for duplicate detection.`
-    );
+    setValidatedTransactions(validTransactions);
+    setStep("duplicate");
   };
 
   return (
@@ -91,7 +95,24 @@ function Import() {
         <ImportValidation
           transactions={transactions}
           onBack={() => setStep("preview")}
-          onContinue={handleContinue}
+          onContinue={handleValidationContinue}
+        />
+      )}
+
+      {step === "duplicate" && (
+        <DuplicateDetection
+          transactions={validatedTransactions}
+          onBack={() => setStep("validation")}
+          onContinue={(uniqueTransactions) => {
+            console.log(
+              "Unique transactions ready for import:",
+              uniqueTransactions
+            );
+
+            alert(
+              `${uniqueTransactions.length} unique transactions are ready to import.`
+            );
+          }}
         />
       )}
     </main>
