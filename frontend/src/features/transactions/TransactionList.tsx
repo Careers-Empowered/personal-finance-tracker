@@ -74,8 +74,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
               </div>
 
               <div className="transaction-details">
-                <div className="transaction-description">
-                  {transaction.description?.trim() || 'No description'}
+                <div className="transaction-title">
+                  {transaction.title?.trim() || 'Untitled'}
                 </div>
 
                 <div className="transaction-meta">

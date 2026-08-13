@@ -55,16 +55,18 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
 interface CategorySelectorProps {
   value: string;
   onChange: (categoryId: string) => void;
+  required?: boolean;
 }
 
 export const CategorySelector: React.FC<CategorySelectorProps> = ({
   value,
   onChange,
+  required = true,
 }) => {
   return (
     <div className="form-group">
       <label htmlFor="transactionCategory" className="form-group-label">
-        Category
+        Category *
       </label>
       <input
         type="text"
@@ -73,6 +75,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="e.g. Groceries"
+        required={required}
       />
     </div>
   );
@@ -103,7 +106,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const [accountId, setAccountId] = useState<string>('');
   const [category, setCategory] = useState<string>('');
   const [date, setDate] = useState<string>(getTodayString());
-  const [description, setDescription] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
@@ -112,7 +116,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       setAccountId(accounts.length > 0 ? accounts[0].id : '');
       setCategory('');
       setDate(getTodayString());
-      setDescription('');
+      setTitle('');
+      setErrorMessage('');
     }
   }, [isOpen, initialType, accounts]);
 
@@ -120,19 +125,46 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
 
+    const trimmedTitle = title.trim();
+    const trimmedCategory = category.trim();
+    const trimmedAccountId = accountId.trim();
+    const trimmedDate = date.trim();
     const numericAmount = parseFloat(amount);
+
     if (isNaN(numericAmount) || numericAmount <= 0) {
+      setErrorMessage('Please enter a valid amount greater than 0.');
+      return;
+    }
+
+    if (!trimmedAccountId) {
+      setErrorMessage('Please select a valid Account.');
+      return;
+    }
+
+    if (!trimmedCategory) {
+      setErrorMessage('Category is required.');
+      return;
+    }
+
+    if (!trimmedDate) {
+      setErrorMessage('Date is required.');
+      return;
+    }
+
+    if (!trimmedTitle) {
+      setErrorMessage('Title is required.');
       return;
     }
 
     const transactionData: CreateTransactionInput = {
       type,
       amount: numericAmount,
-      accountId,
-      date,
-      ...(category.trim() ? { categoryId: category.trim() } : {}),
-      ...(description.trim() ? { description: description.trim() } : {}),
+      accountId: trimmedAccountId,
+      categoryId: trimmedCategory,
+      date: trimmedDate,
+      title: trimmedTitle,
     };
 
     onSave(transactionData);
@@ -167,7 +199,28 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
           </button>
         </div>
 
+        {errorMessage && (
+          <div className="form-error-alert" role="alert">
+            {errorMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="transactionTitle" className="form-group-label">
+              Title *
+            </label>
+            <input
+              type="text"
+              id="transactionTitle"
+              className="form-control-enhanced"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Grocery Shopping"
+              required
+            />
+          </div>
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="transactionAmount" className="form-group-label">
@@ -191,6 +244,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
               value={accountId}
               onChange={setAccountId}
               accounts={accounts}
+              required
             />
           </div>
 
@@ -199,6 +253,7 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
             <CategorySelector
               value={category}
               onChange={setCategory}
+              required
             />
 
             <div className="form-group">
@@ -214,20 +269,6 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                 required
               />
             </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="transactionDescription" className="form-group-label">
-              Description
-            </label>
-            <input
-              type="text"
-              id="transactionDescription"
-              className="form-control-enhanced"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Weekly supermarket shopping"
-            />
           </div>
 
           <div className="modal-actions">

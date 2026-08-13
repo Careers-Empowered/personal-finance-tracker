@@ -73,8 +73,8 @@ const TransactionDeleteConfirm: React.FC<TransactionDeleteConfirmProps> = ({
 
           <div className="delete-transaction-preview">
             <div className="delete-preview-details">
-              <div className="delete-preview-desc">
-                {transaction.description?.trim() || 'No description'}
+              <div className="delete-preview-title">
+                {transaction.title?.trim() || 'Untitled'}
               </div>
               <div className="delete-preview-meta">
                 <span>{formatDate(transaction.date)}</span>

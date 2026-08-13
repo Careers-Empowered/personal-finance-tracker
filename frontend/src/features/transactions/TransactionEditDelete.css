@@ -107,6 +107,7 @@
   min-width: 0;
 }
 
+.delete-preview-title,
 .delete-preview-desc {
   font-weight: 600;
   color: var(--color-text-dark, #231f20);

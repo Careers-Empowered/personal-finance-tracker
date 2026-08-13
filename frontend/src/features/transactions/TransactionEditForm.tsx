@@ -23,7 +23,8 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
   const [accountId, setAccountId] = useState<string>('');
   const [category, setCategory] = useState<string>('');
   const [date, setDate] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
     if (isOpen && transaction) {
@@ -32,7 +33,8 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
       setAccountId(transaction.accountId);
       setCategory(transaction.categoryId || '');
       setDate(transaction.date);
-      setDescription(transaction.description || '');
+      setTitle(transaction.title || '');
+      setErrorMessage('');
     }
   }, [isOpen, transaction]);
 
@@ -40,21 +42,47 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
 
+    const trimmedTitle = title.trim();
+    const trimmedCategory = category.trim();
+    const trimmedAccountId = accountId.trim();
+    const trimmedDate = date.trim();
     const numericAmount = parseFloat(amount);
+
     if (isNaN(numericAmount) || numericAmount <= 0) {
+      setErrorMessage('Please enter a valid amount greater than 0.');
       return;
     }
 
-    // Preserve other original properties (e.g. id, createdAt) if it's a Transaction
+    if (!trimmedAccountId) {
+      setErrorMessage('Please select a valid Account.');
+      return;
+    }
+
+    if (!trimmedCategory) {
+      setErrorMessage('Category is required.');
+      return;
+    }
+
+    if (!trimmedDate) {
+      setErrorMessage('Date is required.');
+      return;
+    }
+
+    if (!trimmedTitle) {
+      setErrorMessage('Title is required.');
+      return;
+    }
+
     const updatedTransaction: Transaction | CreateTransactionInput = {
       ...transaction,
       type,
       amount: numericAmount,
-      accountId,
-      date,
-      categoryId: category.trim() ? category.trim() : undefined,
-      description: description.trim() ? description.trim() : undefined,
+      accountId: trimmedAccountId,
+      date: trimmedDate,
+      categoryId: trimmedCategory,
+      title: trimmedTitle,
     } as Transaction | CreateTransactionInput;
 
     onSave(updatedTransaction);
@@ -98,7 +126,31 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
           </button>
         </div>
 
+        {errorMessage && (
+          <div className="form-error-alert" role="alert">
+            {errorMessage}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label
+              htmlFor="editTransactionTitle"
+              className="form-group-label"
+            >
+              Title *
+            </label>
+            <input
+              type="text"
+              id="editTransactionTitle"
+              className="form-control-enhanced"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Grocery Shopping"
+              required
+            />
+          </div>
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="editTransactionAmount" className="form-group-label">
@@ -122,6 +174,7 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
               value={accountId}
               onChange={setAccountId}
               accounts={accounts}
+              required
             />
           </div>
 
@@ -130,6 +183,7 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
             <CategorySelector
               value={category}
               onChange={setCategory}
+              required
             />
 
             <div className="form-group">
@@ -145,23 +199,6 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
                 required
               />
             </div>
-          </div>
-
-          <div className="form-group">
-            <label
-              htmlFor="editTransactionDescription"
-              className="form-group-label"
-            >
-              Description
-            </label>
-            <input
-              type="text"
-              id="editTransactionDescription"
-              className="form-control-enhanced"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Weekly supermarket shopping"
-            />
           </div>
 
           <div className="modal-actions">
