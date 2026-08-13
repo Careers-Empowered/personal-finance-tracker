@@ -26,12 +26,41 @@ const Transactions: React.FC = () => {
   ) => {
     console.log('Transaction submitted:', transactionData);
 
+    const newTransaction = {
+      ...transactionData,
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+    };
+
     setTransactions((previousTransactions) => [
       ...previousTransactions,
-      transactionData,
+      newTransaction,
     ]);
 
     setIsModalOpen(false);
+  };
+
+  const handleUpdateTransaction = (
+    updatedTransaction: CreateTransactionInput
+  ) => {
+    const updated = updatedTransaction as CreateTransactionInput & { id?: string };
+    setTransactions((previousTransactions) =>
+      previousTransactions.map((tx) => {
+        const currentTx = tx as CreateTransactionInput & { id?: string };
+        return currentTx.id === updated.id ? updated : tx;
+      })
+    );
+  };
+
+  const handleDeleteTransaction = (identifier: string | number) => {
+    setTransactions((previousTransactions) =>
+      previousTransactions.filter((tx, idx) => {
+        const currentTx = tx as CreateTransactionInput & { id?: string };
+        if (currentTx.id) {
+          return currentTx.id !== identifier;
+        }
+        return idx !== identifier;
+      })
+    );
   };
 
   const filteredTransactions = useMemo(() => {
@@ -86,6 +115,8 @@ const Transactions: React.FC = () => {
         <TransactionList
           transactions={filteredTransactions}
           accounts={accounts}
+          onSave={handleUpdateTransaction}
+          onDelete={handleDeleteTransaction}
         />
       </div>
     </div>

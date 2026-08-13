@@ -1,15 +1,20 @@
 import React from 'react';
 import { CreateTransactionInput } from './types';
 import { Account } from '../accounts/types';
+import TransactionEditDelete from './TransactionEditDelete';
 
 interface TransactionListProps {
   transactions: CreateTransactionInput[];
   accounts: Account[];
+  onSave: (updatedTransaction: CreateTransactionInput) => void;
+  onDelete: (identifier: string | number) => void;
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   accounts,
+  onSave,
+  onDelete,
 }) => {
   const getAccountName = (accountId: string) => {
     const account = accounts.find((account) => account.id === accountId);
@@ -102,15 +107,25 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 {formatAmount(transaction.amount)}
               </div>
 
-              <span
-                className={`transaction-type-badge ${
-                  isIncome
-                    ? 'transaction-income-badge'
-                    : 'transaction-expense-badge'
-                }`}
-              >
-                {isIncome ? 'Income' : 'Expense'}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span
+                  className={`transaction-type-badge ${
+                    isIncome
+                      ? 'transaction-income-badge'
+                      : 'transaction-expense-badge'
+                  }`}
+                >
+                  {isIncome ? 'Income' : 'Expense'}
+                </span>
+
+                <TransactionEditDelete
+                  transaction={transaction}
+                  index={index}
+                  accounts={accounts}
+                  onSave={onSave}
+                  onDelete={onDelete}
+                />
+              </div>
             </div>
           </div>
         );
