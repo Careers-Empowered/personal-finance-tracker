@@ -15,6 +15,7 @@ import ImportValidation from "./components/ImportValidation";
 
 import DuplicateDetection from "./components/DuplicateDetection";
 
+import { markDuplicateTransactions } from "./utils/duplicateDetection";
 import type {
   ImportedTransaction,
   ValidatedTransaction,
@@ -58,16 +59,24 @@ function Import() {
   };
 
   const handleValidationContinue = (
-    validTransactions: ValidatedTransaction[]
-  ) => {
-    console.log(
-      "Validated transactions:",
-      validTransactions
-    );
+  validTransactions: ValidatedTransaction[]
+) => {
+  console.log(
+    "Validated transactions:",
+    validTransactions
+  );
 
-    setValidatedTransactions(validTransactions);
-    setStep("duplicate");
-  };
+  const transactionsWithDuplicates =
+    markDuplicateTransactions(validTransactions);
+
+  console.log(
+    "Transactions after duplicate detection:",
+    transactionsWithDuplicates
+  );
+
+  setValidatedTransactions(transactionsWithDuplicates);
+  setStep("duplicate");
+};
 
   return (
     <main className="page-container">

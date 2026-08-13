@@ -6,9 +6,16 @@ import type {
   ValidatedTransaction,
 } from "../types/import";
 
+const isDuplicateRow = (row: ValidatedTransaction): boolean => {
+  return row.errors.some(
+    (error) =>
+      error.field === "transaction" &&
+      error.message.toLowerCase().includes("duplicate")
+  );
+};
+
 import { validateTransactions } from "../utils/transactionValidation";
 
-import { markDuplicateTransactions } from "../utils/duplicateDetection";
 
 interface ImportValidationProps {
   transactions: ImportedTransaction[];
@@ -49,10 +56,7 @@ function ImportValidation({
 }: ImportValidationProps) {
   const [validatedRows, setValidatedRows] =
     useState<ValidatedTransaction[]>(() => {
-      const validated =
-        validateTransactions(transactions);
-
-      return markDuplicateTransactions(validated);
+      return validateTransactions(transactions);
     });
 
   const [editingRow, setEditingRow] =
@@ -138,17 +142,7 @@ function ImportValidation({
     onContinue(validRows);
   };
 
-  const isDuplicateRow = (
-    row: ValidatedTransaction
-  ): boolean => {
-    return row.errors.some(
-      (error) =>
-        error.field === "transaction" &&
-        error.message.includes("duplicate")
-    );
-  };
-
-  return (
+    return (
     <section
       style={{
         backgroundColor: "#ffffff",

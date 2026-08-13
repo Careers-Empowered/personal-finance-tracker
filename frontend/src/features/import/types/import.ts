@@ -24,4 +24,5 @@ export interface ValidatedTransaction {
   errors: ValidationError[];
   isValid: boolean;
   excluded: boolean;
+  duplicateDecision?: "pending" | "exclude" | "add-anyway";
 }
