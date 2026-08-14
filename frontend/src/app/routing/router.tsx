@@ -2,12 +2,12 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../layouts/dashboard/DashboardLayout';
 import Dashboard from '../../features/dashboard/Dashboard';
 import Transactions from '../../features/transactions/Transactions';
-import ReviewTransaction from '../../features/transactions/ReviewTransaction';
 import Accounts from '../../features/accounts/Accounts';
 import Categories from '../../features/categories/Categories';
 import Import from '../../features/import/Import';
 import Auth from '../../features/auth/Auth';
 import SLMManualTest from '../../features/categorization/SLMManualTest';
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -24,10 +24,6 @@ export const router = createBrowserRouter([
       {
         path: 'transactions',
         element: <Transactions />,
-      },
-      {
-        path: 'transactions/:id/review',
-        element: <ReviewTransaction />,
       },
       {
         path: 'accounts',
@@ -54,9 +50,9 @@ export const router = createBrowserRouter([
         element: <Navigate to="/dashboard" replace />,
       },
       {
-  path: 'slm-test',
-  element: <SLMManualTest />,
-},
+        path: 'slm-test',
+        element: <SLMManualTest />,
+      },
     ],
   },
 ]);

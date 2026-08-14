@@ -24,6 +24,9 @@ export default function SLMManualTest() {
     source: string;
   } | null>(null);
 
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [categorizationStatus, setCategorizationStatus] = useState<'Pending' | 'Accepted' | 'Overridden'>('Pending');
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,6 +37,8 @@ export default function SLMManualTest() {
 
   const handleSuggest = async () => {
     setResult(null);
+    setSelectedCategory(null);
+    setCategorizationStatus('Pending');
     setError(null);
 
     if (!description.trim()) {
@@ -57,6 +62,9 @@ export default function SLMManualTest() {
       }
 
       setResult(suggestion);
+      const matched = categories.find((cat) => cat.id === suggestion.categoryId);
+      setSelectedCategory(matched || null);
+      setCategorizationStatus('Pending');
     } catch (err) {
       console.error('SLM error:', err);
 
@@ -104,6 +112,8 @@ export default function SLMManualTest() {
             setDescription(event.target.value);
             setResult(null);
             setError(null);
+            setSelectedCategory(null);
+            setCategorizationStatus('Pending');
           }}
           placeholder="Example: Payment at Green Leaf Cafe"
           rows={4}
@@ -115,18 +125,19 @@ export default function SLMManualTest() {
             fontSize: '1rem',
             resize: 'vertical',
           }}
+          disabled={loading || saving}
         />
       </div>
 
       <button
         onClick={handleSuggest}
-        disabled={loading}
+        disabled={loading || saving}
         style={{
           marginTop: '1rem',
           padding: '0.75rem 1.5rem',
           border: 'none',
           borderRadius: '8px',
-          cursor: loading ? 'not-allowed' : 'pointer',
+          cursor: (loading || saving) ? 'not-allowed' : 'pointer',
           fontWeight: 600,
         }}
       >
@@ -157,12 +168,12 @@ export default function SLMManualTest() {
 
           <p>
             <strong>Category:</strong>{' '}
-            {result.categoryName}
+            {selectedCategory ? selectedCategory.name : ''}
           </p>
 
           <p>
             <strong>Category ID:</strong>{' '}
-            {result.categoryId}
+            {selectedCategory ? selectedCategory.id : ''}
           </p>
 
           <p>
@@ -173,10 +184,14 @@ export default function SLMManualTest() {
           <AcceptOverride
             suggestedCategory={result}
             categories={categories}
-            transactionTitle={description}
-            onDecision={(decision) => {
-              console.log('User decision:', decision);
-            }}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            categorizationStatus={categorizationStatus}
+            setCategorizationStatus={setCategorizationStatus}
+            saving={saving}
+            setSaving={setSaving}
+            transactionDescription={description}
+            setError={setError}
           />
         </div>
       )}
