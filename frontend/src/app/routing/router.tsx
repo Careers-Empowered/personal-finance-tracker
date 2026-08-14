@@ -7,6 +7,7 @@ import Categories from '../../features/categories/Categories';
 import Import from '../../features/import/Import';
 import Categorization from '../../features/categorization/Categorization';
 import Auth from '../../features/auth/Auth';
+import SubcategoryTestPage from '../../features/categories/subcategories/SubcategoryTestPage';
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ export const router = createBrowserRouter([
       {
         path: 'categories',
         element: <Categories />,
+      },
+      {
+        path: 'subcategory-test',
+        element: <SubcategoryTestPage />,
       },
       {
         path: 'import',
