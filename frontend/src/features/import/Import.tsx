@@ -21,7 +21,7 @@ import type {
   ImportedTransaction,
   ValidatedTransaction,
 } from "./types/import";
-import { suggestCategoryByRules } from "./categorization/ruleCategorizationService";
+import { suggestCategory } from "./categorization/categorySuggestionService";
 function Import() {
   const [file, setFile] = useState<File | null>(null);
 
@@ -107,7 +107,7 @@ function Import() {
     onBack={() => setStep("preview")}
     onContinue={handleValidationContinue}
     onCategorize={async (transaction) => {
-  return suggestCategoryByRules(
+  return suggestCategory(
     transaction.title,
     transaction.type
   );
