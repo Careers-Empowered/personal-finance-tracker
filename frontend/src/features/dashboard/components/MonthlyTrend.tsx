@@ -1,19 +1,19 @@
 import { useState } from "react";
-import type { TrendDataPoint } from "../types/dashboard";
+import type { TrendDataPoint } from "../../../types/dashboard";
 
 interface MonthlyTrendProps {
   data?: TrendDataPoint[];
+  currency?: string;
   title?: string;
   description?: string;
   granularity?: "month" | "day";
 }
 
-const formatCurrency = (amount: number) =>
+const formatCurrency = (amount: number, currency: string) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
     maximumFractionDigits: 0,
-    notation: "compact",
   }).format(amount);
 
 const formatMonth = (date: string) =>
@@ -29,6 +29,7 @@ const formatDay = (date: string) =>
 
 const MonthlyTrend = ({
   data = [],
+  currency = "USD",
   title = "Monthly trend",
   description = "Income and expenses over the last six months",
   granularity = "month",
@@ -157,7 +158,6 @@ const MonthlyTrend = ({
             setHoveredPoint(null)
           }
         >
-          {/* Grid lines and Y-axis labels */}
           {gridValues.map((value) => (
             <g key={value}>
               <line
@@ -174,27 +174,23 @@ const MonthlyTrend = ({
                 className="trend-axis-label"
                 textAnchor="end"
               >
-                {formatCurrency(value)}
+                {formatCurrency(value, currency)}
               </text>
             </g>
           ))}
 
-          {/* Income line */}
           <polyline
             points={makePoints("income")}
             className="trend-line trend-line--income"
           />
 
-          {/* Expense line */}
           <polyline
             points={makePoints("expenses")}
             className="trend-line trend-line--expense"
           />
 
-          {/* Data points */}
           {data.map((point, index) => (
             <g key={`${point.date}-${index}`}>
-              {/* Income point */}
               <circle
                 cx={getX(index)}
                 cy={getY(point.income)}
@@ -215,7 +211,6 @@ const MonthlyTrend = ({
                 }
               />
 
-              {/* Expense point */}
               <circle
                 cx={getX(index)}
                 cy={getY(point.expenses)}
@@ -236,7 +231,6 @@ const MonthlyTrend = ({
                 }
               />
 
-              {/* X-axis label */}
               <text
                 x={getX(index)}
                 y={height - 8}
@@ -248,7 +242,6 @@ const MonthlyTrend = ({
             </g>
           ))}
 
-          {/* Tooltip */}
           {tooltipPoint && hoveredPoint && (
             <g
               className="trend-tooltip"
@@ -266,7 +259,10 @@ const MonthlyTrend = ({
                 x={tooltipX + 8}
                 y={tooltipY + 12}
               >
-                {pointLabel(tooltipPoint, formatLabel)}{" "}
+                {pointLabel(
+                  tooltipPoint,
+                  formatLabel,
+                )}{" "}
                 ·{" "}
                 {hoveredPoint.metric === "income"
                   ? "Income"
@@ -277,7 +273,10 @@ const MonthlyTrend = ({
                 x={tooltipX + 8}
                 y={tooltipY + 23}
               >
-                {formatCurrency(tooltipValue)}
+                {formatCurrency(
+                  tooltipValue,
+                  currency,
+                )}
               </text>
             </g>
           )}
@@ -290,6 +289,7 @@ const MonthlyTrend = ({
 const pointLabel = (
   point: TrendDataPoint,
   fallbackFormatter: (date: string) => string,
-) => point.label ?? fallbackFormatter(point.date);
+) =>
+  point.label ?? fallbackFormatter(point.date);
 
 export default MonthlyTrend;
