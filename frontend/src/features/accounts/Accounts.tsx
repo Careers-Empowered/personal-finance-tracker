@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; //import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Account } from './types';
 import mockData from './mockData.json';
 import AccountCard from './AccountCard';
