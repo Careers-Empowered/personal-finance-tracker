@@ -31,10 +31,15 @@ const secondaryButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-function FileUpload({ onFileSelected, onPreview }: FileUploadProps) {
+function FileUpload({
+  onFileSelected,
+  onPreview,
+}: FileUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] =
+    useState<File | null>(null);
+
   const [error, setError] = useState("");
 
   const handleFileChange = (
@@ -79,7 +84,7 @@ function FileUpload({ onFileSelected, onPreview }: FileUploadProps) {
     }
   };
 
-  const handlePreview = () => {
+  const handleReviewAndContinue = () => {
     if (!selectedFile) {
       return;
     }
@@ -87,17 +92,11 @@ function FileUpload({ onFileSelected, onPreview }: FileUploadProps) {
     if (onPreview) {
       onPreview();
     }
-    // Preview functionality will be implemented later.
-    console.log("Preview file:", selectedFile.name);
-  };
 
-  const handleContinue = () => {
-    if (!selectedFile) {
-      return;
-    }
-
-    // Continue functionality will be implemented later.
-    console.log("Continue with file:", selectedFile.name);
+    console.log(
+      "Review and continue with file:",
+      selectedFile.name
+    );
   };
 
   return (
@@ -282,24 +281,15 @@ function FileUpload({ onFileSelected, onPreview }: FileUploadProps) {
             style={{
               display: "flex",
               justifyContent: "flex-end",
-              gap: "0.75rem",
               marginTop: "1.5rem",
             }}
           >
             <button
               type="button"
-              style={secondaryButtonStyle}
-              onClick={handlePreview}
+              style={primaryButtonStyle}
+              onClick={handleReviewAndContinue}
             >
               Preview
-            </button>
-
-            <button
-              type="button"
-              style={primaryButtonStyle}
-              onClick={handleContinue}
-            >
-              Continue
             </button>
           </div>
         </>
