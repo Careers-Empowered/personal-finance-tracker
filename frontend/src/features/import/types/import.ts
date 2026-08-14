@@ -1,4 +1,8 @@
+export type ImportMode = "csv" | "transaction";
+
 export interface FileUploadProps {
+  mode: ImportMode;
+  onModeChange: (mode: ImportMode) => void;
   onFileSelected: (file: File) => void;
   onPreview?: () => void;
 }
