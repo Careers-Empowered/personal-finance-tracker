@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TransactionType, CreateTransactionInput } from './types';
 import { Account } from '../accounts/types';
+import { apiFetch } from '../../shared/utils/api';
 import './Transactions.css';
 
 // ============================================================================
@@ -32,17 +33,12 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
         onChange={(e) => onChange(e.target.value)}
         required={required}
       >
-        {accounts.length === 0 ? (
-          <option value="" disabled>
-            No accounts available
+        <option value="" disabled>Select Account</option>
+        {accounts.map((acc) => (
+          <option key={acc.id} value={acc.id}>
+            {acc.name}
           </option>
-        ) : (
-          accounts.map((acc) => (
-            <option key={acc.id} value={acc.id}>
-              {acc.name}
-            </option>
-          ))
-        )}
+        ))}
       </select>
     </div>
   );
@@ -50,17 +46,18 @@ export const AccountSelector: React.FC<AccountSelectorProps> = ({
 
 // ============================================================================
 // MODULAR EXTENSION POINT 2: Category Selector Field
-// Isolated so the Categories team can swap in their Category picker without touching modal logic
 // ============================================================================
 interface CategorySelectorProps {
   value: string;
   onChange: (categoryId: string) => void;
+  categories: any[];
   required?: boolean;
 }
 
 export const CategorySelector: React.FC<CategorySelectorProps> = ({
   value,
   onChange,
+  categories = [],
   required = true,
 }) => {
   return (
@@ -68,15 +65,64 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
       <label htmlFor="transactionCategory" className="form-group-label">
         Category *
       </label>
-      <input
-        type="text"
+      <select
         id="transactionCategory"
         className="form-control-enhanced"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="e.g. Groceries"
         required={required}
-      />
+      >
+        <option value="" disabled>Select Category</option>
+        {categories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.icon ? `${cat.icon} ` : ''}{cat.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
+// ============================================================================
+// MODULAR EXTENSION POINT 3: Subcategory Selector Field
+// ============================================================================
+interface SubcategorySelectorProps {
+  value: string;
+  onChange: (subcategoryId: string) => void;
+  subcategories: any[];
+  required?: boolean;
+  disabled?: boolean;
+}
+
+export const SubcategorySelector: React.FC<SubcategorySelectorProps> = ({
+  value,
+  onChange,
+  subcategories = [],
+  required = true,
+  disabled = false,
+}) => {
+  return (
+    <div className="form-group">
+      <label htmlFor="transactionSubcategory" className="form-group-label">
+        Subcategory *
+      </label>
+      <select
+        id="transactionSubcategory"
+        className="form-control-enhanced"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        required={required}
+        disabled={disabled || subcategories.length === 0}
+      >
+        <option value="" disabled>
+          {subcategories.length === 0 ? 'Select Category first' : 'Select Subcategory'}
+        </option>
+        {subcategories.map((sub) => (
+          <option key={sub.id} value={sub.id}>
+            {sub.name}
+          </option>
+        ))}
+      </select>
     </div>
   );
 };
@@ -104,22 +150,62 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
   const [type, setType] = useState<TransactionType>(initialType || 'EXPENSE');
   const [amount, setAmount] = useState<string>('');
   const [accountId, setAccountId] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [subcategoryId, setSubcategoryId] = useState<string>('');
   const [date, setDate] = useState<string>(getTodayString());
   const [title, setTitle] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
+  // Dropdown options lists
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  const [subcategoriesList, setSubcategoriesList] = useState<any[]>([]);
+
+  // Fetch categories when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      apiFetch('/api/transactions/categories')
+        .then((data) => {
+          setCategoriesList(data);
+        })
+        .catch((err) => {
+          console.error('Error fetching categories:', err);
+          setErrorMessage('Unable to load categories.');
+        });
+    }
+  }, [isOpen]);
+
+  // Fetch subcategories dynamically when selected category changes
+  useEffect(() => {
+    if (isOpen && categoryId) {
+      apiFetch(`/api/transactions/subcategories?categoryId=${categoryId}`)
+        .then((data) => {
+          setSubcategoriesList(data);
+        })
+        .catch((err) => {
+          console.error('Error fetching subcategories:', err);
+          setErrorMessage('Unable to load subcategories.');
+        });
+    } else {
+      setSubcategoriesList([]);
+    }
+  }, [categoryId, isOpen]);
+
+  // Reset fields on modal state change
   useEffect(() => {
     if (isOpen) {
       setType(initialType || 'EXPENSE');
       setAmount('');
       setAccountId(accounts.length > 0 ? accounts[0].id : '');
-      setCategory('');
+      setCategoryId('');
+      setSubcategoryId('');
       setDate(getTodayString());
       setTitle('');
       setErrorMessage('');
     }
   }, [isOpen, initialType, accounts]);
+
+  // Filter categories shown to match the active type (INCOME/EXPENSE)
+  const filteredCategories = categoriesList.filter((cat) => cat.type === type);
 
   if (!isOpen) return null;
 
@@ -128,8 +214,9 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
     setErrorMessage('');
 
     const trimmedTitle = title.trim();
-    const trimmedCategory = category.trim();
     const trimmedAccountId = accountId.trim();
+    const trimmedCategoryId = categoryId.trim();
+    const trimmedSubcategoryId = subcategoryId.trim();
     const trimmedDate = date.trim();
     const numericAmount = parseFloat(amount);
 
@@ -143,8 +230,13 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       return;
     }
 
-    if (!trimmedCategory) {
+    if (!trimmedCategoryId) {
       setErrorMessage('Category is required.');
+      return;
+    }
+
+    if (!trimmedSubcategoryId) {
+      setErrorMessage('Subcategory is required.');
       return;
     }
 
@@ -162,7 +254,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
       type,
       amount: numericAmount,
       accountId: trimmedAccountId,
-      categoryId: trimmedCategory,
+      categoryId: trimmedCategoryId,
+      subcategoryId: trimmedSubcategoryId,
       date: trimmedDate,
       title: trimmedTitle,
     };
@@ -186,14 +279,22 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
           <button
             type="button"
             className={`type-toggle-btn ${type === 'EXPENSE' ? 'active-expense' : ''}`}
-            onClick={() => setType('EXPENSE')}
+            onClick={() => {
+              setType('EXPENSE');
+              setCategoryId('');
+              setSubcategoryId('');
+            }}
           >
             <span>↓</span> Expense
           </button>
           <button
             type="button"
             className={`type-toggle-btn ${type === 'INCOME' ? 'active-income' : ''}`}
-            onClick={() => setType('INCOME')}
+            onClick={() => {
+              setType('INCOME');
+              setCategoryId('');
+              setSubcategoryId('');
+            }}
           >
             <span>↑</span> Income
           </button>
@@ -251,11 +352,26 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
           <div className="form-row">
             {/* Decoupled Category Selector Field */}
             <CategorySelector
-              value={category}
-              onChange={setCategory}
+              value={categoryId}
+              onChange={(catId) => {
+                setCategoryId(catId);
+                setSubcategoryId('');
+              }}
+              categories={filteredCategories}
               required
             />
 
+            {/* Decoupled Subcategory Selector Field */}
+            <SubcategorySelector
+              value={subcategoryId}
+              onChange={setSubcategoryId}
+              subcategories={subcategoriesList}
+              required
+              disabled={!categoryId}
+            />
+          </div>
+
+          <div className="form-row">
             <div className="form-group">
               <label htmlFor="transactionDate" className="form-group-label">
                 Date *
@@ -269,6 +385,8 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                 required
               />
             </div>
+            {/* Placeholder to align layout grid */}
+            <div className="form-group"></div>
           </div>
 
           <div className="modal-actions">
@@ -286,3 +404,4 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
 };
 
 export default TransactionModal;
+

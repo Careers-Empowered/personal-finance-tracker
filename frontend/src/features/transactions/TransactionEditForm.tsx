@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Transaction, CreateTransactionInput, TransactionType } from './types';
 import { Account } from '../accounts/types';
-import { AccountSelector, CategorySelector } from './TransactionModal';
+import { AccountSelector, CategorySelector, SubcategorySelector } from './TransactionModal';
+import { apiFetch } from '../../shared/utils/api';
 
 interface TransactionEditFormProps {
   isOpen: boolean;
@@ -21,22 +22,62 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
   const [type, setType] = useState<TransactionType>('EXPENSE');
   const [amount, setAmount] = useState<string>('');
   const [accountId, setAccountId] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [subcategoryId, setSubcategoryId] = useState<string>('');
   const [date, setDate] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
+  // Dropdowns option lists
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  const [subcategoriesList, setSubcategoriesList] = useState<any[]>([]);
+
+  // Fetch categories when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      apiFetch('/api/transactions/categories')
+        .then((data) => {
+          setCategoriesList(data);
+        })
+        .catch((err) => {
+          console.error('Error fetching categories in edit form:', err);
+          setErrorMessage('Unable to load categories.');
+        });
+    }
+  }, [isOpen]);
+
+  // Load transaction values when open
   useEffect(() => {
     if (isOpen && transaction) {
       setType(transaction.type);
       setAmount(transaction.amount.toString());
       setAccountId(transaction.accountId);
-      setCategory(transaction.categoryId || '');
+      setCategoryId(transaction.categoryId || '');
+      setSubcategoryId(transaction.subcategoryId || '');
       setDate(transaction.date);
       setTitle(transaction.title || '');
       setErrorMessage('');
     }
   }, [isOpen, transaction]);
+
+  // Fetch subcategories dynamically when selected category changes
+  useEffect(() => {
+    if (isOpen && categoryId) {
+      apiFetch(`/api/transactions/subcategories?categoryId=${categoryId}`)
+        .then((data) => {
+          setSubcategoriesList(data);
+        })
+        .catch((err) => {
+          console.error('Error fetching subcategories in edit form:', err);
+          setErrorMessage('Unable to load subcategories.');
+        });
+    } else {
+      setSubcategoriesList([]);
+    }
+  }, [categoryId, isOpen]);
+
+  // Filter categories shown to match type
+  const filteredCategories = categoriesList.filter((cat) => cat.type === type);
 
   if (!isOpen) return null;
 
@@ -45,8 +86,9 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
     setErrorMessage('');
 
     const trimmedTitle = title.trim();
-    const trimmedCategory = category.trim();
     const trimmedAccountId = accountId.trim();
+    const trimmedCategoryId = categoryId.trim();
+    const trimmedSubcategoryId = subcategoryId.trim();
     const trimmedDate = date.trim();
     const numericAmount = parseFloat(amount);
 
@@ -60,8 +102,13 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
       return;
     }
 
-    if (!trimmedCategory) {
+    if (!trimmedCategoryId) {
       setErrorMessage('Category is required.');
+      return;
+    }
+
+    if (!trimmedSubcategoryId) {
+      setErrorMessage('Subcategory is required.');
       return;
     }
 
@@ -81,7 +128,8 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
       amount: numericAmount,
       accountId: trimmedAccountId,
       date: trimmedDate,
-      categoryId: trimmedCategory,
+      categoryId: trimmedCategoryId,
+      subcategoryId: trimmedSubcategoryId,
       title: trimmedTitle,
     } as Transaction | CreateTransactionInput;
 
@@ -111,7 +159,11 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
             className={`type-toggle-btn ${
               type === 'EXPENSE' ? 'active-expense' : ''
             }`}
-            onClick={() => setType('EXPENSE')}
+            onClick={() => {
+              setType('EXPENSE');
+              setCategoryId('');
+              setSubcategoryId('');
+            }}
           >
             <span>↓</span> Expense
           </button>
@@ -120,7 +172,11 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
             className={`type-toggle-btn ${
               type === 'INCOME' ? 'active-income' : ''
             }`}
-            onClick={() => setType('INCOME')}
+            onClick={() => {
+              setType('INCOME');
+              setCategoryId('');
+              setSubcategoryId('');
+            }}
           >
             <span>↑</span> Income
           </button>
@@ -181,11 +237,26 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
           <div className="form-row">
             {/* Decoupled Category Selector Field */}
             <CategorySelector
-              value={category}
-              onChange={setCategory}
+              value={categoryId}
+              onChange={(catId) => {
+                setCategoryId(catId);
+                setSubcategoryId('');
+              }}
+              categories={filteredCategories}
               required
             />
 
+            {/* Decoupled Subcategory Selector Field */}
+            <SubcategorySelector
+              value={subcategoryId}
+              onChange={setSubcategoryId}
+              subcategories={subcategoriesList}
+              required
+              disabled={!categoryId}
+            />
+          </div>
+
+          <div className="form-row">
             <div className="form-group">
               <label htmlFor="editTransactionDate" className="form-group-label">
                 Date *
@@ -199,6 +270,8 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
                 required
               />
             </div>
+            {/* Placeholder to align layout grid */}
+            <div className="form-group"></div>
           </div>
 
           <div className="modal-actions">
@@ -220,3 +293,4 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
 };
 
 export default TransactionEditForm;
+

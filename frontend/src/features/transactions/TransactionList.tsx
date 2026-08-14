@@ -1,12 +1,12 @@
 import React from 'react';
-import { CreateTransactionInput } from './types';
+import { Transaction, CreateTransactionInput } from './types';
 import { Account } from '../accounts/types';
 import TransactionEditDelete from './TransactionEditDelete';
 
 interface TransactionListProps {
-  transactions: CreateTransactionInput[];
+  transactions: Transaction[];
   accounts: Account[];
-  onSave: (updatedTransaction: CreateTransactionInput) => void;
+  onSave: (updatedTransaction: Transaction | CreateTransactionInput) => void;
   onDelete: (identifier: string | number) => void;
 }
 
@@ -84,12 +84,21 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <span className="transaction-meta-dot">•</span>
 
                   <span>
-                    {transaction.categoryId?.trim() || 'Uncategorized'}
+                    {transaction.category?.name || transaction.categoryId?.trim() || 'Uncategorized'}
                   </span>
+
+                  {transaction.subcategory?.name && (
+                    <>
+                      <span className="transaction-meta-dot">•</span>
+                      <span>{transaction.subcategory.name}</span>
+                    </>
+                  )}
 
                   <span className="transaction-meta-dot">•</span>
 
-                  <span>{getAccountName(transaction.accountId)}</span>
+                  <span>
+                    {transaction.account?.name || getAccountName(transaction.accountId)}
+                  </span>
                 </div>
               </div>
             </div>
