@@ -173,6 +173,7 @@ export default function SLMManualTest() {
           <AcceptOverride
             suggestedCategory={result}
             categories={categories}
+            transactionTitle={description}
             onDecision={(decision) => {
               console.log('User decision:', decision);
             }}
