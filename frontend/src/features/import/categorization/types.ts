@@ -8,6 +8,6 @@ export interface CategorizationRule {
 
 export interface CategorySuggestion {
   category: string;
-  source: "RULE";
+  source: "RULE" | "SLM";
   confidence: number;
 }
