@@ -7,13 +7,13 @@ import type {
 } from "../types/import";
 
 import { validateTransactions } from "../utils/transactionValidation";
-import { markDuplicateTransactions } from "../utils/duplicateDetection";
 
 /**
  * Result returned by the Categorization feature.
  *
- * The Import Validation feature does not implement
- * Rule-based or SLM categorization logic.
+ * Import Validation does not implement the categorization
+ * logic itself. It only consumes the result returned by
+ * the categorization feature.
  */
 export interface CategorySuggestion {
   category: string;
@@ -33,8 +33,11 @@ interface ImportValidationProps {
   /**
    * Called when the user clicks "Categorize".
    *
-   * The Categorization feature will eventually provide
-   * the Rule-based -> SLM implementation.
+   * The Categorization feature is responsible for:
+   *
+   * 1. Rule-based categorization
+   * 2. SLM fallback
+   * 3. Returning the suggested category
    */
   onCategorize?: (
     transaction: ImportedTransaction
@@ -98,14 +101,14 @@ function ImportValidation({
   onCategorize,
 }: ImportValidationProps) {
   /*
-   * Validate the imported transactions first,
-   * then run duplicate detection.
+   * Validate imported transactions.
+   *
+   * Duplicate detection is intentionally NOT handled here.
+   * That functionality belongs to the duplicate-detection feature.
    */
   const [validatedRows, setValidatedRows] =
     useState<ValidatedTransaction[]>(() => {
-      const validated = validateTransactions(transactions);
-
-      return markDuplicateTransactions(validated);
+      return validateTransactions(transactions);
     });
 
   /*
@@ -130,8 +133,8 @@ function ImportValidation({
     useState<number | null>(null);
 
   /*
-   * Tracks whether the user accepted a category
-   * suggestion.
+   * Tracks whether the user accepted
+   * a category suggestion.
    */
   const [acceptedCategories, setAcceptedCategories] =
     useState<Record<number, boolean>>({});
@@ -172,8 +175,8 @@ function ImportValidation({
   /*
    * Category is OPTIONAL.
    *
-   * Therefore, it is intentionally NOT included
-   * in the Continue validation.
+   * Therefore, a missing category does not prevent
+   * the user from continuing.
    */
   const canContinue = invalidCount === 0;
 
@@ -271,6 +274,7 @@ function ImportValidation({
    * Trigger the Categorization feature.
    *
    * This component does NOT contain:
+   *
    * - Rule-based categorization
    * - SLM logic
    * - AI calls
@@ -281,7 +285,7 @@ function ImportValidation({
     row: ValidatedTransaction
   ) => {
     /*
-     * Until the Categorization feature is connected,
+     * If the Categorization feature has not been connected,
      * show a clear message instead of using fake data.
      */
     if (!onCategorize) {
@@ -322,6 +326,7 @@ function ImportValidation({
        *
        * IMPORTANT:
        * The suggestion is NOT automatically applied.
+       * The user must Accept or Edit it.
        */
       setCategorySuggestions((current) => ({
         ...current,
@@ -408,8 +413,8 @@ function ImportValidation({
   /**
    * Save manually entered category.
    *
-   * Category remains optional overall,
-   * but if the user enters one, we save it.
+   * Category remains optional overall.
+   * But if the user enters one, it is saved.
    */
   const handleSaveCategory = (
     rowNumber: number
@@ -457,8 +462,8 @@ function ImportValidation({
    *
    * CATEGORY IS OPTIONAL.
    *
-   * Therefore, transactions without categories
-   * are still passed to the next stage.
+   * Transactions without categories are still
+   * passed to the next stage.
    */
   const handleContinue = () => {
     const validRows = validatedRows.filter(
@@ -468,24 +473,6 @@ function ImportValidation({
     );
 
     onContinue(validRows);
-  };
-
-  /**
-   * Determine whether a row was marked as duplicate.
-   *
-   * Duplicate detection itself is handled by
-   * duplicateDetection.ts.
-   */
-  const isDuplicateRow = (
-    row: ValidatedTransaction
-  ): boolean => {
-    return row.errors.some(
-      (error) =>
-        error.field === "transaction" &&
-        error.message
-          .toLowerCase()
-          .includes("duplicate")
-    );
   };
 
   return (
@@ -620,15 +607,6 @@ function ImportValidation({
                   >
                     Excluded
                   </span>
-                ) : isDuplicateRow(row) ? (
-                  <span
-                    style={{
-                      color: "#b26a00",
-                      fontWeight: 600,
-                    }}
-                  >
-                    ⚠ Duplicate
-                  </span>
                 ) : row.isValid ? (
                   <span
                     style={{
@@ -699,11 +677,15 @@ function ImportValidation({
                     />
 
                     {/*
-                     * Categorize button is only useful
-                     * when the row is valid and category
-                     * has not been filled.
+                     * Category is optional.
                      *
-                     * Category is OPTIONAL.
+                     * Categorize button appears only when:
+                     *
+                     * - Transaction is valid
+                     * - Transaction is not excluded
+                     * - Category is empty
+                     * - No suggestion currently exists
+                     * - User is not manually editing category
                      */}
                     {row.isValid &&
                       !row.excluded &&
@@ -798,7 +780,9 @@ function ImportValidation({
                                     "0.9rem",
                                 }}
                               >
-                                {suggestion.category}
+                                {
+                                  suggestion.category
+                                }
                               </strong>
 
                               <div
