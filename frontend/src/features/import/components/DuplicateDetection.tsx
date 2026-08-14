@@ -1,12 +1,20 @@
+import { useState } from "react";
 import type { CSSProperties } from "react";
-import type { ValidatedTransaction } from "../types/import";
+
+import type {
+  ImportedTransaction,
+  ValidatedTransaction,
+} from "../types/import";
+
+import {
+  isDuplicateError,
+  markDuplicateTransactions,
+} from "../utils/duplicateDetection";
 
 interface DuplicateDetectionProps {
   transactions: ValidatedTransaction[];
   onBack?: () => void;
-  onContinue: (
-    transactions: ValidatedTransaction[]
-  ) => void;
+  onContinue: (transactions: ValidatedTransaction[]) => void;
 }
 
 const primaryButtonStyle: CSSProperties = {
@@ -33,27 +41,127 @@ const secondaryButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+const dangerButtonStyle: CSSProperties = {
+  backgroundColor: "#fff1f0",
+  color: "#b42318",
+  border: "1px solid #f0b7b2",
+  borderRadius: "8px",
+  padding: "0.7rem 1.25rem",
+  fontFamily: "var(--font-body)",
+  fontSize: "0.9rem",
+  fontWeight: 600,
+  cursor: "pointer",
+};
+
 function DuplicateDetection({
   transactions,
   onBack,
   onContinue,
 }: DuplicateDetectionProps) {
-  const duplicates = transactions.filter((transaction) =>
-    transaction.errors.some(
-      (error) =>
-        error.field === "transaction" &&
-        error.message.toLowerCase().includes("duplicate")
-    )
+  const [rows, setRows] =
+    useState<ValidatedTransaction[]>(transactions);
+
+  const [editingRow, setEditingRow] =
+    useState<number | null>(null);
+
+  const [editData, setEditData] =
+    useState<ImportedTransaction | null>(null);
+
+  const duplicates = rows.filter((transaction) =>
+    transaction.errors.some(isDuplicateError)
   );
 
-  const uniqueTransactions = transactions.filter(
+  const uniqueTransactions = rows.filter(
     (transaction) =>
-      !transaction.errors.some(
-        (error) =>
-          error.field === "transaction" &&
-          error.message.toLowerCase().includes("duplicate")
-      )
+      !transaction.excluded &&
+      !transaction.errors.some(isDuplicateError)
   );
+
+  const handleFix = (row: ValidatedTransaction) => {
+    setEditingRow(row.row);
+
+    setEditData({
+      ...row.data,
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRow(null);
+    setEditData(null);
+  };
+
+  const handleSaveFix = () => {
+    if (!editingRow || !editData) {
+      return;
+    }
+
+    if (
+      !editData.date.trim() ||
+      !editData.title.trim() ||
+      !editData.account.trim() ||
+      editData.amount <= 0
+    ) {
+      alert(
+        "Please enter a valid date, description, account and amount."
+      );
+      return;
+    }
+
+    const updatedRows = rows.map((row) => {
+      if (row.row !== editingRow) {
+        return row;
+      }
+
+      return {
+        ...row,
+        data: editData,
+      };
+    });
+
+    /*
+     * Run duplicate detection again after editing.
+     * This allows the transaction to become unique
+     * if the user changed its data.
+     */
+    const recheckedRows =
+      markDuplicateTransactions(updatedRows);
+
+    setRows(recheckedRows);
+    setEditingRow(null);
+    setEditData(null);
+  };
+
+  const handleExclude = (rowNumber: number) => {
+    setRows((currentRows) =>
+      currentRows.filter(
+        (row) => row.row !== rowNumber
+      )
+    );
+  };
+
+  const handleAddAnyway = (rowNumber: number) => {
+    setRows((currentRows) =>
+      currentRows.map((row) => {
+        if (row.row !== rowNumber) {
+          return row;
+        }
+
+        const remainingErrors = row.errors.filter(
+          (error) => !isDuplicateError(error)
+        );
+
+        return {
+          ...row,
+          isValid: remainingErrors.length === 0,
+          errors: remainingErrors,
+        };
+      })
+    );
+  };
+
+  const handleContinue = () => {
+    onContinue(uniqueTransactions);
+  };
 
   return (
     <section
@@ -90,7 +198,7 @@ function DuplicateDetection({
         </p>
       </div>
 
-      {/* Summary */}
+      {/* SUMMARY */}
       <div
         style={{
           display: "grid",
@@ -101,7 +209,7 @@ function DuplicateDetection({
       >
         <Summary
           label="Transactions Checked"
-          value={transactions.length}
+          value={rows.length}
         />
 
         <Summary
@@ -117,7 +225,7 @@ function DuplicateDetection({
         />
       </div>
 
-      {/* Results */}
+      {/* NO DUPLICATES */}
       {duplicates.length === 0 ? (
         <div
           style={{
@@ -129,9 +237,10 @@ function DuplicateDetection({
             marginBottom: "2rem",
           }}
         >
-          ✓ No duplicate transactions found.
+          ✓ No duplicate transactions require attention.
         </div>
       ) : (
+        /* DUPLICATE LIST */
         <div
           style={{
             display: "flex",
@@ -142,13 +251,159 @@ function DuplicateDetection({
         >
           {duplicates.map((duplicate) => {
             const duplicateError = duplicate.errors.find(
-              (error) =>
-                error.field === "transaction" &&
-                error.message
-                  .toLowerCase()
-                  .includes("duplicate")
+              isDuplicateError
             );
 
+            /* EDIT MODE */
+            if (
+              editingRow === duplicate.row &&
+              editData
+            ) {
+              return (
+                <div
+                  key={duplicate.row}
+                  style={{
+                    border: "1px solid var(--color-primary)",
+                    borderRadius: "10px",
+                    padding: "1.25rem",
+                    backgroundColor: "#fffaf5",
+                  }}
+                >
+                  <h3
+                    style={{
+                      marginBottom: "1.25rem",
+                      fontFamily:
+                        "var(--font-heading)",
+                    }}
+                  >
+                    Fix Transaction — Row {duplicate.row}
+                  </h3>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(2, 1fr)",
+                      gap: "1rem",
+                    }}
+                  >
+                    <EditField
+                      label="Date"
+                      value={editData.date}
+                      onChange={(value) =>
+                        setEditData({
+                          ...editData,
+                          date: value,
+                        })
+                      }
+                      type="date"
+                    />
+
+                    <EditField
+                      label="Description"
+                      value={editData.title}
+                      onChange={(value) =>
+                        setEditData({
+                          ...editData,
+                          title: value,
+                        })
+                      }
+                    />
+
+                    <EditField
+                      label="Amount"
+                      value={String(editData.amount)}
+                      onChange={(value) =>
+                        setEditData({
+                          ...editData,
+                          amount: Number(value),
+                        })
+                      }
+                      type="number"
+                    />
+
+                    <div>
+                      <label
+                        style={labelStyle}
+                      >
+                        Type
+                      </label>
+
+                      <select
+                        value={editData.type}
+                        onChange={(event) =>
+                          setEditData({
+                            ...editData,
+                            type: event.target
+                              .value as
+                              | "income"
+                              | "expense",
+                          })
+                        }
+                        style={inputStyle}
+                      >
+                        <option value="expense">
+                          Expense
+                        </option>
+                        <option value="income">
+                          Income
+                        </option>
+                      </select>
+                    </div>
+
+                    <EditField
+                      label="Account"
+                      value={editData.account}
+                      onChange={(value) =>
+                        setEditData({
+                          ...editData,
+                          account: value,
+                        })
+                      }
+                    />
+
+                    <EditField
+                      label="Category"
+                      value={
+                        editData.category ?? ""
+                      }
+                      onChange={(value) =>
+                        setEditData({
+                          ...editData,
+                          category: value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.75rem",
+                      marginTop: "1.5rem",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      style={primaryButtonStyle}
+                      onClick={handleSaveFix}
+                    >
+                      Save & Check Again
+                    </button>
+
+                    <button
+                      type="button"
+                      style={secondaryButtonStyle}
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            /* DUPLICATE CARD */
             return (
               <div
                 key={duplicate.row}
@@ -183,7 +438,8 @@ function DuplicateDetection({
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gridTemplateColumns:
+                      "repeat(3, 1fr)",
                     gap: "1rem",
                   }}
                 >
@@ -199,7 +455,9 @@ function DuplicateDetection({
 
                   <Info
                     label="Amount"
-                    value={String(duplicate.data.amount)}
+                    value={String(
+                      duplicate.data.amount
+                    )}
                   />
 
                   <Info
@@ -210,6 +468,13 @@ function DuplicateDetection({
                   <Info
                     label="Account"
                     value={duplicate.data.account}
+                  />
+
+                  <Info
+                    label="Category"
+                    value={
+                      duplicate.data.category ?? "-"
+                    }
                   />
                 </div>
 
@@ -227,13 +492,55 @@ function DuplicateDetection({
                     {duplicateError.message}
                   </div>
                 )}
+
+                {/* ACTION BUTTONS */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.75rem",
+                    marginTop: "1rem",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    type="button"
+                    style={primaryButtonStyle}
+                    onClick={() =>
+                      handleFix(duplicate)
+                    }
+                  >
+                    Fix
+                  </button>
+
+                  <button
+                    type="button"
+                    style={dangerButtonStyle}
+                    onClick={() =>
+                      handleExclude(duplicate.row)
+                    }
+                  >
+                    Exclude
+                  </button>
+
+                  <button
+                    type="button"
+                    style={secondaryButtonStyle}
+                    onClick={() =>
+                      handleAddAnyway(
+                        duplicate.row
+                      )
+                    }
+                  >
+                    Add Anyway
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-      {/* Actions */}
+      {/* ACTIONS */}
       <div
         style={{
           display: "flex",
@@ -251,15 +558,23 @@ function DuplicateDetection({
 
         <button
           type="button"
-          style={primaryButtonStyle}
-          onClick={() => onContinue(uniqueTransactions)}
+          style={{
+            ...primaryButtonStyle,
+            opacity:
+              duplicates.length > 0 ? 0.6 : 1,
+          }}
+          disabled={duplicates.length > 0}
+          onClick={handleContinue}
         >
-          Continue with {uniqueTransactions.length} Transactions
+          Continue with{" "}
+          {uniqueTransactions.length} Transactions
         </button>
       </div>
     </section>
   );
 }
+
+/* SUMMARY COMPONENT */
 
 function Summary({
   label,
@@ -306,6 +621,8 @@ function Summary({
   );
 }
 
+/* INFORMATION COMPONENT */
+
 function Info({
   label,
   value,
@@ -337,5 +654,55 @@ function Info({
     </div>
   );
 }
+
+/* EDIT FIELD */
+
+function EditField({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+}) {
+  return (
+    <div>
+      <label style={labelStyle}>
+        {label}
+      </label>
+
+      <input
+        type={type}
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value)
+        }
+        style={inputStyle}
+      />
+    </div>
+  );
+}
+
+const labelStyle: CSSProperties = {
+  display: "block",
+  fontSize: "0.8rem",
+  color: "var(--color-text-muted)",
+  marginBottom: "0.35rem",
+};
+
+const inputStyle: CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "0.7rem",
+  border: "1px solid var(--color-divider)",
+  borderRadius: "8px",
+  fontFamily: "var(--font-body)",
+  fontSize: "0.9rem",
+  color: "var(--color-text-dark)",
+  backgroundColor: "#ffffff",
+};
 
 export default DuplicateDetection;

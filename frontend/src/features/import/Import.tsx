@@ -7,6 +7,7 @@
 // export default Import;
 
 
+
 import { useState } from "react";
 
 import FileUpload from "./components/FileUpload";
@@ -15,11 +16,12 @@ import ImportValidation from "./components/ImportValidation";
 
 import DuplicateDetection from "./components/DuplicateDetection";
 
+import { markDuplicateTransactions } from "./utils/duplicateDetection";
 import type {
   ImportedTransaction,
   ValidatedTransaction,
 } from "./types/import";
-
+import { suggestCategoryByRules } from "./categorization/ruleCategorizationService";
 function Import() {
   const [file, setFile] = useState<File | null>(null);
 
@@ -58,16 +60,24 @@ function Import() {
   };
 
   const handleValidationContinue = (
-    validTransactions: ValidatedTransaction[]
-  ) => {
-    console.log(
-      "Validated transactions:",
-      validTransactions
-    );
+  validTransactions: ValidatedTransaction[]
+) => {
+  console.log(
+    "Validated transactions:",
+    validTransactions
+  );
 
-    setValidatedTransactions(validTransactions);
-    setStep("duplicate");
-  };
+  const transactionsWithDuplicates =
+    markDuplicateTransactions(validTransactions);
+
+  console.log(
+    "Transactions after duplicate detection:",
+    transactionsWithDuplicates
+  );
+
+  setValidatedTransactions(transactionsWithDuplicates);
+  setStep("duplicate");
+};
 
   return (
     <main className="page-container">
@@ -93,10 +103,17 @@ function Import() {
       {/* STEP 3: VALIDATION */}
       {step === "validation" && (
         <ImportValidation
-          transactions={transactions}
-          onBack={() => setStep("preview")}
-          onContinue={handleValidationContinue}
-        />
+    transactions={transactions}
+    onBack={() => setStep("preview")}
+    onContinue={handleValidationContinue}
+    onCategorize={async (transaction) => {
+  return suggestCategoryByRules(
+    transaction.title,
+    transaction.type
+  );
+}}
+  />
+
       )}
 
       {step === "duplicate" && (
