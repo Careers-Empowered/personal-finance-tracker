@@ -1,21 +1,22 @@
-import type { Account, Transaction } from "../types/dashboard";
+import type { Account, Transaction } from "../../../types/dashboard";
 
 interface RecentTransactionsProps {
   transactions?: Transaction[];
   accounts?: Account[];
 }
 
-const formatCurrency = (amount: number) =>
+const formatCurrency = (amount: number, currency = "USD") =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
     maximumFractionDigits: 2,
   }).format(amount);
 
 const formatDate = (date: string) =>
-  new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
-    new Date(`${date}T00:00:00`),
-  );
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(`${date}T00:00:00`));
 
 const RecentTransactions = ({
   transactions = [],
@@ -24,11 +25,13 @@ const RecentTransactions = ({
   const recentTransactions = [...transactions]
     .sort(
       (first, second) =>
-        new Date(second.date).getTime() - new Date(first.date).getTime(),
+        new Date(second.date).getTime() -
+        new Date(first.date).getTime(),
     )
     .slice(0, 5);
-  const accountName = (accountId: string) =>
-    accounts.find((account) => account.id === accountId)?.name ?? "Account";
+
+  const getAccount = (accountId: string) =>
+    accounts.find((account) => account.id === accountId);
 
   return (
     <section className="dashboard-section">
@@ -38,32 +41,47 @@ const RecentTransactions = ({
           <p>Your latest financial activity</p>
         </div>
       </div>
+
       <div className="recent-transactions-card">
         {recentTransactions.length === 0 ? (
-          <div className="empty-state">No recent transactions available</div>
+          <div className="empty-state">
+            No recent transactions available
+          </div>
         ) : (
-          recentTransactions.map((transaction) => (
-            <div className="recent-transaction" key={transaction.id}>
+          recentTransactions.map((transaction) => {
+            const account = getAccount(transaction.accountId);
+            const currency = account?.currency ?? "USD";
+
+            return (
               <div
-                className={`recent-transaction__icon recent-transaction__icon--${transaction.type}`}
+                className="recent-transaction"
+                key={transaction.id}
               >
-                {transaction.type === "income" ? "+" : "−"}
+                <div
+                  className={`recent-transaction__icon recent-transaction__icon--${transaction.type}`}
+                >
+                  {transaction.type === "income" ? "+" : "−"}
+                </div>
+
+                <div className="recent-transaction__details">
+                  <strong>{transaction.description}</strong>
+
+                  <span>
+                    {transaction.category} ·{" "}
+                    {account?.name ?? "Account"} ·{" "}
+                    {formatDate(transaction.date)}
+                  </span>
+                </div>
+
+                <strong
+                  className={`recent-transaction__amount recent-transaction__amount--${transaction.type}`}
+                >
+                  {transaction.type === "income" ? "+" : "−"}
+                  {formatCurrency(transaction.amount, currency)}
+                </strong>
               </div>
-              <div className="recent-transaction__details">
-                <strong>{transaction.description}</strong>
-                <span>
-                  {transaction.category} · {accountName(transaction.accountId)}{" "}
-                  · {formatDate(transaction.date)}
-                </span>
-              </div>
-              <strong
-                className={`recent-transaction__amount recent-transaction__amount--${transaction.type}`}
-              >
-                {transaction.type === "income" ? "+" : "−"}
-                {formatCurrency(transaction.amount)}
-              </strong>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </section>
