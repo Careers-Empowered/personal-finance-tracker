@@ -1,78 +1,84 @@
-import type { CategoryProvider } from './categoryProvider';
+import {
+  SLM_CATEGORIES,
+} from '../data/slmCategories';
+
 import type { SLMProvider } from './qwenProvider';
-import { redactTransactionDescription } from './redactionService';
+
 import type { CategorySuggestion } from '../types/suggestion';
 
 const SLM_ENABLED =
-  import.meta.env.VITE_ENABLE_SLM_CATEGORY_SUGGESTION === 'true';
+  import.meta.env.VITE_ENABLE_SLM_CATEGORY_SUGGESTION ===
+  'true';
 
 export class CategorySuggestionService {
   constructor(
-    private readonly categoryProvider: CategoryProvider,
     private readonly slmProvider: SLMProvider
   ) {}
 
   async suggestCategory(
     description: string
   ): Promise<CategorySuggestion | null> {
-    // Feature flag
     if (!SLM_ENABLED) {
       return null;
     }
 
-    // Empty description
     if (!description || !description.trim()) {
       return null;
     }
 
-    // Get categories from provider
-    const categories =
-      await this.categoryProvider.getCategories();
-
-    if (categories.length === 0) {
-      return null;
-    }
-
-    // Remove unnecessary sensitive information
-    const sanitizedDescription =
-      redactTransactionDescription(description);
-
-    if (!sanitizedDescription) {
-      return null;
-    }
-
     try {
-      // Ask the SLM
-      const suggestedCategory =
+      const modelResponse =
         await this.slmProvider.suggestCategory(
-          sanitizedDescription,
-          categories
+          description.trim(),
+          SLM_CATEGORIES
         );
 
-      if (!suggestedCategory) {
+      console.log(
+        'SLM model response:',
+        modelResponse
+      );
+
+      if (!modelResponse) {
         return null;
       }
 
-      // Validate model output against supplied categories
-      const matchedCategory = categories.find(
-        (category) =>
-          normalize(category.name) ===
-          normalize(suggestedCategory)
-      );
+      const normalizedResponse =
+        normalize(modelResponse);
+
+      // Never accept these as categories.
+      if (
+        normalizedResponse === 'expense' ||
+        normalizedResponse === 'income'
+      ) {
+        console.warn(
+          'SLM returned a transaction type:',
+          modelResponse
+        );
+
+        return null;
+      }
+
+      // Validate against our allowed categories.
+      const matchedCategory =
+        SLM_CATEGORIES.find(
+          (category) =>
+            normalize(category.name) ===
+            normalizedResponse
+        );
 
       if (!matchedCategory) {
         console.warn(
           'SLM returned an invalid category:',
-          suggestedCategory
+          modelResponse
         );
 
         return null;
       }
 
       return {
-        categoryId: matchedCategory.id,
-        categoryName: matchedCategory.name,
-        source: 'model',
+        category: matchedCategory.name,
+        source: 'SLM',
+        confidence: 0.8,
       };
     } catch (error) {
       console.error(
@@ -80,7 +86,6 @@ export class CategorySuggestionService {
         error
       );
 
-      // Model failure must not crash the application.
       return null;
     }
   }

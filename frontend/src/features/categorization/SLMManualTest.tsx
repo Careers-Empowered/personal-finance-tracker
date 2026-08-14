@@ -1,44 +1,57 @@
 import { useState } from 'react';
+
 import { CategorySuggestionService } from './services/slmService';
-import { MockCategoryProvider } from './services/mockCategoryProvider';
 import { QwenProvider } from './services/qwenProvider';
 
-const categoryProvider = new MockCategoryProvider();
 const qwenProvider = new QwenProvider();
 
-const suggestionService = new CategorySuggestionService(
-  categoryProvider,
-  qwenProvider
-);
+const suggestionService =
+  new CategorySuggestionService(qwenProvider);
 
 export default function SLMManualTest() {
-  const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [description, setDescription] =
+    useState('');
+
+  const [loading, setLoading] =
+    useState(false);
 
   const [result, setResult] = useState<{
-    categoryId: string;
-    categoryName: string;
+    category: string;
     source: string;
+    confidence: number;
   } | null>(null);
 
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] =
+    useState<string | null>(null);
 
   const handleSuggest = async () => {
     setResult(null);
     setError(null);
 
     if (!description.trim()) {
-      setError('Please enter a transaction description.');
+      setError(
+        'Please enter a transaction description.'
+      );
       return;
     }
 
     setLoading(true);
 
     try {
+      console.log(
+        'Sending description to SLM:',
+        description
+      );
+
       const suggestion =
         await suggestionService.suggestCategory(
           description
         );
+
+      console.log(
+        'SLM suggestion:',
+        suggestion
+      );
 
       if (!suggestion) {
         setError(
@@ -48,12 +61,15 @@ export default function SLMManualTest() {
       }
 
       setResult(suggestion);
-    } catch (err) {
-      console.error('SLM error:', err);
+    } catch (error) {
+      console.error(
+        'SLM suggestion failed:',
+        error
+      );
 
       setError(
-        err instanceof Error
-          ? err.message
+        error instanceof Error
+          ? error.message
           : 'SLM suggestion failed.'
       );
     } finally {
@@ -69,14 +85,20 @@ export default function SLMManualTest() {
         padding: '2rem',
       }}
     >
-      <h1>SLM Category Auto-Suggestion</h1>
+      <h1>
+        SLM Category Auto-Suggestion
+      </h1>
 
       <p>
-        Enter a transaction description and let the
-        local Qwen3-0.6B model suggest a category.
+        Enter a transaction description and
+        let Qwen3-0.6B suggest a category.
       </p>
 
-      <div style={{ marginTop: '2rem' }}>
+      <div
+        style={{
+          marginTop: '2rem',
+        }}
+      >
         <label
           htmlFor="transaction-description"
           style={{
@@ -96,7 +118,7 @@ export default function SLMManualTest() {
             setResult(null);
             setError(null);
           }}
-          placeholder="Example: Payment at Green Leaf Cafe"
+          placeholder="Example: Paid rent for apartment"
           rows={4}
           style={{
             width: '100%',
@@ -117,11 +139,15 @@ export default function SLMManualTest() {
           padding: '0.75rem 1.5rem',
           border: 'none',
           borderRadius: '8px',
-          cursor: loading ? 'not-allowed' : 'pointer',
+          cursor: loading
+            ? 'not-allowed'
+            : 'pointer',
           fontWeight: 600,
         }}
       >
-        {loading ? 'Running Qwen3...' : 'Suggest Category'}
+        {loading
+          ? 'Running Qwen3...'
+          : 'Suggest Category'}
       </button>
 
       {loading && (
@@ -139,26 +165,36 @@ export default function SLMManualTest() {
             borderRadius: '10px',
           }}
         >
-          <h2>Suggested Category</h2>
+          <h2>
+            Suggested Category
+          </h2>
 
           <p>
-            <strong>Transaction:</strong>{' '}
+            <strong>
+              Transaction:
+            </strong>{' '}
             {description}
           </p>
 
           <p>
-            <strong>Category:</strong>{' '}
-            {result.categoryName}
+            <strong>
+              Category:
+            </strong>{' '}
+            {result.category}
           </p>
 
           <p>
-            <strong>Category ID:</strong>{' '}
-            {result.categoryId}
-          </p>
-
-          <p>
-            <strong>Source:</strong>{' '}
+            <strong>
+              Source:
+            </strong>{' '}
             {result.source}
+          </p>
+
+          <p>
+            <strong>
+              Confidence:
+            </strong>{' '}
+            {result.confidence}
           </p>
         </div>
       )}
@@ -172,7 +208,8 @@ export default function SLMManualTest() {
             borderRadius: '8px',
           }}
         >
-          <strong>Error:</strong> {error}
+          <strong>Error:</strong>{' '}
+          {error}
         </div>
       )}
     </div>
