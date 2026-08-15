@@ -7,6 +7,13 @@ export interface FileUploadProps {
   onPreview?: () => void;
 }
 
+export interface TransactionDataSummary {
+  fileName: string;
+  transactionCount: number;
+  earliestDate: string;
+  latestDate: string;
+}
+
 export interface ImportedTransaction {
   date: string;
   title: string;

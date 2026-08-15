@@ -251,9 +251,7 @@ router.get(
           accountId: tx.accountId,
 
           categoryId: tx.categoryId,
-
-          subcategoryId:
-            tx.subcategory_id,
+          subcategoryId: tx.subcategory_id,
 
           amount: Number(tx.amount),
 

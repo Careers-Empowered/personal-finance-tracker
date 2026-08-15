@@ -114,10 +114,7 @@ function DuplicateDetection({
     return addedAnywayRows.includes(transaction.row);
   });
 
-  const selectedDuplicateRows = activeDuplicates.filter((transaction) =>
-    selectedRows.includes(transaction.row)
-  );
-
+  
   const allSelected =
     activeDuplicates.length > 0 &&
     activeDuplicates.every((transaction) =>
