@@ -1,45 +1,48 @@
-// import React from 'react';
-
-// const Import: React.FC = () => {
-//   return <div className="page-container"><h1 className="page-title">Import</h1></div>;
-// };
-
-// export default Import;
-
-
-
 import { useState } from "react";
 
 import FileUpload from "./components/FileUpload";
 import FilePreview from "./components/FilePreview";
 import ImportValidation from "./components/ImportValidation";
 
-import DuplicateDetection from "./components/DuplicateDetection";
-
-import { markDuplicateTransactions } from "./utils/duplicateDetection";
 import type {
+  ImportMode,
   ImportedTransaction,
   ValidatedTransaction,
 } from "./types/import";
-import { suggestCategoryByRules } from "./categorization/ruleCategorizationService";
+
 function Import() {
-  const [file, setFile] = useState<File | null>(null);
+  const [importMode, setImportMode] =
+    useState<ImportMode>("csv");
+
+  const [file, setFile] =
+    useState<File | null>(null);
 
   const [transactions, setTransactions] =
     useState<ImportedTransaction[]>([]);
 
-  const [validatedTransactions, setValidatedTransactions] =
-    useState<ValidatedTransaction[]>([]);
-
   const [step, setStep] = useState<
-    "upload" | "preview" | "validation" | "duplicate"
+    "upload" | "preview" | "validation"
   >("upload");
 
-  const handleFileSelected = (selectedFile: File) => {
+  /*
+   * --------------------------------------------------
+   * FILE SELECTED
+   * --------------------------------------------------
+   */
+
+  const handleFileSelected = (
+    selectedFile: File
+  ) => {
     setFile(selectedFile);
     setTransactions([]);
     setStep("upload");
   };
+
+  /*
+   * --------------------------------------------------
+   * NORMAL CSV -> PREVIEW
+   * --------------------------------------------------
+   */
 
   const handlePreview = () => {
     if (!file) {
@@ -47,94 +50,121 @@ function Import() {
       return;
     }
 
+    /*
+     * This is ONLY used by the normal CSV flow.
+     */
     setStep("preview");
   };
+
+  /*
+   * --------------------------------------------------
+   * TRANSACTION DATA -> CONTINUE
+   * --------------------------------------------------
+   */
+
+  const handleTransactionContinue = () => {
+    if (!file) {
+      return;
+    }
+
+    /*
+     * For now we keep the transaction-data
+     * flow on the same page.
+     *
+     * Later this can navigate to the next
+     * transaction-import step.
+     */
+    console.log(
+      "Continue with transaction data:",
+      file.name
+    );
+  };
+
+  /*
+   * --------------------------------------------------
+   * MAPPING CONFIRMED
+   * --------------------------------------------------
+   */
 
   const handleConfirmMapping = (
     mappedTransactions: ImportedTransaction[]
   ) => {
-    console.log("Mapped transactions:", mappedTransactions);
+    console.log(
+      "Mapped transactions:",
+      mappedTransactions
+    );
 
     setTransactions(mappedTransactions);
     setStep("validation");
   };
 
-  const handleValidationContinue = (
-  validTransactions: ValidatedTransaction[]
-) => {
-  console.log(
-    "Validated transactions:",
-    validTransactions
-  );
+  /*
+   * --------------------------------------------------
+   * VALIDATION CONTINUE
+   * --------------------------------------------------
+   */
 
-  const transactionsWithDuplicates =
-    markDuplicateTransactions(validTransactions);
+  const handleContinue = (
+    validatedTransactions: ValidatedTransaction[]
+  ) => {
+    console.log(
+      "Validated transactions:",
+      validatedTransactions
+    );
 
-  console.log(
-    "Transactions after duplicate detection:",
-    transactionsWithDuplicates
-  );
-
-  setValidatedTransactions(transactionsWithDuplicates);
-  setStep("duplicate");
-};
+    alert(
+      `${validatedTransactions.length} valid transactions are ready for duplicate detection.`
+    );
+  };
 
   return (
     <main className="page-container">
-      <h1 className="page-title">Import</h1>
+      <h1 className="page-title">
+        Import
+      </h1>
 
-      {/* STEP 1: FILE UPLOAD */}
+      {/* ==========================================
+          STEP 1: FILE UPLOAD
+          ========================================== */}
+
       {step === "upload" && (
         <FileUpload
+          mode={importMode}
+          onModeChange={setImportMode}
           onFileSelected={handleFileSelected}
           onPreview={handlePreview}
         />
       )}
 
-      {/* STEP 2: FILE PREVIEW + MAPPING */}
-      {step === "preview" && file && (
-        <FilePreview
-          file={file}
-          onBack={() => setStep("upload")}
-          onConfirmMapping={handleConfirmMapping}
-        />
-      )}
+      {/* ==========================================
+          STEP 2: NORMAL CSV PREVIEW + MAPPING
+          ========================================== */}
 
-      {/* STEP 3: VALIDATION */}
+      {step === "preview" &&
+        file &&
+        importMode === "csv" && (
+          <FilePreview
+            file={file}
+            onBack={() =>
+              setStep("upload")
+            }
+            onConfirmMapping={
+              handleConfirmMapping
+            }
+          />
+        )}
+
+      {/* ==========================================
+          STEP 3: VALIDATION
+          ========================================== */}
+
       {step === "validation" && (
         <ImportValidation
-    transactions={transactions}
-    onBack={() => setStep("preview")}
-    onContinue={handleValidationContinue}
-    onCategorize={async (transaction) => {
-  return suggestCategoryByRules(
-    transaction.title,
-    transaction.type
-  );
-}}
-  />
-
-      )}
-
-      {step === "duplicate" && (
-        <DuplicateDetection
-          transactions={validatedTransactions}
-          onBack={() => setStep("validation")}
-          onContinue={(uniqueTransactions, decisions) => {
-            console.log(
-              "Unique transactions ready for import:",
-              uniqueTransactions
-            );
-
-            console.log(
-              "Duplicate decisions:",
-              decisions
-            );
-
-            alert(
-              `${uniqueTransactions.length} transactions are ready to import.`
-            );
-          }}
+          transactions={transactions}
+          onBack={() =>
+            setStep("preview")
+          }
+          onContinue={handleContinue}
         />
       )}
     </main>
