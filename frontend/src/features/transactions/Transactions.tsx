@@ -7,8 +7,6 @@ import { Account } from '../accounts/types';
 import accountMockData from '../accounts/mockData.json';
 import '../accounts/Accounts.css';
 import './Transactions.css';
-import './TransactionDisplay.css';
-import './TransactionFilter.css';
 
 const Transactions: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,17 +15,9 @@ const Transactions: React.FC = () => {
     CreateTransactionInput[]
   >([]);
 
-  // Transaction type filter
   const [selectedType, setSelectedType] = useState<
     TransactionType | 'ALL'
   >('ALL');
-  // Date filter
-const [selectedDate, setSelectedDate] = useState<string>('');
-//category filter
-const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
-
-
- 
 
   const accounts: Account[] = accountMockData as Account[];
 
@@ -38,9 +28,7 @@ const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
     const newTransaction = {
       ...transactionData,
-      id: crypto.randomUUID
-        ? crypto.randomUUID()
-        : Date.now().toString(),
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
     };
 
     setTransactions((previousTransactions) => [
@@ -54,74 +42,41 @@ const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const handleUpdateTransaction = (
     updatedTransaction: CreateTransactionInput
   ) => {
-    const updated =
-      updatedTransaction as CreateTransactionInput & { id?: string };
-
+    const updated = updatedTransaction as CreateTransactionInput & { id?: string };
     setTransactions((previousTransactions) =>
       previousTransactions.map((tx) => {
-        const currentTx =
-          tx as CreateTransactionInput & { id?: string };
-
+        const currentTx = tx as CreateTransactionInput & { id?: string };
         return currentTx.id === updated.id ? updated : tx;
       })
     );
   };
 
-  const handleDeleteTransaction = (
-    identifier: string | number
-  ) => {
+  const handleDeleteTransaction = (identifier: string | number) => {
     setTransactions((previousTransactions) =>
       previousTransactions.filter((tx, idx) => {
-        const currentTx =
-          tx as CreateTransactionInput & { id?: string };
-
+        const currentTx = tx as CreateTransactionInput & { id?: string };
         if (currentTx.id) {
           return currentTx.id !== identifier;
         }
-
         return idx !== identifier;
       })
     );
   };
 
-  // Apply both type and date filters
   const filteredTransactions = useMemo(() => {
-  return transactions.filter((transaction) => {
-    const matchesType =
-      selectedType === 'ALL' ||
-      transaction.type === selectedType;
+    if (selectedType === 'ALL') {
+      return transactions;
+    }
 
-    const matchesDate =
-      selectedDate === '' ||
-      transaction.date === selectedDate;
-
-    const matchesCategory =
-      selectedCategory === 'ALL' ||
-      transaction.categoryId?.trim() === selectedCategory;
-
-    return matchesType && matchesDate && matchesCategory;
-  });
-}, [
-  transactions,
-  selectedType,
-  selectedDate,
-  selectedCategory,
-]);
-
-  const availableCategories = useMemo(() => {
-  const categories = transactions
-    .map((transaction) => transaction.categoryId?.trim())
-    .filter((category): category is string => Boolean(category));
-
-  return Array.from(new Set(categories)).sort();
-}, [transactions]);
+    return transactions.filter(
+      (transaction) => transaction.type === selectedType
+    );
+  }, [transactions, selectedType]);
 
   return (
     <div className="transactions-container">
       <div className="transactions-header">
-        <h1 className="transactions-title">
-          Transactions
-        </h1>
+        <h1 className="transactions-title">Transactions</h1>
 
         <button
           className="btn btn-primary"
@@ -152,14 +107,9 @@ const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
           </div>
 
           <TransactionFilter
-  selectedType={selectedType}
-  onTypeChange={setSelectedType}
-  selectedDate={selectedDate}
-  onDateChange={setSelectedDate}
-  selectedCategory={selectedCategory}
-  onCategoryChange={setSelectedCategory}
-  categories={availableCategories}
-/>
+            selectedType={selectedType}
+            onTypeChange={setSelectedType}
+          />
         </div>
 
         <TransactionList

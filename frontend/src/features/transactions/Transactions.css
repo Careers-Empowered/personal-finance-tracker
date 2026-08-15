@@ -384,3 +384,63 @@
 }
 
 
+/* ============================================================================
+   TRANSACTION FILTER
+   ============================================================================ */
+
+.transaction-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+}
+
+.transaction-filter-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted, #6b6b6b);
+  padding: 0.5rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.transaction-filter-btn:hover {
+  color: var(--color-text-dark, #231f20);
+}
+
+.transaction-filter-btn.active {
+  background-color: #ffffff;
+  color: var(--color-text-dark, #231f20);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.transaction-filter-btn.active.income-filter {
+  color: #1e8e3e;
+}
+
+.transaction-filter-btn.active.expense-filter {
+  color: #d93025;
+}
+
+/* Responsive */
+
+@media (max-width: 650px) {
+  .transactions-list-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .transaction-filter {
+    width: 100%;
+  }
+
+  .transaction-filter-btn {
+    flex: 1;
+  }
+}
