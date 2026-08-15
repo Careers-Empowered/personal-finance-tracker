@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import TransactionModal from './TransactionModal';
+import { AddTransactionModal as TransactionModal } from './addTransaction';
 import TransactionList from './TransactionList';
 import TransactionFilter from './TransactionFilter';
 import { Transaction, CreateTransactionInput, TransactionType } from './types';

@@ -2,6 +2,7 @@ import React from 'react';
 import { Transaction, CreateTransactionInput } from './types';
 import { Account } from '../accounts/types';
 import TransactionEditDelete from './TransactionEditDelete';
+import { getCurrencySymbol } from '../../shared/utils/currencyUtils';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -58,6 +59,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
     <div className="transaction-list">
       {transactions.map((transaction, index) => {
         const isIncome = transaction.type === 'INCOME';
+        const account = accounts.find((acc) => acc.id === transaction.accountId);
+        const currencySymbol = getCurrencySymbol(account?.currency || (transaction as any).account?.currency);
 
         return (
           <div className="transaction-item" key={`${transaction.date}-${index}`}>
@@ -112,7 +115,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     : 'transaction-expense-amount'
                 }`}
               >
-                {isIncome ? '+' : '-'}₹
+                {isIncome ? '+' : '-'}{currencySymbol}
                 {formatAmount(transaction.amount)}
               </div>
 
