@@ -5,22 +5,17 @@ import {
   useState,
 } from "react";
 
+import axios from "axios";
+
 import EditCategory from "../category-edit/EditCategory";
 import DeleteCategory from "../category-delete/DeleteCategory";
 
-import { mockSubcategories } from "../subcategories/data/subcategory.mock";
-
 import type { Subcategory } from "../subcategories/types/subcategory.types";
-
-import {
-  generateSubcategoryId,
-  isDuplicateSubcategory,
-} from "../subcategories/utils/subcategory.utils";
+import { isDuplicateSubcategory } from "../subcategories/utils/subcategory.utils";
 
 import {
   CATEGORY_COLORS,
   CATEGORY_ICONS,
-  DEFAULT_CATEGORIES,
 } from "./categoryData";
 
 import type {
@@ -29,6 +24,8 @@ import type {
   CreateCategoryFormData,
   CreateCategoryProps,
 } from "./categoryTypes";
+
+import { useCategories } from "../context/CategoryContext";
 
 import "./CreateCategory.css";
 
@@ -88,15 +85,22 @@ const DEFAULT_SUBCATEGORY_FORM: SubcategoryFormData = {
    ========================================= */
 
 const CreateCategory = ({
-  categories: initialCategories = DEFAULT_CATEGORIES,
   onCategoryCreate,
 }: CreateCategoryProps) => {
   /* =========================================
-     CATEGORY STATE
+     SHARED CATEGORY / SUBCATEGORY STATE
      ========================================= */
 
-  const [categories, setCategories] =
-    useState<Category[]>(initialCategories);
+  const {
+    categories,
+    setCategories,
+    subcategories,
+    setSubcategories,
+  } = useCategories();
+
+  /* =========================================
+     CATEGORY FORM STATE
+     ========================================= */
 
   const [categoryName, setCategoryName] =
     useState("");
@@ -129,11 +133,8 @@ const CreateCategory = ({
     useState<Category | null>(null);
 
   /* =========================================
-     SUBCATEGORY STATE
+     SUBCATEGORY UI STATE
      ========================================= */
-
-  const [subcategories, setSubcategories] =
-    useState<Subcategory[]>(mockSubcategories);
 
   const [selectedCategoryId, setSelectedCategoryId] =
     useState<string | null>(null);
@@ -261,59 +262,64 @@ const CreateCategory = ({
     );
   };
 
-  /* =========================================
-     CREATE CATEGORY OBJECT
-     ========================================= */
-
-  const createCategory = (
-    formData: CreateCategoryFormData,
-  ): Category => {
-    return {
-      id: crypto.randomUUID(),
-      name: formData.name,
-      type: formData.type,
-      icon: formData.icon,
-      color: formData.color,
-      isCustom: true,
-    };
-  };
+ 
 
   /* =========================================
      CREATE CATEGORY
      ========================================= */
+const handleSubmit = async (
+  event: FormEvent<HTMLFormElement>,
+) => {
+  event.preventDefault();
 
-  const handleSubmit = (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
+  const trimmedName = categoryName.trim();
 
-    const trimmedName = categoryName.trim();
+  if (!trimmedName) {
+    setErrorMessage(
+      "Please enter a category name.",
+    );
+    return;
+  }
 
-    if (!trimmedName) {
-      setErrorMessage(
-        "Please enter a category name.",
-      );
-      return;
-    }
+  if (
+    isDuplicateCategory(
+      trimmedName,
+      categoryType,
+    )
+  ) {
+    setErrorMessage(
+      "This category already exists.",
+    );
+    return;
+  }
 
-    if (
-      isDuplicateCategory(
-        trimmedName,
-        categoryType,
-      )
-    ) {
-      setErrorMessage(
-        "This category already exists.",
-      );
-      return;
-    }
+  try {
+    const response = await axios.post(
+      "http://localhost:3000/api/categories",
+      {
+        name: trimmedName,
+        type:
+          categoryType === "income"
+            ? "INCOME"
+            : "EXPENSE",
+        icon: selectedIcon,
+        color: selectedColor,
+      },
+    );
 
-    const newCategory = createCategory({
-      name: trimmedName,
-      type: categoryType,
-      icon: selectedIcon,
-      color: selectedColor,
-    });
+    const savedCategory = response.data.data;
+
+    const newCategory: Category = {
+      id: savedCategory.id,
+      name: savedCategory.name,
+      type:
+        savedCategory.type === "INCOME"
+          ? "income"
+          : "expense",
+      icon: savedCategory.icon ?? selectedIcon,
+      color: savedCategory.color ?? selectedColor,
+      isCustom: true,
+    };
 
     setCategories((currentCategories) => [
       ...currentCategories,
@@ -331,52 +337,96 @@ const CreateCategory = ({
     );
 
     handleCloseForm();
-  };
+  } catch (error) {
+    console.error(
+      "Failed to create category:",
+      error,
+    );
+
+    setErrorMessage(
+      "Failed to create category. Please try again.",
+    );
+  }
+};
+  
+
+
+   
+
+  
 
   /* =========================================
      EDIT CATEGORY
      ========================================= */
 
-  const handleEditCategory = (
-    category: Category,
-    formData: CreateCategoryFormData,
-  ) => {
-    const trimmedName = formData.name.trim();
+  const handleEditCategory = async (
+  category: Category,
+  formData: CreateCategoryFormData,
+) => {
+  const trimmedName = formData.name.trim();
 
-    if (!trimmedName) {
-      return;
-    }
+  if (!trimmedName) {
+    return;
+  }
 
-    if (
-      isDuplicateCategory(
-        trimmedName,
-        formData.type,
-        category.id,
-      )
-    ) {
-      setSuccessMessage(
-        "Another category with this name already exists.",
-      );
+  if (
+    isDuplicateCategory(
+      trimmedName,
+      formData.type,
+      category.id,
+    )
+  ) {
+    setSuccessMessage(
+      "Another category with this name already exists.",
+    );
 
-      setEditingCategory(null);
-      return;
-    }
+    setEditingCategory(null);
+    return;
+  }
+
+  try {
+    const response = await axios.put(
+      `http://localhost:3000/api/categories/${category.id}`,
+      {
+        name: trimmedName,
+        type:
+          formData.type === "income"
+            ? "INCOME"
+            : "EXPENSE",
+        icon: formData.icon,
+        color: formData.color,
+      },
+    );
+
+    const savedCategory =
+      response.data.data;
 
     const updatedCategory: Category = {
       ...category,
-      name: trimmedName,
-      type: formData.type,
-      icon: formData.icon,
-      color: formData.color,
+      id: savedCategory.id,
+      name: savedCategory.name,
+      type:
+        savedCategory.type === "INCOME"
+          ? "income"
+          : "expense",
+      icon:
+        savedCategory.icon ??
+        formData.icon,
+      color:
+        savedCategory.color ??
+        formData.color,
+      isCustom: !savedCategory.isDefault,
     };
 
-    setCategories((currentCategories) =>
-      currentCategories.map(
-        (currentCategory) =>
-          currentCategory.id === category.id
-            ? updatedCategory
-            : currentCategory,
-      ),
+    setCategories(
+      (currentCategories) =>
+        currentCategories.map(
+          (currentCategory) =>
+            currentCategory.id ===
+            category.id
+              ? updatedCategory
+              : currentCategory,
+        ),
     );
 
     setActiveType(formData.type);
@@ -386,32 +436,48 @@ const CreateCategory = ({
     );
 
     setEditingCategory(null);
-  };
+  } catch (error) {
+    console.error(
+      "Failed to update category:",
+      error,
+    );
+
+    setErrorMessage(
+      "Failed to update category. Please try again.",
+    );
+  }
+};
 
   /* =========================================
      DELETE CATEGORY
      ========================================= */
 
-  const handleDeleteCategory = (
-    categoryId: string,
-  ) => {
-    const categoryToDelete =
-      categories.find(
-        (category) =>
-          category.id === categoryId,
-      );
-
-    setCategories((currentCategories) =>
-      currentCategories.filter(
-        (category) =>
-          category.id !== categoryId,
-      ),
+ const handleDeleteCategory = async (
+  categoryId: string,
+) => {
+  const categoryToDelete =
+    categories.find(
+      (category) =>
+        category.id === categoryId,
     );
 
-    /*
-     * Remove all subcategories belonging
-     * to the deleted category.
-     */
+  if (!categoryToDelete) {
+    return;
+  }
+
+  try {
+    await axios.delete(
+      `http://localhost:3000/api/categories/${categoryId}`,
+    );
+
+    setCategories(
+      (currentCategories) =>
+        currentCategories.filter(
+          (category) =>
+            category.id !== categoryId,
+        ),
+    );
+
     setSubcategories(
       (currentSubcategories) =>
         currentSubcategories.filter(
@@ -421,19 +487,29 @@ const CreateCategory = ({
         ),
     );
 
-    if (selectedCategoryId === categoryId) {
+    if (
+      selectedCategoryId === categoryId
+    ) {
       setSelectedCategoryId(null);
       setSelectedSubcategoryId(null);
     }
 
-    if (categoryToDelete) {
-      setSuccessMessage(
-        `"${categoryToDelete.name}" category deleted successfully.`,
-      );
-    }
+    setSuccessMessage(
+      `"${categoryToDelete.name}" category deleted successfully.`,
+    );
 
     setDeletingCategory(null);
-  };
+  } catch (error) {
+    console.error(
+      "Failed to delete category:",
+      error,
+    );
+
+    setErrorMessage(
+      "Failed to delete category. Please try again.",
+    );
+  }
+};
 
   /* =========================================
      CATEGORY CLICK
@@ -564,60 +640,77 @@ const CreateCategory = ({
   };
 
   /* =========================================
-     SAVE SUBCATEGORY
-     ========================================= */
+   SAVE SUBCATEGORY
+   ========================================= */
 
-  const handleSaveSubcategory = (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
-    event.preventDefault();
+const handleSaveSubcategory = async (
+  event: FormEvent<HTMLFormElement>,
+) => {
+  event.preventDefault();
 
-    if (!selectedCategoryId) {
-      setSubcategoryError(
-        "Please select a category first.",
+  if (!selectedCategoryId) {
+    setSubcategoryError(
+      "Please select a category first.",
+    );
+    return;
+  }
+
+  const trimmedName =
+    subcategoryForm.name.trim();
+
+  if (!trimmedName) {
+    setSubcategoryError(
+      "Subcategory name is required.",
+    );
+    return;
+  }
+
+  if (!subcategoryForm.icon) {
+    setSubcategoryError(
+      "Please select an icon.",
+    );
+    return;
+  }
+
+  const duplicate =
+    isDuplicateSubcategory(
+      subcategories,
+      trimmedName,
+      selectedCategoryId,
+      editingSubcategory?.id,
+    );
+
+  if (duplicate) {
+    setSubcategoryError(
+      "A subcategory with this name already exists in this category.",
+    );
+    return;
+  }
+
+  const now = new Date().toISOString();
+
+   if (editingSubcategory) {
+    try {
+      const response = await axios.put(
+        `http://localhost:3000/api/categories/subcategories/${editingSubcategory.id}`,
+        {
+          name: trimmedName,
+          icon: subcategoryForm.icon,
+        },
       );
-      return;
-    }
 
-    const trimmedName =
-      subcategoryForm.name.trim();
+      const savedSubcategory =
+        response.data.data;
 
-    if (!trimmedName) {
-      setSubcategoryError(
-        "Subcategory name is required.",
-      );
-      return;
-    }
-
-    if (!subcategoryForm.icon) {
-      setSubcategoryError(
-        "Please select an icon.",
-      );
-      return;
-    }
-
-    const duplicate =
-      isDuplicateSubcategory(
-        subcategories,
-        trimmedName,
-        selectedCategoryId,
-        editingSubcategory?.id,
-      );
-
-    if (duplicate) {
-      setSubcategoryError(
-        "A subcategory with this name already exists in this category.",
-      );
-      return;
-    }
-
-    const now = new Date().toISOString();
-
-    if (editingSubcategory) {
       const updatedSubcategory: Subcategory = {
         ...editingSubcategory,
-        name: trimmedName,
-        icon: subcategoryForm.icon,
+        id: savedSubcategory.id,
+        name: savedSubcategory.name,
+        categoryId:
+          savedSubcategory.categoryId,
+        icon:
+          savedSubcategory.icon ??
+          subcategoryForm.icon,
         updatedAt: now,
       };
 
@@ -639,12 +732,40 @@ const CreateCategory = ({
       setSuccessMessage(
         `"${trimmedName}" subcategory updated successfully.`,
       );
-    } else {
+    } catch (error) {
+      console.error(
+        "Failed to update subcategory:",
+        error,
+      );
+
+      setSubcategoryError(
+        "Failed to update subcategory. Please try again.",
+      );
+
+      return;
+    }
+  } 
+ else {
+    try {
+      const response = await axios.post(
+        `http://localhost:3000/api/categories/${selectedCategoryId}/subcategories`,
+        {
+          name: trimmedName,
+          icon: subcategoryForm.icon,
+        },
+      );
+
+      const savedSubcategory =
+        response.data.data;
+
       const newSubcategory: Subcategory = {
-        id: generateSubcategoryId(),
-        name: trimmedName,
-        categoryId: selectedCategoryId,
-        icon: subcategoryForm.icon,
+        id: savedSubcategory.id,
+        name: savedSubcategory.name,
+        categoryId:
+          savedSubcategory.categoryId,
+        icon:
+          savedSubcategory.icon ??
+          subcategoryForm.icon,
         createdAt: now,
         updatedAt: now,
       };
@@ -663,28 +784,44 @@ const CreateCategory = ({
       setSuccessMessage(
         `"${trimmedName}" subcategory added successfully.`,
       );
+    } catch (error) {
+      console.error(
+        "Failed to create subcategory:",
+        error,
+      );
+
+      setSubcategoryError(
+        "Failed to create subcategory. Please try again.",
+      );
+
+      return;
     }
+  }
 
-    handleCloseSubcategoryForm();
-  };
-
+  handleCloseSubcategoryForm();
+};
   /* =========================================
      DELETE SUBCATEGORY
      ========================================= */
 
-  const handleDeleteSubcategory = (
-    event: MouseEvent<HTMLButtonElement>,
-    subcategory: Subcategory,
-  ) => {
-    event.stopPropagation();
+  const handleDeleteSubcategory = async (
+  event: MouseEvent<HTMLButtonElement>,
+  subcategory: Subcategory,
+) => {
+  event.stopPropagation();
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${subcategory.name}"?`,
+  const confirmed = window.confirm(
+    `Are you sure you want to delete "${subcategory.name}"?`,
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await axios.delete(
+      `http://localhost:3000/api/categories/subcategories/${subcategory.id}`,
     );
-
-    if (!confirmed) {
-      return;
-    }
 
     setSubcategories(
       (currentSubcategories) =>
@@ -712,7 +849,17 @@ const CreateCategory = ({
     setSuccessMessage(
       `"${subcategory.name}" subcategory deleted successfully.`,
     );
-  };
+  } catch (error) {
+    console.error(
+      "Failed to delete subcategory:",
+      error,
+    );
+
+    setSubcategoryError(
+      "Failed to delete subcategory. Please try again.",
+    );
+  }
+};
 
   /* =========================================
      CHANGE ACTIVE CATEGORY TYPE

@@ -9,7 +9,7 @@ const customCategory: Category = {
   id: "custom-1",
   name: "Pet Care",
   type: "expense",
-  icon: "ðŸ",
+  icon: "🐾",
   color: "#E8F1FF",
   isCustom: true,
 };
@@ -18,24 +18,17 @@ const incomeCategory: Category = {
   id: "income-1",
   name: "Salary",
   type: "income",
-  icon: "ðŸ’¼",
+  icon: "💼",
   color: "#E8F1FF",
   isCustom: false,
 };
-
-const getAddCategoryButton = () =>
-  screen.getAllByRole("button", {
-    name: "+ Add Category",
-  })[0];
 
 describe("CreateCategory", () => {
   it("should render the Categories heading", () => {
     render(<CreateCategory />);
 
     expect(
-      screen.getByRole("heading", {
-        name: "Categories",
-      }),
+      screen.getByRole("heading", { name: "Categories" })
     ).toBeInTheDocument();
   });
 
@@ -44,22 +37,26 @@ describe("CreateCategory", () => {
 
     render(<CreateCategory />);
 
-    await user.click(getAddCategoryButton());
+    await user.click(
+      screen.getByRole("button", {
+        name: "+ Add Category",
+      })
+    );
 
     expect(
       screen.getByRole("heading", {
         name: "Create Category",
-      }),
+      })
     ).toBeInTheDocument();
 
     expect(
-      screen.getByLabelText("Category Name"),
+      screen.getByLabelText("Category Name")
     ).toBeInTheDocument();
 
     expect(
       screen.getByRole("button", {
         name: "Create Category",
-      }),
+      })
     ).toBeInTheDocument();
   });
 
@@ -68,16 +65,22 @@ describe("CreateCategory", () => {
 
     render(<CreateCategory />);
 
-    await user.click(getAddCategoryButton());
+    await user.click(
+      screen.getByRole("button", {
+        name: "+ Add Category",
+      })
+    );
 
     await user.click(
       screen.getByRole("button", {
         name: "Create Category",
-      }),
+      })
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Please enter a category name.",
+    expect(
+      screen.getByRole("alert")
+    ).toHaveTextContent(
+      "Please enter a category name."
     );
   });
 
@@ -87,24 +90,30 @@ describe("CreateCategory", () => {
     render(
       <CreateCategory
         categories={[customCategory]}
-      />,
+      />
     );
 
-    await user.click(getAddCategoryButton());
+    await user.click(
+      screen.getByRole("button", {
+        name: "+ Add Category",
+      })
+    );
 
     await user.type(
       screen.getByLabelText("Category Name"),
-      "pet care",
+      "pet care"
     );
 
     await user.click(
       screen.getByRole("button", {
         name: "Create Category",
-      }),
+      })
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "This category already exists.",
+    expect(
+      screen.getByRole("alert")
+    ).toHaveTextContent(
+      "This category already exists."
     );
   });
 
@@ -117,20 +126,24 @@ describe("CreateCategory", () => {
       <CreateCategory
         categories={[]}
         onCategoryCreate={onCategoryCreate}
-      />,
+      />
     );
 
-    await user.click(getAddCategoryButton());
+    await user.click(
+      screen.getByRole("button", {
+        name: "+ Add Category",
+      })
+    );
 
     await user.type(
       screen.getByLabelText("Category Name"),
-      "Pet Care",
+      "Pet Care"
     );
 
     await user.click(
       screen.getByRole("button", {
         name: "Create Category",
-      }),
+      })
     );
 
     expect(onCategoryCreate).toHaveBeenCalledTimes(1);
@@ -140,17 +153,17 @@ describe("CreateCategory", () => {
         name: "Pet Care",
         type: "expense",
         isCustom: true,
-      }),
+      })
     );
 
     expect(
-      screen.getByText("Pet Care"),
+      screen.getByText("Pet Care")
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("status"),
+      screen.getByRole("status")
     ).toHaveTextContent(
-      '"Pet Care" category created successfully.',
+      '"Pet Care" category created successfully.'
     );
   });
 
@@ -163,26 +176,30 @@ describe("CreateCategory", () => {
       <CreateCategory
         categories={[]}
         onCategoryCreate={onCategoryCreate}
-      />,
+      />
     );
 
-    await user.click(getAddCategoryButton());
+    await user.click(
+      screen.getByRole("button", {
+        name: "+ Add Category",
+      })
+    );
 
     await user.type(
       screen.getByLabelText("Category Name"),
-      "   Travel   ",
+      "   Travel   "
     );
 
     await user.click(
       screen.getByRole("button", {
         name: "Create Category",
-      }),
+      })
     );
 
     expect(onCategoryCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Travel",
-      }),
+      })
     );
   });
 
@@ -195,29 +212,29 @@ describe("CreateCategory", () => {
           customCategory,
           incomeCategory,
         ]}
-      />,
+      />
     );
 
     expect(
-      screen.getByText("Pet Care"),
+      screen.getByText("Pet Care")
     ).toBeInTheDocument();
 
     expect(
-      screen.queryByText("Salary"),
+      screen.queryByText("Salary")
     ).not.toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
         name: "Income",
-      }),
+      })
     );
 
     expect(
-      screen.getByText("Salary"),
+      screen.getByText("Salary")
     ).toBeInTheDocument();
 
     expect(
-      screen.queryByText("Pet Care"),
+      screen.queryByText("Pet Care")
     ).not.toBeInTheDocument();
   });
 
@@ -227,17 +244,17 @@ describe("CreateCategory", () => {
     render(
       <CreateCategory
         categories={[customCategory]}
-      />,
+      />
     );
 
     await user.click(
       screen.getByRole("button", {
         name: "Edit",
-      }),
+      })
     );
 
     expect(
-      screen.getByText("Edit Category"),
+      screen.getByText("Edit Category")
     ).toBeInTheDocument();
   });
 
@@ -247,17 +264,17 @@ describe("CreateCategory", () => {
     render(
       <CreateCategory
         categories={[customCategory]}
-      />,
+      />
     );
 
     await user.click(
       screen.getByRole("button", {
         name: "Delete",
-      }),
+      })
     );
 
     expect(
-      screen.getByText("Delete Category"),
+      screen.getByText("Delete Category")
     ).toBeInTheDocument();
   });
 
@@ -265,19 +282,19 @@ describe("CreateCategory", () => {
     render(
       <CreateCategory
         categories={[incomeCategory]}
-      />,
+      />
     );
 
     expect(
       screen.queryByRole("button", {
         name: "Edit",
-      }),
+      })
     ).not.toBeInTheDocument();
 
     expect(
       screen.queryByRole("button", {
         name: "Delete",
-      }),
+      })
     ).not.toBeInTheDocument();
   });
 
@@ -290,25 +307,29 @@ describe("CreateCategory", () => {
       <CreateCategory
         categories={[]}
         onCategoryCreate={onCategoryCreate}
-      />,
+      />
     );
 
-    await user.click(getAddCategoryButton());
+    await user.click(
+      screen.getByRole("button", {
+        name: "+ Add Category",
+      })
+    );
 
     await user.type(
       screen.getByLabelText("Category Name"),
-      "Freelance",
+      "Freelance"
     );
 
     await user.selectOptions(
       screen.getByLabelText("Category Type"),
-      "income",
+      "income"
     );
 
     await user.click(
       screen.getByRole("button", {
         name: "Create Category",
-      }),
+      })
     );
 
     expect(onCategoryCreate).toHaveBeenCalledWith(
@@ -316,7 +337,7 @@ describe("CreateCategory", () => {
         name: "Freelance",
         type: "income",
         isCustom: true,
-      }),
+      })
     );
   });
 });

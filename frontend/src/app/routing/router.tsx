@@ -1,57 +1,64 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import DashboardLayout from '../../layouts/dashboard/DashboardLayout';
-import Dashboard from '../../features/dashboard/Dashboard';
-import Transactions from '../../features/transactions/Transactions';
-import Accounts from '../../features/accounts/Accounts';
-import Categories from '../../features/categories/Categories';
-import Import from '../../features/import/Import';
-import Categorization from '../../features/categorization/Categorization';
-import Auth from '../../features/auth/Auth';
-import SubcategoryTestPage from '../../features/categories/subcategories/SubcategoryTestPage';
+import { createBrowserRouter, Navigate } from "react-router-dom";
+
+import DashboardLayout from "../../layouts/dashboard/DashboardLayout";
+import Dashboard from "../../features/dashboard/Dashboard";
+import Transactions from "../../features/transactions/Transactions";
+import Accounts from "../../features/accounts/Accounts";
+import Categories from "../../features/categories/Categories";
+import Import from "../../features/import/Import";
+import Categorization from "../../features/categorization/Categorization";
+import Auth from "../../features/auth/Auth";
+import SubcategoryTestPage from "../../features/categories/subcategories/SubcategoryTestPage";
+
+import { CategoryProvider } from "../../features/categories/context/CategoryContext";
 
 export const router = createBrowserRouter([
   {
-    path: '/',
-    element: <DashboardLayout />,
+    path: "/",
+    element: (
+      <CategoryProvider>
+        <DashboardLayout />
+      </CategoryProvider>
+    ),
     children: [
       {
-        path: '',
+        path: "",
         element: <Navigate to="/dashboard" replace />,
       },
       {
-        path: 'dashboard',
+        path: "dashboard",
         element: <Dashboard />,
       },
       {
-        path: 'transactions',
+        path: "transactions",
         element: <Transactions />,
       },
       {
-        path: 'accounts',
+        path: "accounts",
         element: <Accounts />,
       },
       {
-        path: 'categories',
+        path: "categories",
         element: <Categories />,
       },
       {
-        path: 'subcategory-test',
+        path: "subcategory-test",
         element: <SubcategoryTestPage />,
       },
       {
-        path: 'import',
+        path: "import",
         element: <Import />,
       },
       {
-        path: 'categorization',
+        path: "categorization",
         element: <Categorization />,
       },
       {
-        path: 'auth',
+        path: "auth",
         element: <Auth />,
       },
       {
-        path: '*',
+        path: "*",
         element: <Navigate to="/dashboard" replace />,
       },
     ],
