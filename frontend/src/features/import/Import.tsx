@@ -120,14 +120,19 @@ function Import() {
         <DuplicateDetection
           transactions={validatedTransactions}
           onBack={() => setStep("validation")}
-          onContinue={(uniqueTransactions) => {
+          onContinue={(uniqueTransactions, decisions) => {
             console.log(
               "Unique transactions ready for import:",
               uniqueTransactions
             );
 
+            console.log(
+              "Duplicate decisions:",
+              decisions
+            );
+
             alert(
-              `${uniqueTransactions.length} unique transactions are ready to import.`
+              `${uniqueTransactions.length} transactions are ready to import.`
             );
           }}
         />

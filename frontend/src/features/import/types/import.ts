@@ -26,3 +26,11 @@ export interface ValidatedTransaction {
   excluded: boolean;
   duplicateDecision?: "pending" | "exclude" | "add-anyway";
 }
+
+export type DuplicateAction = "exclude" | "add-anyway";
+
+export interface DuplicateDecision {
+  row: number;
+  action: DuplicateAction;
+  note?: string;
+}
