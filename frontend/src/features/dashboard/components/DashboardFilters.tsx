@@ -1,5 +1,5 @@
-import type { Account } from "../types/dashboard";
-import type { DateRange } from "../utils/dashboardSelectors";
+import type { Account } from "../../../types/dashboard";
+import type { DateRange } from "../../../utils/dashboardSelectors";
 
 interface DashboardFiltersProps {
   accounts: Account[];

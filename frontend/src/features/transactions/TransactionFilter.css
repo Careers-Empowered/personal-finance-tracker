@@ -1,0 +1,121 @@
+.transaction-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+}
+
+/* All / Income / Expense */
+
+.transaction-filter-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted, #6b6b6b);
+  height: 40px;
+  padding: 0 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.transaction-filter-btn:hover {
+  color: var(--color-text-dark, #231f20);
+}
+
+.transaction-filter-btn.active {
+  background-color: #ffffff;
+  color: var(--color-text-dark, #231f20);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.transaction-filter-btn.active.income-filter {
+  color: #1e8e3e;
+}
+
+.transaction-filter-btn.active.expense-filter {
+  color: #d93025;
+}
+
+/* Date */
+
+.transaction-date-filter {
+  height: 40px;
+  padding: 0 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--color-text-dark, #231f20);
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+.transaction-date-filter:focus,
+.transaction-date-filter:hover {
+  background-color: #ffffff;
+}
+
+/* Category */
+
+.transaction-category-filter {
+  height: 40px;
+  min-width: 150px;
+  padding: 0 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--color-text-dark, #231f20);
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+.transaction-category-filter:focus,
+.transaction-category-filter:hover {
+  background-color: #ffffff;
+}
+
+/* Clear */
+
+.transaction-filter-clear {
+  height: 40px;
+  padding: 0 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--color-text-muted, #6b6b6b);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.transaction-filter-clear:hover {
+  background-color: #ffffff;
+  color: var(--color-text-dark, #231f20);
+}
+
+/* Responsive */
+
+@media (max-width: 650px) {
+  .transaction-filter {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .transaction-filter-btn {
+    flex: 1;
+  }
+
+  .transaction-date-filter,
+  .transaction-category-filter {
+    flex: 1;
+    min-width: 140px;
+  }
+}
