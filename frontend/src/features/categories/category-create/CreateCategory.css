@@ -61,6 +61,258 @@
   box-shadow: 0 8px 18px rgba(7, 27, 58, 0.18);
 }
 
+.category-create__download-button {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 58px;
+  height: 58px;
+
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+
+  background: linear-gradient(
+    145deg,
+    #071b3a 0%,
+    #102d54 55%,
+    #1d4ed8 100%
+  );
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 12px 24px rgba(7, 27, 58, 0.24),
+    0 4px 8px rgba(7, 27, 58, 0.12);
+
+  transform: translateY(0);
+
+  animation:
+    categoryDownloadFloat 4s ease-in-out infinite;
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* Floating background layer */
+.category-create__download-button::before {
+  content: "";
+
+  position: absolute;
+
+  width: 70px;
+  height: 70px;
+
+  border-radius: 22px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(37, 99, 235, 0.16),
+      rgba(7, 27, 58, 0.04)
+    );
+
+  transform: rotate(12deg);
+
+  z-index: -1;
+
+  animation:
+    categoryDownloadBackground 5s ease-in-out infinite;
+}
+
+/* Second floating layer */
+.category-create__download-button::after {
+  content: "";
+
+  position: absolute;
+
+  width: 46px;
+  height: 46px;
+
+  border-radius: 14px;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.18);
+
+  transform: rotate(-8deg);
+
+  pointer-events: none;
+
+  transition:
+    transform 0.35s ease,
+    border-color 0.35s ease;
+}
+
+/* Icon container */
+.category-create__download-icon {
+  position: relative;
+  z-index: 3;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 34px;
+  height: 34px;
+
+  border-radius: 11px;
+
+  background:
+    rgba(255, 255, 255, 0.13);
+
+  color: #ffffff;
+
+  box-shadow:
+    inset 0 1px 2px
+      rgba(255, 255, 255, 0.2),
+    0 3px 8px
+      rgba(0, 0, 0, 0.15);
+
+  backdrop-filter: blur(4px);
+
+  transition:
+    transform 0.3s ease,
+    background-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+/* SVG */
+.category-create__download-icon svg {
+  display: block;
+
+  width: 20px;
+  height: 20px;
+
+  filter:
+    drop-shadow(
+      0 1px 2px
+      rgba(0, 0, 0, 0.2)
+    );
+
+  transition:
+    transform 0.3s ease;
+}
+
+/* Hover */
+.category-create__download-button:hover {
+  transform:
+    translateY(-7px)
+    scale(1.05);
+
+  box-shadow:
+    0 20px 35px
+      rgba(7, 27, 58, 0.25),
+    0 8px 14px
+      rgba(29, 78, 216, 0.16);
+
+  animation: none;
+}
+
+.category-create__download-button:hover::before {
+  transform:
+    rotate(25deg)
+    scale(1.08);
+}
+
+.category-create__download-button:hover::after {
+  transform:
+    rotate(-18deg)
+    scale(1.08);
+
+  border-color:
+    rgba(255, 255, 255, 0.32);
+}
+
+.category-create__download-button:hover
+  .category-create__download-icon {
+  transform:
+    translateY(-2px)
+    scale(1.08);
+
+  background:
+    rgba(255, 255, 255, 0.2);
+
+  box-shadow:
+    inset 0 1px 3px
+      rgba(255, 255, 255, 0.3),
+    0 5px 12px
+      rgba(0, 0, 0, 0.18);
+}
+
+.category-create__download-button:hover
+  .category-create__download-icon
+  svg {
+  transform: translateY(3px);
+}
+
+/* Click */
+.category-create__download-button:active {
+  transform:
+    translateY(-2px)
+    scale(0.95);
+}
+
+/* Focus */
+.category-create__download-button:focus-visible {
+  outline: 3px solid
+    rgba(37, 99, 235, 0.25);
+
+  outline-offset: 4px;
+}
+
+/* Main floating motion */
+@keyframes categoryDownloadFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+}
+
+/* Background movement */
+@keyframes categoryDownloadBackground {
+  0%,
+  100% {
+    transform:
+      rotate(12deg)
+      translate(0, 0);
+  }
+
+  50% {
+    transform:
+      rotate(18deg)
+      translate(-3px, -4px);
+  }
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .category-create__download-button {
+    right: 18px;
+    bottom: 18px;
+
+    width: 52px;
+    height: 52px;
+  }
+
+  .category-create__download-button::before {
+    width: 64px;
+    height: 64px;
+  }
+}
+
 .category-create__success {
   margin-bottom: 20px;
   padding: 12px 15px;
@@ -1571,6 +1823,7 @@
 .category-create__subcategory-actions button:active,
 .category-create__add-subcategory-button:active,
 .category-create__add-button:active,
+.category-create__download-button:active,
 .category-create__submit:active,
 .category-create__cancel:active {
   transform: translateY(0) scale(0.98);
