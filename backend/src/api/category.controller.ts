@@ -1,6 +1,27 @@
 import type { Request, Response } from "express";
 import { categoryService } from "../application/category.service";
 
+function getAliases(
+  value: unknown,
+): string[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  return value.filter(
+    (alias): alias is string =>
+      typeof alias === "string",
+  );
+}
+
+// =========================================
+// GET ALL CATEGORIES
+// =========================================
+
 export async function getCategories(
   _req: Request,
   res: Response,
@@ -23,6 +44,10 @@ export async function getCategories(
     });
   }
 }
+
+// =========================================
+// GET CATEGORY BY ID
+// =========================================
 
 export async function getCategoryById(
   req: Request,
@@ -63,6 +88,10 @@ export async function getCategoryById(
   }
 }
 
+// =========================================
+// CREATE CATEGORY
+// =========================================
+
 export async function createCategory(
   req: Request,
   res: Response,
@@ -73,6 +102,7 @@ export async function createCategory(
       type,
       icon,
       color,
+      aliases,
     } = req.body;
 
     if (
@@ -96,12 +126,23 @@ export async function createCategory(
       return;
     }
 
+    if (
+      aliases !== undefined &&
+      !Array.isArray(aliases)
+    ) {
+      res.status(400).json({
+        error: "Aliases must be an array",
+      });
+      return;
+    }
+
     const category =
       await categoryService.createCategory({
         name: name.trim(),
         type,
         icon,
         color,
+        aliases: getAliases(aliases),
       });
 
     res.status(201).json({
@@ -131,6 +172,10 @@ export async function createCategory(
   }
 }
 
+// =========================================
+// UPDATE CATEGORY
+// =========================================
+
 export async function updateCategory(
   req: Request,
   res: Response,
@@ -143,6 +188,7 @@ export async function updateCategory(
       type,
       icon,
       color,
+      aliases,
     } = req.body;
 
     if (typeof id !== "string") {
@@ -173,6 +219,16 @@ export async function updateCategory(
       return;
     }
 
+    if (
+      aliases !== undefined &&
+      !Array.isArray(aliases)
+    ) {
+      res.status(400).json({
+        error: "Aliases must be an array",
+      });
+      return;
+    }
+
     const existingCategory =
       await categoryService.getCategoryById(id);
 
@@ -191,6 +247,7 @@ export async function updateCategory(
           type,
           icon,
           color,
+          aliases: getAliases(aliases),
         },
       );
 
@@ -220,6 +277,10 @@ export async function updateCategory(
     });
   }
 }
+
+// =========================================
+// DELETE CATEGORY
+// =========================================
 
 export async function deleteCategory(
   req: Request,
@@ -263,6 +324,10 @@ export async function deleteCategory(
   }
 }
 
+// =========================================
+// CREATE SUBCATEGORY
+// =========================================
+
 export async function createSubcategory(
   req: Request,
   res: Response,
@@ -275,6 +340,7 @@ export async function createSubcategory(
     const {
       name,
       icon,
+      aliases,
     } = req.body;
 
     if (typeof categoryId !== "string") {
@@ -291,6 +357,16 @@ export async function createSubcategory(
       res.status(400).json({
         error:
           "Subcategory name is required",
+      });
+      return;
+    }
+
+    if (
+      aliases !== undefined &&
+      !Array.isArray(aliases)
+    ) {
+      res.status(400).json({
+        error: "Aliases must be an array",
       });
       return;
     }
@@ -312,6 +388,7 @@ export async function createSubcategory(
         categoryId,
         name: name.trim(),
         icon,
+        aliases: getAliases(aliases),
       });
 
     res.status(201).json({
@@ -341,6 +418,10 @@ export async function createSubcategory(
   }
 }
 
+// =========================================
+// UPDATE SUBCATEGORY
+// =========================================
+
 export async function updateSubcategory(
   req: Request,
   res: Response,
@@ -353,6 +434,7 @@ export async function updateSubcategory(
     const {
       name,
       icon,
+      aliases,
     } = req.body;
 
     if (
@@ -375,12 +457,23 @@ export async function updateSubcategory(
       return;
     }
 
+    if (
+      aliases !== undefined &&
+      !Array.isArray(aliases)
+    ) {
+      res.status(400).json({
+        error: "Aliases must be an array",
+      });
+      return;
+    }
+
     const subcategory =
       await categoryService.updateSubcategory(
         subcategoryId,
         {
           name: name.trim(),
           icon,
+          aliases: getAliases(aliases),
         },
       );
 
@@ -398,6 +491,10 @@ export async function updateSubcategory(
     });
   }
 }
+
+// =========================================
+// DELETE SUBCATEGORY
+// =========================================
 
 export async function deleteSubcategory(
   req: Request,

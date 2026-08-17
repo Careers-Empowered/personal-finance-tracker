@@ -1,19 +1,52 @@
 import { categoryRepository } from "../repositories/category.repository";
 
+function normalizeAliases(aliases?: string[]): string[] {
+  if (!Array.isArray(aliases)) {
+    return [];
+  }
+
+  return [
+    ...new Set(
+      aliases
+        .filter(
+          (alias): alias is string =>
+            typeof alias === "string",
+        )
+        .map((alias) =>
+          alias.trim().toLowerCase(),
+        )
+        .filter(Boolean),
+    ),
+  ];
+}
+
 export const categoryService = {
+  // =========================================
+  // GET ALL CATEGORIES
+  // =========================================
+
   async getCategories() {
     return categoryRepository.findAll();
   },
 
+  // =========================================
+  // GET CATEGORY BY ID
+  // =========================================
+
   async getCategoryById(id: string) {
     return categoryRepository.findById(id);
   },
+
+  // =========================================
+  // CREATE CATEGORY
+  // =========================================
 
   async createCategory(data: {
     name: string;
     type: "INCOME" | "EXPENSE";
     icon?: string;
     color?: string;
+    aliases?: string[];
   }) {
     const normalizedName =
       data.name.trim().toLowerCase();
@@ -35,10 +68,19 @@ export const categoryService = {
     }
 
     return categoryRepository.create({
-      ...data,
       name: data.name.trim(),
+      type: data.type,
+      icon: data.icon,
+      color: data.color,
+      aliases: normalizeAliases(
+        data.aliases,
+      ),
     });
   },
+
+  // =========================================
+  // UPDATE CATEGORY
+  // =========================================
 
   async updateCategory(
     id: string,
@@ -47,6 +89,7 @@ export const categoryService = {
       type: "INCOME" | "EXPENSE";
       icon?: string;
       color?: string;
+      aliases?: string[];
     },
   ) {
     const normalizedName =
@@ -72,20 +115,36 @@ export const categoryService = {
     return categoryRepository.updateCategory(
       id,
       {
-        ...data,
         name: data.name.trim(),
+        type: data.type,
+        icon: data.icon,
+        color: data.color,
+        aliases: normalizeAliases(
+          data.aliases,
+        ),
       },
     );
   },
 
+  // =========================================
+  // DELETE CATEGORY
+  // =========================================
+
   async deleteCategory(id: string) {
-    return categoryRepository.deleteCategory(id);
+    return categoryRepository.deleteCategory(
+      id,
+    );
   },
+
+  // =========================================
+  // CREATE SUBCATEGORY
+  // =========================================
 
   async createSubcategory(data: {
     categoryId: string;
     name: string;
     icon?: string;
+    aliases?: string[];
   }) {
     const normalizedName =
       data.name.trim().toLowerCase();
@@ -117,26 +176,42 @@ export const categoryService = {
     }
 
     return categoryRepository.createSubcategory({
-      ...data,
+      categoryId: data.categoryId,
       name: data.name.trim(),
+      icon: data.icon,
+      aliases: normalizeAliases(
+        data.aliases,
+      ),
     });
   },
+
+  // =========================================
+  // UPDATE SUBCATEGORY
+  // =========================================
 
   async updateSubcategory(
     id: string,
     data: {
       name: string;
       icon?: string;
+      aliases?: string[];
     },
   ) {
     return categoryRepository.updateSubcategory(
       id,
       {
-        ...data,
         name: data.name.trim(),
+        icon: data.icon,
+        aliases: normalizeAliases(
+          data.aliases,
+        ),
       },
     );
   },
+
+  // =========================================
+  // DELETE SUBCATEGORY
+  // =========================================
 
   async deleteSubcategory(id: string) {
     return categoryRepository.deleteSubcategory(

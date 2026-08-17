@@ -1,6 +1,10 @@
 import { prisma } from "../infrastructure/postgres/prisma";
 
 export const categoryRepository = {
+  // =========================================
+  // GET ALL CATEGORIES
+  // =========================================
+
   findAll() {
     return prisma.category.findMany({
       orderBy: [
@@ -21,9 +25,15 @@ export const categoryRepository = {
     });
   },
 
+  // =========================================
+  // GET CATEGORY BY ID
+  // =========================================
+
   findById(id: string) {
     return prisma.category.findUnique({
-      where: { id },
+      where: {
+        id,
+      },
       include: {
         subcategories: {
           orderBy: {
@@ -34,11 +44,16 @@ export const categoryRepository = {
     });
   },
 
+  // =========================================
+  // CREATE CATEGORY
+  // =========================================
+
   create(data: {
     name: string;
     type: "INCOME" | "EXPENSE";
     icon?: string;
     color?: string;
+    aliases?: string[];
   }) {
     return prisma.category.create({
       data: {
@@ -46,6 +61,7 @@ export const categoryRepository = {
         type: data.type,
         icon: data.icon ?? null,
         color: data.color ?? null,
+        aliases: data.aliases ?? [],
         isDefault: false,
       },
       include: {
@@ -54,6 +70,10 @@ export const categoryRepository = {
     });
   },
 
+  // =========================================
+  // UPDATE CATEGORY
+  // =========================================
+
   updateCategory(
     id: string,
     data: {
@@ -61,6 +81,7 @@ export const categoryRepository = {
       type: "INCOME" | "EXPENSE";
       icon?: string;
       color?: string;
+      aliases?: string[];
     },
   ) {
     return prisma.category.update({
@@ -72,12 +93,17 @@ export const categoryRepository = {
         type: data.type,
         icon: data.icon ?? null,
         color: data.color ?? null,
+        aliases: data.aliases ?? [],
       },
       include: {
         subcategories: true,
       },
     });
   },
+
+  // =========================================
+  // DELETE CATEGORY
+  // =========================================
 
   deleteCategory(id: string) {
     return prisma.category.delete({
@@ -87,16 +113,22 @@ export const categoryRepository = {
     });
   },
 
+  // =========================================
+  // CREATE SUBCATEGORY
+  // =========================================
+
   createSubcategory(data: {
     categoryId: string;
     name: string;
     icon?: string;
+    aliases?: string[];
   }) {
     return prisma.subcategory.create({
       data: {
         categoryId: data.categoryId,
         name: data.name,
         icon: data.icon ?? null,
+        aliases: data.aliases ?? [],
         userId: null,
         color: null,
         isDefault: false,
@@ -104,11 +136,16 @@ export const categoryRepository = {
     });
   },
 
+  // =========================================
+  // UPDATE SUBCATEGORY
+  // =========================================
+
   updateSubcategory(
     id: string,
     data: {
       name: string;
       icon?: string;
+      aliases?: string[];
     },
   ) {
     return prisma.subcategory.update({
@@ -118,9 +155,14 @@ export const categoryRepository = {
       data: {
         name: data.name,
         icon: data.icon ?? null,
+        aliases: data.aliases ?? [],
       },
     });
   },
+
+  // =========================================
+  // DELETE SUBCATEGORY
+  // =========================================
 
   deleteSubcategory(id: string) {
     return prisma.subcategory.delete({
