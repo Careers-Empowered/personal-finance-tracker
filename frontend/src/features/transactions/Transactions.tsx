@@ -3,9 +3,8 @@ import TransactionModal from './TransactionModal';
 import TransactionList from './TransactionList';
 import TransactionFilter from './TransactionFilter';
 import { CreateTransactionInput, TransactionType } from './types';
-import { Account } from '../accounts/types';
-import accountMockData from '../accounts/mockData.json';
-import '../accounts/Accounts.css';
+import { Account } from '../accounts/types/types';
+import { accountApi } from '../accounts/api/account.api';
 import './Transactions.css';
 
 const Transactions: React.FC = () => {
@@ -19,7 +18,13 @@ const Transactions: React.FC = () => {
     TransactionType | 'ALL'
   >('ALL');
 
-  const accounts: Account[] = accountMockData as Account[];
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  React.useEffect(() => {
+    accountApi.getAccounts()
+      .then(setAccounts)
+      .catch(err => console.error("Failed to load accounts for transactions", err));
+  }, []);
 
   const handleSaveTransaction = (
     transactionData: CreateTransactionInput

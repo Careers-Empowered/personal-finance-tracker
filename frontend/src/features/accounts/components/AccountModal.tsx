@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Account } from "./types";
-import { convertCurrency, DEFAULT_RATES } from "./currencyUtils";
+import { Account } from "../types/types";
+import { convertCurrency, DEFAULT_RATES } from "../utils/currencyUtils";
 
 interface AccountModalProps {
   isOpen: boolean;
