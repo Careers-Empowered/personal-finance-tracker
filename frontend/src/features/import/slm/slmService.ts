@@ -5,8 +5,7 @@ import {
 import type { SLMProvider } from './qwenProvider';
 
 const SLM_ENABLED =
-  import.meta.env.VITE_ENABLE_SLM_CATEGORY_SUGGESTION ===
-  'true';
+  import.meta.env.VITE_ENABLE_SLM_CATEGORY_SUGGESTION !== 'false';
 
 export class CategorySuggestionService {
   constructor(
