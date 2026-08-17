@@ -272,6 +272,28 @@ function ImportValidation({
   };
 
   /**
+   * Re-include a previously excluded transaction.
+   *
+   * The row's last-known validity is preserved as-is (its data
+   * hasn't changed), so it drops back into either "Valid",
+   * "Category needed", or "Needs Attention" — whichever applied
+   * before it was excluded — letting the user Fix/Categorize it
+   * again if needed.
+   */
+  const handleInclude = (rowNumber: number) => {
+    setValidatedRows((currentRows) =>
+      currentRows.map((row) =>
+        row.row === rowNumber
+          ? {
+              ...row,
+              excluded: false,
+            }
+          : row
+      )
+    );
+  };
+
+  /**
    * Trigger the Categorization feature.
    *
    * This component does NOT contain:
@@ -741,23 +763,46 @@ function ImportValidation({
                       !row.data.category?.trim() &&
                       !suggestion &&
                       !isCategoryEditing && (
-                        <button
-                          type="button"
+                        <div
                           style={{
-                            ...categoryButtonStyle,
+                            display: "flex",
+                            gap: "0.5rem",
                             marginTop: "0.5rem",
                           }}
-                          onClick={() =>
-                            handleCategorize(row)
-                          }
-                          disabled={
-                            isCategorizing
-                          }
                         >
-                          {isCategorizing
-                            ? "Categorizing..."
-                            : "✨ Categorize"}
-                        </button>
+                          <button
+                            type="button"
+                            style={categoryButtonStyle}
+                            onClick={() =>
+                              handleCategorize(row)
+                            }
+                            disabled={
+                              isCategorizing
+                            }
+                          >
+                            {isCategorizing
+                              ? "Categorizing..."
+                              : "✨ Categorize"}
+                          </button>
+
+                          {/*
+                           * Manual entry doesn't require waiting
+                           * on a suggestion first — the user can
+                           * just type the category directly.
+                           */}
+                          <button
+                            type="button"
+                            style={secondaryButtonStyle}
+                            onClick={() =>
+                              handleEditCategory(row)
+                            }
+                            disabled={
+                              isCategorizing
+                            }
+                          >
+                            Fix
+                          </button>
+                        </div>
                       )}
 
                     {/* Categorization message */}
@@ -957,28 +1002,80 @@ function ImportValidation({
                         >
                           Save
                         </button>
+
+                        {/*
+                         * Entering manual edit (via "Fix" or the
+                         * ✎ edit icon) must be reversible. Without
+                         * Cancel, a user who opens this by mistake
+                         * has no way back to the AI "Categorize"
+                         * option other than saving something.
+                         */}
+                        <button
+                          type="button"
+                          style={secondaryButtonStyle}
+                          onClick={() =>
+                            setEditingCategoryRow(null)
+                          }
+                        >
+                          Cancel
+                        </button>
                       </div>
                     )}
 
                     {/* Category Confirmed */}
                     {categoryAccepted &&
-                      row.data.category && (
+                      row.data.category &&
+                      !isCategoryEditing && (
                         <div
                           style={{
                             marginTop: "0.5rem",
                             display: "flex",
                             alignItems:
                               "center",
-                            gap: "0.4rem",
-                            color: "#188038",
-                            fontFamily:
-                              "var(--font-body)",
-                            fontSize:
-                              "0.75rem",
-                            fontWeight: 600,
+                            gap: "0.5rem",
                           }}
                         >
-                          ✓ Category confirmed
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems:
+                                "center",
+                              gap: "0.4rem",
+                              color: "#188038",
+                              fontFamily:
+                                "var(--font-body)",
+                              fontSize:
+                                "0.75rem",
+                              fontWeight: 600,
+                            }}
+                          >
+                            ✓ Category confirmed
+                          </div>
+
+                          {/*
+                           * A confirmed category is not final —
+                           * the user can still change it.
+                           */}
+                          <button
+                            type="button"
+                            title="Edit category"
+                            aria-label="Edit category"
+                            style={{
+                              ...iconButtonStyle,
+                              width: "24px",
+                              height: "24px",
+                              fontSize: "0.8rem",
+                              color:
+                                "var(--color-primary)",
+                            }}
+                            onClick={() =>
+                              handleEditCategory(
+                                row
+                              )
+                            }
+                          >
+                            ✎
+                          </button>
                         </div>
                       )}
                   </div>
@@ -1143,11 +1240,13 @@ function ImportValidation({
                     }}
                   >
                     {/*
-                     * The "Fix" flow is only for rows with
-                     * genuinely malformed fields. A row that
-                     * only needs a category is resolved via
-                     * the Categorize / Accept / Edit controls
-                     * above, not this generic edit form.
+                     * Only rows with genuinely malformed fields get
+                     * a Fix button here. Rows that only need a
+                     * category are handled entirely by the
+                     * Categorize / Fix pair next to the Category
+                     * field above — repeating "Fix" down here would
+                     * just be a second way to trigger the same
+                     * manual-entry mode.
                      */}
                     {nonCategoryErrors.length > 0 &&
                       (editingRow === row.row ? (
@@ -1194,6 +1293,32 @@ function ImportValidation({
                     </button>
                   </div>
                 )}
+
+              {/*
+               * Exclusion is reversible. Bringing a row back in
+               * restores its previous Valid / Category needed /
+               * Needs Attention state (its data hasn't changed),
+               * so the user can Fix or Categorize it again.
+               */}
+              {row.excluded && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.75rem",
+                    marginTop: "1rem",
+                  }}
+                >
+                  <button
+                    type="button"
+                    style={secondaryButtonStyle}
+                    onClick={() =>
+                      handleInclude(row.row)
+                    }
+                  >
+                    Include
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
