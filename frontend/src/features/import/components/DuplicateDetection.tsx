@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 
 import type {
   DuplicateDecision,
+  ImportedTransaction,
   ValidatedTransaction,
 } from "../types/import";
+
+import { markDuplicateTransactions } from "../utils/duplicateDetection";
 
 interface DuplicateDetectionProps {
   transactions: ValidatedTransaction[];
@@ -63,11 +66,46 @@ const addAnywayButtonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+const inputStyle: CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  border: "1px solid var(--color-divider)",
+  borderRadius: "8px",
+  padding: "0.7rem",
+  fontFamily: "var(--font-body)",
+  fontSize: "0.9rem",
+  color: "var(--color-text-dark)",
+  backgroundColor: "#ffffff",
+};
+
 function DuplicateDetection({
   transactions,
   onBack,
   onContinue,
 }: DuplicateDetectionProps) {
+  /*
+   * --------------------------------------------------
+   * WORKING TRANSACTIONS
+   * --------------------------------------------------
+   *
+   * We keep a local copy so the Fix feature can modify
+   * a transaction without requiring changes to the
+   * Transactions page.
+   */
+
+  const [workingTransactions, setWorkingTransactions] =
+    useState<ValidatedTransaction[]>(transactions);
+
+  useEffect(() => {
+    setWorkingTransactions(transactions);
+  }, [transactions]);
+
+  /*
+   * --------------------------------------------------
+   * SELECTION / DUPLICATE STATES
+   * --------------------------------------------------
+   */
+
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
 
   const [excludedRows, setExcludedRows] = useState<number[]>([]);
@@ -78,27 +116,61 @@ function DuplicateDetection({
     Record<number, string>
   >({});
 
+  /*
+   * --------------------------------------------------
+   * ADD ANYWAY / EDIT NOTES DIALOG
+   * --------------------------------------------------
+   */
+
   const [noteDialogRows, setNoteDialogRows] = useState<number[]>([]);
 
   const [noteText, setNoteText] = useState("");
 
+  /*
+   * --------------------------------------------------
+   * FIX / EDIT TRANSACTION DIALOG
+   * --------------------------------------------------
+   */
+
+  const [fixDialogRow, setFixDialogRow] = useState<number | null>(null);
+
+  const [fixForm, setFixForm] = useState<ImportedTransaction | null>(null);
+
+  /*
+   * --------------------------------------------------
+   * FIND DUPLICATES
+   * --------------------------------------------------
+   */
+
   const duplicates = useMemo(
     () =>
-      transactions.filter((transaction) =>
+      workingTransactions.filter((transaction) =>
         transaction.errors.some(
           (error) =>
             error.field === "transaction" &&
             error.message.toLowerCase().includes("duplicate")
         )
       ),
-    [transactions]
+    [workingTransactions]
   );
+
+  /*
+   * --------------------------------------------------
+   * ACTIVE DUPLICATES
+   * --------------------------------------------------
+   */
 
   const activeDuplicates = duplicates.filter(
     (transaction) => !excludedRows.includes(transaction.row)
   );
 
-  const uniqueTransactions = transactions.filter((transaction) => {
+  /*
+   * --------------------------------------------------
+   * UNIQUE TRANSACTIONS
+   * --------------------------------------------------
+   */
+
+  const uniqueTransactions = workingTransactions.filter((transaction) => {
     const isDuplicate = duplicates.some(
       (duplicate) => duplicate.row === transaction.row
     );
@@ -114,7 +186,18 @@ function DuplicateDetection({
     return addedAnywayRows.includes(transaction.row);
   });
 
-  
+  const unresolvedDuplicates = duplicates.filter(
+    (duplicate) =>
+      !excludedRows.includes(duplicate.row) &&
+      !addedAnywayRows.includes(duplicate.row)
+  );
+
+  /*
+   * --------------------------------------------------
+   * SELECT ALL
+   * --------------------------------------------------
+   */
+
   const allSelected =
     activeDuplicates.length > 0 &&
     activeDuplicates.every((transaction) =>
@@ -135,8 +218,16 @@ function DuplicateDetection({
       return;
     }
 
-    setSelectedRows(activeDuplicates.map((transaction) => transaction.row));
+    setSelectedRows(
+      activeDuplicates.map((transaction) => transaction.row)
+    );
   };
+
+  /*
+   * --------------------------------------------------
+   * EXCLUDE
+   * --------------------------------------------------
+   */
 
   const excludeRows = (rows: number[]) => {
     setExcludedRows((current) => [
@@ -146,32 +237,194 @@ function DuplicateDetection({
     setSelectedRows((current) =>
       current.filter((row) => !rows.includes(row))
     );
+
+    setAddedAnywayRows((current) =>
+      current.filter((row) => !rows.includes(row))
+    );
+
+    setOverrideNotes((current) => {
+      const updated = { ...current };
+
+      rows.forEach((row) => {
+        delete updated[row];
+      });
+
+      return updated;
+    });
   };
+
+  /*
+   * --------------------------------------------------
+   * FIX
+   * --------------------------------------------------
+   *
+   * Opens an edit dialog instead of showing the old
+   * placeholder alert.
+   */
+
+  const handleFix = (row: number) => {
+    const transaction = workingTransactions.find(
+      (item) => item.row === row
+    );
+
+    if (!transaction) {
+      return;
+    }
+
+    setFixDialogRow(row);
+
+    setFixForm({
+      ...transaction.data,
+    });
+  };
+
+  /*
+   * --------------------------------------------------
+   * SAVE FIX
+   * --------------------------------------------------
+   *
+   * After editing, duplicate detection is run again.
+   */
+
+  const saveFix = () => {
+    if (fixDialogRow === null || !fixForm) {
+      return;
+    }
+
+    const updatedTransactions = workingTransactions.map(
+      (transaction) => {
+        if (transaction.row !== fixDialogRow) {
+          return transaction;
+        }
+
+        return {
+          ...transaction,
+          data: {
+            ...fixForm,
+          },
+        };
+      }
+    );
+
+    /*
+     * Re-run duplicate detection after the edit.
+     */
+    const recheckedTransactions =
+      markDuplicateTransactions(updatedTransactions);
+
+    setWorkingTransactions(recheckedTransactions);
+
+    /*
+     * The row is no longer excluded/added-anyway after
+     * using Fix.
+     */
+    setExcludedRows((current) =>
+      current.filter((row) => row !== fixDialogRow)
+    );
+
+    setAddedAnywayRows((current) =>
+      current.filter((row) => row !== fixDialogRow)
+    );
+
+    setOverrideNotes((current) => {
+      const updated = { ...current };
+
+      delete updated[fixDialogRow];
+
+      return updated;
+    });
+
+    setSelectedRows((current) =>
+      current.filter((row) => row !== fixDialogRow)
+    );
+
+    setFixDialogRow(null);
+    setFixForm(null);
+  };
+
+  /*
+   * --------------------------------------------------
+   * CANCEL FIX
+   * --------------------------------------------------
+   */
+
+  const cancelFix = () => {
+    setFixDialogRow(null);
+    setFixForm(null);
+  };
+
+  /*
+   * --------------------------------------------------
+   * UPDATE FIX FORM
+   * --------------------------------------------------
+   */
+
+  const updateFixField = (
+    field: keyof ImportedTransaction,
+    value: string | number
+  ) => {
+    setFixForm((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [field]: value,
+      };
+    });
+  };
+
+  /*
+   * --------------------------------------------------
+   * ADD ANYWAY / EDIT NOTES
+   * --------------------------------------------------
+   */
 
   const openAddAnywayDialog = (rows: number[]) => {
     if (rows.length === 0) {
-      alert("Please select at least one duplicate transaction.");
+      alert(
+        "Please select at least one duplicate transaction."
+      );
       return;
     }
 
     setNoteDialogRows(rows);
-    setNoteText("");
+
+    if (rows.length === 1 && overrideNotes[rows[0]]) {
+      setNoteText(overrideNotes[rows[0]]);
+    } else {
+      setNoteText("");
+    }
   };
+
+  /*
+   * --------------------------------------------------
+   * CONFIRM ADD ANYWAY / SAVE NOTES
+   * --------------------------------------------------
+   */
 
   const confirmAddAnyway = () => {
     const note = noteText.trim();
 
     if (!note) {
-      alert("Please enter a short note explaining why this transaction should be added.");
+      alert(
+        "Please enter a short note explaining why this transaction should be added."
+      );
       return;
     }
 
     setAddedAnywayRows((current) => [
-      ...new Set([...current, ...noteDialogRows]),
+      ...new Set([
+        ...current,
+        ...noteDialogRows,
+      ]),
     ]);
 
     setOverrideNotes((current) => {
-      const updated = { ...current };
+      const updated = {
+        ...current,
+      };
 
       noteDialogRows.forEach((row) => {
         updated[row] = note;
@@ -181,12 +434,21 @@ function DuplicateDetection({
     });
 
     setSelectedRows((current) =>
-      current.filter((row) => !noteDialogRows.includes(row))
+      current.filter(
+        (row) => !noteDialogRows.includes(row)
+      )
     );
 
     setNoteDialogRows([]);
+
     setNoteText("");
   };
+
+  /*
+   * --------------------------------------------------
+   * CONTINUE
+   * --------------------------------------------------
+   */
 
   const handleContinue = () => {
     const decisions: DuplicateDecision[] = [];
@@ -208,8 +470,17 @@ function DuplicateDetection({
       }
     });
 
-    onContinue(uniqueTransactions, decisions);
+    onContinue(
+      uniqueTransactions,
+      decisions
+    );
   };
+
+  /*
+   * --------------------------------------------------
+   * RENDER
+   * --------------------------------------------------
+   */
 
   return (
     <>
@@ -223,7 +494,13 @@ function DuplicateDetection({
           width: "100%",
         }}
       >
-        <div style={{ marginBottom: "1.5rem" }}>
+        {/* HEADER */}
+
+        <div
+          style={{
+            marginBottom: "1.5rem",
+          }}
+        >
           <h2
             style={{
               fontFamily: "var(--font-heading)",
@@ -247,7 +524,8 @@ function DuplicateDetection({
           </p>
         </div>
 
-        {/* Summary */}
+        {/* SUMMARY */}
+
         <div
           style={{
             display: "grid",
@@ -258,7 +536,7 @@ function DuplicateDetection({
         >
           <Summary
             label="Transactions Checked"
-            value={transactions.length}
+            value={workingTransactions.length}
           />
 
           <Summary
@@ -274,7 +552,8 @@ function DuplicateDetection({
           />
         </div>
 
-        {/* Bulk actions */}
+        {/* BULK ACTIONS */}
+
         {activeDuplicates.length > 0 && (
           <div
             style={{
@@ -327,7 +606,9 @@ function DuplicateDetection({
                 type="button"
                 style={addAnywayButtonStyle}
                 disabled={selectedRows.length === 0}
-                onClick={() => openAddAnywayDialog(selectedRows)}
+                onClick={() =>
+                  openAddAnywayDialog(selectedRows)
+                }
               >
                 Add Anyway Selected
               </button>
@@ -335,7 +616,8 @@ function DuplicateDetection({
           </div>
         )}
 
-        {/* Results */}
+        {/* RESULTS */}
+
         {activeDuplicates.length === 0 ? (
           <div
             style={{
@@ -359,33 +641,43 @@ function DuplicateDetection({
             }}
           >
             {activeDuplicates.map((duplicate) => {
-              const duplicateError = duplicate.errors.find(
-                (error) =>
-                  error.field === "transaction" &&
-                  error.message
-                    .toLowerCase()
-                    .includes("duplicate")
-              );
+              const duplicateError =
+                duplicate.errors.find(
+                  (error) =>
+                    error.field === "transaction" &&
+                    error.message
+                      .toLowerCase()
+                      .includes("duplicate")
+                );
 
               const isSelected = selectedRows.includes(
                 duplicate.row
               );
 
-              const wasAddedAnyway = addedAnywayRows.includes(
-                duplicate.row
-              );
+              const wasAddedAnyway =
+                addedAnywayRows.includes(
+                  duplicate.row
+                );
 
               return (
                 <div
                   key={duplicate.row}
                   style={{
-                    border: "1px solid #f0b7b2",
+                    border: wasAddedAnyway
+                      ? "1px solid #9ad9ad"
+                      : "1px solid #f0b7b2",
+
                     borderRadius: "10px",
+
                     padding: "1.25rem",
-                    backgroundColor: "#fff8f7",
+
+                    backgroundColor: wasAddedAnyway
+                      ? "#f0fdf4"
+                      : "#fff8f7",
                   }}
                 >
-                  {/* Header */}
+                  {/* HEADER */}
+
                   <div
                     style={{
                       display: "flex",
@@ -415,15 +707,20 @@ function DuplicateDetection({
 
                     <span
                       style={{
-                        color: "#b42318",
+                        color: wasAddedAnyway
+                          ? "#188038"
+                          : "#b42318",
                         fontWeight: 600,
                       }}
                     >
-                      ⚠ Duplicate
+                      {wasAddedAnyway
+                        ? "✓ Added Anyway"
+                        : "⚠ Duplicate"}
                     </span>
                   </div>
 
-                  {/* Transaction data */}
+                  {/* TRANSACTION DATA */}
+
                   <div
                     style={{
                       display: "grid",
@@ -467,7 +764,8 @@ function DuplicateDetection({
                     />
                   </div>
 
-                  {/* Duplicate explanation */}
+                  {/* DUPLICATE EXPLANATION */}
+
                   {duplicateError && (
                     <div
                       style={{
@@ -483,9 +781,12 @@ function DuplicateDetection({
                     </div>
                   )}
 
-                  {/* Override note */}
+                  {/* ADD ANYWAY NOTE */}
+
                   {wasAddedAnyway &&
-                    overrideNotes[duplicate.row] && (
+                    overrideNotes[
+                      duplicate.row
+                    ] && (
                       <div
                         style={{
                           marginTop: "1rem",
@@ -499,11 +800,16 @@ function DuplicateDetection({
                         <strong>
                           Added anyway note:
                         </strong>{" "}
-                        {overrideNotes[duplicate.row]}
+                        {
+                          overrideNotes[
+                            duplicate.row
+                          ]
+                        }
                       </div>
                     )}
 
-                  {/* Individual actions */}
+                  {/* INDIVIDUAL ACTIONS */}
+
                   <div
                     style={{
                       display: "flex",
@@ -512,38 +818,46 @@ function DuplicateDetection({
                       flexWrap: "wrap",
                     }}
                   >
-                    <button
-                      type="button"
-                      style={primaryButtonStyle}
-                      onClick={() =>
-                        alert(
-                          `Fix functionality for row ${duplicate.row} will be connected to the mapping/edit flow.`
-                        )
-                      }
-                    >
-                      Fix
-                    </button>
+                    {!wasAddedAnyway && (
+                      <>
+                        <button
+                          type="button"
+                          style={primaryButtonStyle}
+                          onClick={() =>
+                            handleFix(
+                              duplicate.row
+                            )
+                          }
+                        >
+                          Fix
+                        </button>
+
+                        <button
+                          type="button"
+                          style={dangerButtonStyle}
+                          onClick={() =>
+                            excludeRows([
+                              duplicate.row,
+                            ])
+                          }
+                        >
+                          Exclude
+                        </button>
+                      </>
+                    )}
 
                     <button
                       type="button"
-                      style={dangerButtonStyle}
-                      onClick={() =>
-                        excludeRows([duplicate.row])
-                      }
-                    >
-                      Exclude
-                    </button>
-
-                    <button
-                      type="button"
-                      style={addAnywayButtonStyle}
+                      style={secondaryButtonStyle}
                       onClick={() =>
                         openAddAnywayDialog([
                           duplicate.row,
                         ])
                       }
                     >
-                      Add Anyway
+                      {wasAddedAnyway
+                        ? "Edit Notes"
+                        : "Add Anyway"}
                     </button>
                   </div>
                 </div>
@@ -552,7 +866,8 @@ function DuplicateDetection({
           </div>
         )}
 
-        {/* Footer actions */}
+        {/* FOOTER */}
+
         <div
           style={{
             display: "flex",
@@ -570,21 +885,37 @@ function DuplicateDetection({
 
           <button
             type="button"
-            style={primaryButtonStyle}
+            disabled={unresolvedDuplicates.length > 0}
             onClick={handleContinue}
+            style={{
+              ...primaryButtonStyle,
+              opacity:
+                unresolvedDuplicates.length > 0
+                  ? 0.5
+                  : 1,
+              cursor:
+                unresolvedDuplicates.length > 0
+                  ? "not-allowed"
+                  : "pointer",
+            }}
           >
-            Continue with {uniqueTransactions.length} Transactions
+            Continue with{" "}
+            {uniqueTransactions.length} Transactions
           </button>
         </div>
       </section>
 
-      {/* Add Anyway note dialog */}
+      {/* ------------------------------------------------
+          ADD ANYWAY / EDIT NOTES DIALOG
+      ------------------------------------------------ */}
+
       {noteDialogRows.length > 0 && (
         <div
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.45)",
+            backgroundColor:
+              "rgba(0, 0, 0, 0.45)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -609,7 +940,12 @@ function DuplicateDetection({
                 marginBottom: "0.5rem",
               }}
             >
-              Add Transaction Anyway
+              {noteDialogRows.length === 1 &&
+              overrideNotes[
+                noteDialogRows[0]
+              ]
+                ? "Edit Add Anyway Note"
+                : "Add Transaction Anyway"}
             </h3>
 
             <p
@@ -679,7 +1015,294 @@ function DuplicateDetection({
                 style={primaryButtonStyle}
                 onClick={confirmAddAnyway}
               >
-                Add Anyway
+                {noteDialogRows.length === 1 &&
+                overrideNotes[
+                  noteDialogRows[0]
+                ]
+                  ? "Save Changes"
+                  : "Add Anyway"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------
+          FIX / EDIT TRANSACTION DIALOG
+      ------------------------------------------------ */}
+
+      {fixDialogRow !== null && fixForm && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor:
+              "rgba(0, 0, 0, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1100,
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: "14px",
+              padding: "1.5rem",
+              width: "100%",
+              maxWidth: "600px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow:
+                "0 10px 30px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <h3
+              style={{
+                marginTop: 0,
+                marginBottom: "0.5rem",
+                fontSize: "1.25rem",
+              }}
+            >
+              Fix Duplicate Transaction
+            </h3>
+
+            <p
+              style={{
+                color: "var(--color-text-muted)",
+                fontSize: "0.9rem",
+                marginBottom: "1.25rem",
+              }}
+            >
+              Edit the transaction details and save.
+              The transaction will be checked again for
+              duplicates.
+            </p>
+
+            {/* DATE */}
+
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+              }}
+            >
+              Date
+            </label>
+
+            <input
+              type="date"
+              value={fixForm.date}
+              onChange={(event) =>
+                updateFixField(
+                  "date",
+                  event.target.value
+                )
+              }
+              style={{
+                ...inputStyle,
+                marginBottom: "1rem",
+              }}
+            />
+
+            {/* DESCRIPTION */}
+
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+              }}
+            >
+              Description
+            </label>
+
+            <input
+              type="text"
+              value={fixForm.title}
+              onChange={(event) =>
+                updateFixField(
+                  "title",
+                  event.target.value
+                )
+              }
+              style={{
+                ...inputStyle,
+                marginBottom: "1rem",
+              }}
+            />
+
+            {/* AMOUNT */}
+
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+              }}
+            >
+              Amount
+            </label>
+
+            <input
+              type="number"
+              step="1"
+              value={fixForm.amount}
+              onChange={(event) =>
+                updateFixField(
+                  "amount",
+                  Number(event.target.value)
+                )
+              }
+              style={{
+                ...inputStyle,
+                marginBottom: "1rem",
+              }}
+            />
+
+            {/* TYPE */}
+
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+              }}
+            >
+              Type
+            </label>
+
+            <select
+              value={fixForm.type}
+              onChange={(event) =>
+                updateFixField(
+                  "type",
+                  event.target.value as
+                    | "income"
+                    | "expense"
+                )
+              }
+              style={{
+                ...inputStyle,
+                marginBottom: "1rem",
+              }}
+            >
+              <option value="expense">
+                Expense
+              </option>
+
+              <option value="income">
+                Income
+              </option>
+            </select>
+
+            {/* ACCOUNT */}
+
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+              }}
+            >
+              Account
+            </label>
+
+            <input
+              type="text"
+              value={fixForm.account}
+              onChange={(event) =>
+                updateFixField(
+                  "account",
+                  event.target.value
+                )
+              }
+              style={{
+                ...inputStyle,
+                marginBottom: "1rem",
+              }}
+            />
+
+            {/* CATEGORY */}
+
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+              }}
+            >
+              Category
+            </label>
+
+            <input
+              type="text"
+              value={fixForm.category || ""}
+              onChange={(event) =>
+                updateFixField(
+                  "category",
+                  event.target.value
+                )
+              }
+              style={{
+                ...inputStyle,
+                marginBottom: "1rem",
+              }}
+            />
+
+            {/* NOTES */}
+
+            <label
+              style={{
+                display: "block",
+                marginBottom: "0.4rem",
+                fontWeight: 600,
+              }}
+            >
+              Notes
+            </label>
+
+            <textarea
+              value={fixForm.notes || ""}
+              onChange={(event) =>
+                updateFixField(
+                  "notes",
+                  event.target.value
+                )
+              }
+              rows={3}
+              style={{
+                ...inputStyle,
+                resize: "vertical",
+                marginBottom: "1.25rem",
+              }}
+            />
+
+            {/* ACTIONS */}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "0.75rem",
+              }}
+            >
+              <button
+                type="button"
+                style={secondaryButtonStyle}
+                onClick={cancelFix}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                style={primaryButtonStyle}
+                onClick={saveFix}
+              >
+                Save Changes
               </button>
             </div>
           </div>
@@ -688,6 +1311,12 @@ function DuplicateDetection({
     </>
   );
 }
+
+/*
+ * --------------------------------------------------
+ * SUMMARY COMPONENT
+ * --------------------------------------------------
+ */
 
 function Summary({
   label,
@@ -703,7 +1332,8 @@ function Summary({
   return (
     <div
       style={{
-        border: "1px solid var(--color-divider)",
+        border:
+          "1px solid var(--color-divider)",
         borderRadius: "10px",
         padding: "1rem",
       }}
@@ -734,6 +1364,12 @@ function Summary({
   );
 }
 
+/*
+ * --------------------------------------------------
+ * INFO COMPONENT
+ * --------------------------------------------------
+ */
+
 function Info({
   label,
   value,
@@ -746,7 +1382,8 @@ function Info({
       <div
         style={{
           fontSize: "0.75rem",
-          color: "var(--color-text-muted)",
+          color:
+            "var(--color-text-muted)",
           marginBottom: "0.2rem",
         }}
       >
@@ -756,7 +1393,8 @@ function Info({
       <div
         style={{
           fontSize: "0.9rem",
-          color: "var(--color-text-dark)",
+          color:
+            "var(--color-text-dark)",
           fontWeight: 500,
         }}
       >

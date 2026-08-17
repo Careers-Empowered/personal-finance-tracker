@@ -71,8 +71,8 @@ model Category {
 model Transaction {
   id                   String          @id @default(uuid()) @db.Uuid
   accountId            String          @map("account_id") @db.Uuid
-  categoryId           String          @map("category_id") @db.Uuid
-  subcategory_id       String          @db.Uuid
+  categoryId           String?          @map("category_id") @db.Uuid
+  subcategory_id       String?          @db.Uuid
   amount               Decimal         @db.Decimal(15, 2)
   type                 TransactionType
   date                 DateTime
@@ -82,8 +82,8 @@ model Transaction {
   importedWithOverride Boolean         @default(false) @map("imported_with_override")
   overrideNote         String?         @map("override_note")
   account              Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category             Category        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  subcategory          subcategories   @relation(fields: [subcategory_id], references: [id], onDelete: SetNull)
+  category             Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory          subcategories?   @relation(fields: [subcategory_id], references: [id], onDelete: SetNull)
 
   @@index([accountId])
   @@index([categoryId])

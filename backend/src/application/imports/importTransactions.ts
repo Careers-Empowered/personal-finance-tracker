@@ -27,8 +27,6 @@ export async function importTransactions(
 
         Title: transaction.title,
 
-        importId: transaction.importId ?? null,
-
         importedWithOverride:
           transaction.importedWithOverride ?? false,
 
