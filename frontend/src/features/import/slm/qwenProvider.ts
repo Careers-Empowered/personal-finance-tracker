@@ -11,7 +11,6 @@ let initializationPromise:
   | Promise<TextGenerationPipeline>
   | null = null;
 
-// Load Qwen3-0.6B only once.
 async function getGenerator(): Promise<TextGenerationPipeline> {
   if (generator) {
     return generator;
@@ -21,12 +20,35 @@ async function getGenerator(): Promise<TextGenerationPipeline> {
     return initializationPromise;
   }
 
+  // Detect WebGPU & shader-f16 support
+  let device = 'wasm';
+  let dtype = 'q8'; // Safe fallback for WASM / CPU
+
+  try {
+    const gpu = (navigator as any).gpu;
+    if (gpu) {
+      const adapter = await gpu.requestAdapter();
+      if (adapter) {
+        const hasFP16 = adapter.features.has('shader-f16');
+        device = 'webgpu';
+        dtype = hasFP16 ? 'q4f16' : 'q4';
+        console.log(`SLM: WebGPU supported! Using device: ${device}, dtype: ${dtype}`);
+      }
+    }
+  } catch (e) {
+    console.warn('WebGPU check failed, falling back to WASM/CPU:', e);
+  }
+
+  if (device === 'wasm') {
+    console.log('SLM: WebGPU is not supported. Running model on CPU (WASM).');
+  }
+
   initializationPromise = pipeline(
     'text-generation',
     'onnx-community/Qwen3-0.6B-ONNX',
     {
-      device: 'webgpu',
-      dtype: 'q4f16',
+      device: device as any,
+      dtype: dtype as any,
     }
   ) as Promise<TextGenerationPipeline>;
 
