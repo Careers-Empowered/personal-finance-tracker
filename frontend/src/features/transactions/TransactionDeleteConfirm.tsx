@@ -1,6 +1,6 @@
 import React from 'react';
 import { Transaction, CreateTransactionInput } from './types';
-import { Account } from '../accounts/types';
+import { Account } from '../accounts/types/types';
 
 interface TransactionDeleteConfirmProps {
   isOpen: boolean;

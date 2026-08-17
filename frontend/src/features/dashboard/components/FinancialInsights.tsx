@@ -166,7 +166,7 @@ const FinancialInsights = ({
     <section className="dashboard-section financial-insights">
       <div className="section-header">
         <div>
-          <h2>Financial insights</h2>
+          <h2>Financial Insights</h2>
           <p>
             A quick interpretation of your financial activity
           </p>

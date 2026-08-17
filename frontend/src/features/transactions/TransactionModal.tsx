@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TransactionType, CreateTransactionInput } from './types';
-import { Account } from '../accounts/types';
+import { Account } from '../accounts/types/types';
 import './Transactions.css';
 
 // ============================================================================

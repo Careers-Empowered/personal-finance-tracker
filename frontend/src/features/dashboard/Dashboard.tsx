@@ -1,9 +1,9 @@
-import AccountAnalysis from "./components/AccountAnalysis";
+import FinancialInsights from "./components/FinancialInsights";
 import DailySummary from "./components/DailySummary";
 import DashboardFilters from "./components/DashboardFilters";
 import MonthlySummary from "./components/MonthlySummary";
 import MonthlyTrend from "./components/MonthlyTrend";
-import RecentTransactions from "./components/RecentTransactions";
+import Transactions from "./components/Transactions";
 import SpendingByCategory from "./components/SpendingByCategory";
 import { useDashboard } from "../../hooks/useDashboard";
 import dashboardMockData from "./mockData.json";
@@ -27,8 +27,6 @@ const Dashboard = () => {
     clearDateRange,
   } = useDashboard(dashboardData);
 
-  // Use the selected account's currency.
-  // USD is only the fallback when "All accounts" is selected.
   const currency = view.selectedAccount?.currency ?? "USD";
 
   const periodDescription =
@@ -68,6 +66,12 @@ const Dashboard = () => {
         />
       </div>
 
+      <FinancialInsights
+          account={view.selectedAccount}
+          summary={view.summary}
+          spendingByCategory={view.spendingByCategory}
+        />
+        
       <div className="dashboard-top-grid">
         <MonthlySummary
           data={view.summary}
@@ -85,9 +89,14 @@ const Dashboard = () => {
         />
       </div>
 
+      
+
       <DailySummary
+        key={selectedAccountId}
         data={view.dailyTrend}
-        currency={currency}
+        transactions={view.transactions}
+        accounts={dashboardData.accounts}
+        currency={view.selectedAccount?.currency}
       />
 
       <div className="dashboard-detail-grid dashboard-detail-grid--wide">
@@ -96,14 +105,10 @@ const Dashboard = () => {
           currency={currency}
         />
 
-        <AccountAnalysis
-          account={view.selectedAccount}
-          summary={view.summary}
-          spendingByCategory={view.spendingByCategory}
-        />
+        
       </div>
 
-      <RecentTransactions
+      <Transactions
         transactions={view.transactions}
         accounts={dashboardData.accounts}
       />

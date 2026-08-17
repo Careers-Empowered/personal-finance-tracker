@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchExchangeRates, DEFAULT_RATES } from "./currencyUtils";
+import { fetchExchangeRates, DEFAULT_RATES } from "../utils/currencyUtils";
 
 export function useExchangeRates() {
   const [rates, setRates] = useState<Record<string, number>>(DEFAULT_RATES);

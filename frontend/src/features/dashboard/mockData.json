@@ -1,176 +1,579 @@
 {
-  "daily": { "income": 2500, "expenses": 850, "balance": 1650, "transactionCount": 6 },
-  "monthly": { "income": 45000, "expenses": 18750, "balance": 26250, "transactionCount": 42 },
+  "daily": {
+    "income": 3350,
+    "expenses": 415.49,
+    "balance": 2934.51,
+    "transactionCount": 10
+  },
+
+  "monthly": {
+    "income": 3350,
+    "expenses": 415.49,
+    "balance": 2934.51,
+    "transactionCount": 10
+  },
+
   "spendingByCategory": [
-    { "category": "Food & Dining", "amount": 5250 },
-    { "category": "Transportation", "amount": 3200 },
-    { "category": "Shopping", "amount": 4500 },
-    { "category": "Bills & Utilities", "amount": 3800 },
-    { "category": "Entertainment", "amount": 2000 }
+    {
+      "category": "Food & Dining",
+      "amount": 159.25
+    },
+    {
+      "category": "Transportation",
+      "amount": 42
+    },
+    {
+      "category": "Bills & Utilities",
+      "amount": 110
+    },
+    {
+      "category": "Shopping",
+      "amount": 85.25
+    },
+    {
+      "category": "Entertainment",
+      "amount": 18.99
+    }
   ],
+
   "monthlyTrend": [
-    { "date": "2026-03", "income": 39000, "expenses": 17600, "balance": 21400 },
-    { "date": "2026-04", "income": 41500, "expenses": 18300, "balance": 23200 },
-    { "date": "2026-05", "income": 40200, "expenses": 16800, "balance": 23400 },
-    { "date": "2026-06", "income": 43800, "expenses": 19200, "balance": 24600 },
-    { "date": "2026-07", "income": 42100, "expenses": 18100, "balance": 24000 },
-    { "date": "2026-08", "income": 45000, "expenses": 18750, "balance": 26250 }
+    {
+      "date": "2026-03",
+      "income": 39000,
+      "expenses": 17600,
+      "balance": 21400
+    },
+    {
+      "date": "2026-04",
+      "income": 41500,
+      "expenses": 18300,
+      "balance": 23200
+    },
+    {
+      "date": "2026-05",
+      "income": 40200,
+      "expenses": 16800,
+      "balance": 23400
+    },
+    {
+      "date": "2026-06",
+      "income": 43800,
+      "expenses": 19200,
+      "balance": 24600
+    },
+    {
+      "date": "2026-07",
+      "income": 42100,
+      "expenses": 18100,
+      "balance": 24000
+    },
+    {
+      "date": "2026-08",
+      "income": 3350,
+      "expenses": 415.49,
+      "balance": 2934.51
+    }
   ],
+
   "dailyTrend": [
-    { "date": "2026-08-06", "income": 0, "expenses": 280, "balance": -280 },
-    { "date": "2026-08-07", "income": 750, "expenses": 145, "balance": 605 },
-    { "date": "2026-08-08", "income": 0, "expenses": 360, "balance": -360 },
-    { "date": "2026-08-09", "income": 0, "expenses": 95, "balance": -95 },
-    { "date": "2026-08-10", "income": 1250, "expenses": 210, "balance": 1040 },
-    { "date": "2026-08-11", "income": 0, "expenses": 420, "balance": -420 },
-    { "date": "2026-08-12", "income": 2500, "expenses": 850, "balance": 1650 }
+    {
+      "date": "2026-08-06",
+      "income": 0,
+      "expenses": 61.25,
+      "balance": -61.25
+    },
+    {
+      "date": "2026-08-07",
+      "income": 750,
+      "expenses": 0,
+      "balance": 750
+    },
+    {
+      "date": "2026-08-08",
+      "income": 0,
+      "expenses": 110,
+      "balance": -110
+    },
+    {
+      "date": "2026-08-09",
+      "income": 0,
+      "expenses": 12.5,
+      "balance": -12.5
+    },
+    {
+      "date": "2026-08-10",
+      "income": 100,
+      "expenses": 85.25,
+      "balance": 14.75
+    },
+    {
+      "date": "2026-08-11",
+      "income": 0,
+      "expenses": 42,
+      "balance": -42
+    },
+    {
+      "date": "2026-08-12",
+      "income": 2500,
+      "expenses": 104.49,
+      "balance": 2395.51
+    }
   ],
+
   "transactions": [
-    { "id": "txn-001", "accountId": "1", "date": "2026-08-12", "description": "Salary deposit", "category": "Income", "amount": 2500, "type": "income" },
-    { "id": "txn-002", "accountId": "1", "date": "2026-08-12", "description": "Fresh Market", "category": "Food & Dining", "amount": 85.5, "type": "expense" },
-    { "id": "txn-003", "accountId": "3", "date": "2026-08-12", "description": "StreamFlix", "category": "Entertainment", "amount": 18.99, "type": "expense" },
-    { "id": "txn-004", "accountId": "1", "date": "2026-08-11", "description": "City Transit", "category": "Transportation", "amount": 42, "type": "expense" },
-    { "id": "txn-005", "accountId": "2", "date": "2026-08-10", "description": "Savings transfer", "category": "Savings deposit", "amount": 100, "type": "income" },
-    { "id": "txn-006", "accountId": "3", "date": "2026-08-10", "description": "Home Store", "category": "Shopping", "amount": 85.25, "type": "expense" },
-    { "id": "txn-007", "accountId": "1", "date": "2026-08-09", "description": "Coffee Corner", "category": "Food & Dining", "amount": 12.5, "type": "expense" },
-    { "id": "txn-008", "accountId": "1", "date": "2026-08-08", "description": "Electricity bill", "category": "Bills & Utilities", "amount": 110, "type": "expense" },
-    { "id": "txn-009", "accountId": "1", "date": "2026-08-07", "description": "Freelance payment", "category": "Income", "amount": 750, "type": "income" },
-    { "id": "txn-010", "accountId": "3", "date": "2026-08-06", "description": "Restaurant", "category": "Food & Dining", "amount": 61.25, "type": "expense" }
+    {
+      "id": "txn-001",
+      "accountId": "1",
+      "date": "2026-08-12",
+      "description": "Salary deposit",
+      "category": "Income",
+      "amount": 2500,
+      "type": "income"
+    },
+    {
+      "id": "txn-002",
+      "accountId": "1",
+      "date": "2026-08-12",
+      "description": "Fresh Market",
+      "category": "Food & Dining",
+      "amount": 85.5,
+      "type": "expense"
+    },
+    {
+      "id": "txn-003",
+      "accountId": "3",
+      "date": "2026-08-12",
+      "description": "StreamFlix",
+      "category": "Entertainment",
+      "amount": 18.99,
+      "type": "expense"
+    },
+    {
+      "id": "txn-004",
+      "accountId": "1",
+      "date": "2026-08-11",
+      "description": "City Transit",
+      "category": "Transportation",
+      "amount": 42,
+      "type": "expense"
+    },
+    {
+      "id": "txn-005",
+      "accountId": "2",
+      "date": "2026-08-10",
+      "description": "Savings transfer",
+      "category": "Savings deposit",
+      "amount": 100,
+      "type": "income"
+    },
+    {
+      "id": "txn-006",
+      "accountId": "3",
+      "date": "2026-08-10",
+      "description": "Home Store",
+      "category": "Shopping",
+      "amount": 85.25,
+      "type": "expense"
+    },
+    {
+      "id": "txn-007",
+      "accountId": "1",
+      "date": "2026-08-09",
+      "description": "Coffee Corner",
+      "category": "Food & Dining",
+      "amount": 12.5,
+      "type": "expense"
+    },
+    {
+      "id": "txn-008",
+      "accountId": "1",
+      "date": "2026-08-08",
+      "description": "Electricity bill",
+      "category": "Bills & Utilities",
+      "amount": 110,
+      "type": "expense"
+    },
+    {
+      "id": "txn-009",
+      "accountId": "1",
+      "date": "2026-08-07",
+      "description": "Freelance payment",
+      "category": "Income",
+      "amount": 750,
+      "type": "income"
+    },
+    {
+      "id": "txn-010",
+      "accountId": "3",
+      "date": "2026-08-06",
+      "description": "Restaurant",
+      "category": "Food & Dining",
+      "amount": 61.25,
+      "type": "expense"
+    }
   ],
+
   "accounts": [
-  {
-    "id": "1",
-    "name": "Checking Account",
-    "balance": 2500.5,
-    "currency": "USD",
-    "income": 4200,
-    "expenses": 1699.5,
-    "transactionCount": 18,
-    "dashboard": {
-      "daily": {
-        "income": 450,
-        "expenses": 120,
-        "balance": 330,
-        "transactionCount": 4
-      },
-      "monthly": {
-        "income": 4200,
-        "expenses": 1699.5,
-        "balance": 2500.5,
-        "transactionCount": 18
-      },
-      "spendingByCategory": [
-        { "category": "Food & Dining", "amount": 520 },
-        { "category": "Transportation", "amount": 310 },
-        { "category": "Shopping", "amount": 420 },
-        { "category": "Bills & Utilities", "amount": 449.5 }
-      ],
-      "monthlyTrend": [
-        { "date": "2026-03", "income": 3600, "expenses": 1550, "balance": 2050 },
-        { "date": "2026-04", "income": 3900, "expenses": 1620, "balance": 2280 },
-        { "date": "2026-05", "income": 3800, "expenses": 1480, "balance": 2320 },
-        { "date": "2026-06", "income": 4100, "expenses": 1710, "balance": 2390 },
-        { "date": "2026-07", "income": 4000, "expenses": 1650, "balance": 2350 },
-        { "date": "2026-08", "income": 4200, "expenses": 1699.5, "balance": 2500.5 }
-      ],
-      "dailyTrend": [
-        { "date": "2026-08-06", "income": 0, "expenses": 60, "balance": -60 },
-        { "date": "2026-08-07", "income": 450, "expenses": 45, "balance": 405 },
-        { "date": "2026-08-08", "income": 0, "expenses": 110, "balance": -110 },
-        { "date": "2026-08-09", "income": 0, "expenses": 12.5, "balance": -12.5 },
-        { "date": "2026-08-10", "income": 0, "expenses": 85, "balance": -85 },
-        { "date": "2026-08-11", "income": 0, "expenses": 87.5, "balance": -87.5 },
-        { "date": "2026-08-12", "income": 450, "expenses": 120, "balance": 330 }
-      ]
+    {
+      "id": "1",
+      "name": "Checking Account",
+      "balance": 2500.5,
+      "currency": "USD",
+      "income": 3250,
+      "expenses": 250,
+      "transactionCount": 6,
+
+      "dashboard": {
+        "daily": {
+          "income": 2500,
+          "expenses": 85.5,
+          "balance": 2414.5,
+          "transactionCount": 2
+        },
+
+        "monthly": {
+          "income": 3250,
+          "expenses": 250,
+          "balance": 3000,
+          "transactionCount": 6
+        },
+
+        "spendingByCategory": [
+          {
+            "category": "Food & Dining",
+            "amount": 98
+          },
+          {
+            "category": "Transportation",
+            "amount": 42
+          },
+          {
+            "category": "Bills & Utilities",
+            "amount": 110
+          }
+        ],
+
+        "monthlyTrend": [
+          {
+            "date": "2026-03",
+            "income": 3600,
+            "expenses": 1550,
+            "balance": 2050
+          },
+          {
+            "date": "2026-04",
+            "income": 3900,
+            "expenses": 1620,
+            "balance": 2280
+          },
+          {
+            "date": "2026-05",
+            "income": 3800,
+            "expenses": 1480,
+            "balance": 2320
+          },
+          {
+            "date": "2026-06",
+            "income": 4100,
+            "expenses": 1710,
+            "balance": 2390
+          },
+          {
+            "date": "2026-07",
+            "income": 4000,
+            "expenses": 1650,
+            "balance": 2350
+          },
+          {
+            "date": "2026-08",
+            "income": 3250,
+            "expenses": 250,
+            "balance": 3000
+          }
+        ],
+
+        "dailyTrend": [
+          {
+            "date": "2026-08-06",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-07",
+            "income": 750,
+            "expenses": 0,
+            "balance": 750
+          },
+          {
+            "date": "2026-08-08",
+            "income": 0,
+            "expenses": 110,
+            "balance": -110
+          },
+          {
+            "date": "2026-08-09",
+            "income": 0,
+            "expenses": 12.5,
+            "balance": -12.5
+          },
+          {
+            "date": "2026-08-10",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-11",
+            "income": 0,
+            "expenses": 42,
+            "balance": -42
+          },
+          {
+            "date": "2026-08-12",
+            "income": 2500,
+            "expenses": 85.5,
+            "balance": 2414.5
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "2",
+      "name": "Savings Account",
+      "balance": 10000,
+      "currency": "EUR",
+      "income": 100,
+      "expenses": 0,
+      "transactionCount": 1,
+
+      "dashboard": {
+        "daily": {
+          "income": 100,
+          "expenses": 0,
+          "balance": 100,
+          "transactionCount": 1
+        },
+
+        "monthly": {
+          "income": 100,
+          "expenses": 0,
+          "balance": 100,
+          "transactionCount": 1
+        },
+
+        "spendingByCategory": [],
+
+        "monthlyTrend": [
+          {
+            "date": "2026-03",
+            "income": 450,
+            "expenses": 0,
+            "balance": 450
+          },
+          {
+            "date": "2026-04",
+            "income": 500,
+            "expenses": 0,
+            "balance": 500
+          },
+          {
+            "date": "2026-05",
+            "income": 450,
+            "expenses": 0,
+            "balance": 450
+          },
+          {
+            "date": "2026-06",
+            "income": 500,
+            "expenses": 0,
+            "balance": 500
+          },
+          {
+            "date": "2026-07",
+            "income": 500,
+            "expenses": 0,
+            "balance": 500
+          },
+          {
+            "date": "2026-08",
+            "income": 100,
+            "expenses": 0,
+            "balance": 100
+          }
+        ],
+
+        "dailyTrend": [
+          {
+            "date": "2026-08-06",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-07",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-08",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-09",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-10",
+            "income": 100,
+            "expenses": 0,
+            "balance": 100
+          },
+          {
+            "date": "2026-08-11",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-12",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          }
+        ]
+      }
+    },
+
+    {
+      "id": "3",
+      "name": "Credit Card",
+      "balance": -450.75,
+      "currency": "INR",
+      "income": 0,
+      "expenses": 165.49,
+      "transactionCount": 3,
+
+      "dashboard": {
+        "daily": {
+          "income": 0,
+          "expenses": 18.99,
+          "balance": -18.99,
+          "transactionCount": 1
+        },
+
+        "monthly": {
+          "income": 0,
+          "expenses": 165.49,
+          "balance": -165.49,
+          "transactionCount": 3
+        },
+
+        "spendingByCategory": [
+          {
+            "category": "Food & Dining",
+            "amount": 61.25
+          },
+          {
+            "category": "Shopping",
+            "amount": 85.25
+          },
+          {
+            "category": "Entertainment",
+            "amount": 18.99
+          }
+        ],
+
+        "monthlyTrend": [
+          {
+            "date": "2026-03",
+            "income": 0,
+            "expenses": 380,
+            "balance": -380
+          },
+          {
+            "date": "2026-04",
+            "income": 0,
+            "expenses": 410,
+            "balance": -410
+          },
+          {
+            "date": "2026-05",
+            "income": 0,
+            "expenses": 395,
+            "balance": -395
+          },
+          {
+            "date": "2026-06",
+            "income": 0,
+            "expenses": 430,
+            "balance": -430
+          },
+          {
+            "date": "2026-07",
+            "income": 0,
+            "expenses": 415,
+            "balance": -415
+          },
+          {
+            "date": "2026-08",
+            "income": 0,
+            "expenses": 165.49,
+            "balance": -165.49
+          }
+        ],
+
+        "dailyTrend": [
+          {
+            "date": "2026-08-06",
+            "income": 0,
+            "expenses": 61.25,
+            "balance": -61.25
+          },
+          {
+            "date": "2026-08-07",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-08",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-09",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-10",
+            "income": 0,
+            "expenses": 85.25,
+            "balance": -85.25
+          },
+          {
+            "date": "2026-08-11",
+            "income": 0,
+            "expenses": 0,
+            "balance": 0
+          },
+          {
+            "date": "2026-08-12",
+            "income": 0,
+            "expenses": 18.99,
+            "balance": -18.99
+          }
+        ]
+      }
     }
-  },
-  {
-    "id": "2",
-    "name": "Savings Account",
-    "balance": 10000,
-    "currency": "EUR",
-    "income": 550,
-    "expenses": 0,
-    "transactionCount": 3,
-    "dashboard": {
-      "daily": {
-        "income": 100,
-        "expenses": 0,
-        "balance": 100,
-        "transactionCount": 1
-      },
-      "monthly": {
-        "income": 550,
-        "expenses": 0,
-        "balance": 10000,
-        "transactionCount": 3
-      },
-      "spendingByCategory": [
-        { "category": "Savings deposit", "amount": 550 }
-      ],
-      "monthlyTrend": [
-        { "date": "2026-03", "income": 450, "expenses": 0, "balance": 8500 },
-        { "date": "2026-04", "income": 500, "expenses": 0, "balance": 9000 },
-        { "date": "2026-05", "income": 450, "expenses": 0, "balance": 9450 },
-        { "date": "2026-06", "income": 500, "expenses": 0, "balance": 9950 },
-        { "date": "2026-07", "income": 500, "expenses": 0, "balance": 9950 },
-        { "date": "2026-08", "income": 550, "expenses": 0, "balance": 10000 }
-      ],
-      "dailyTrend": [
-        { "date": "2026-08-06", "income": 0, "expenses": 0, "balance": 0 },
-        { "date": "2026-08-07", "income": 0, "expenses": 0, "balance": 0 },
-        { "date": "2026-08-08", "income": 0, "expenses": 0, "balance": 0 },
-        { "date": "2026-08-09", "income": 0, "expenses": 0, "balance": 0 },
-        { "date": "2026-08-10", "income": 100, "expenses": 0, "balance": 100 },
-        { "date": "2026-08-11", "income": 0, "expenses": 0, "balance": 0 },
-        { "date": "2026-08-12", "income": 100, "expenses": 0, "balance": 100 }
-      ]
-    }
-  },
-  {
-    "id": "3",
-    "name": "Credit Card",
-    "balance": -450.75,
-    "currency": "INR",
-    "income": 0,
-    "expenses": 450.75,
-    "transactionCount": 7,
-    "dashboard": {
-      "daily": {
-        "income": 0,
-        "expenses": 85.25,
-        "balance": -85.25,
-        "transactionCount": 2
-      },
-      "monthly": {
-        "income": 0,
-        "expenses": 450.75,
-        "balance": -450.75,
-        "transactionCount": 7
-      },
-      "spendingByCategory": [
-        { "category": "Food & Dining", "amount": 165.5 },
-        { "category": "Shopping", "amount": 185.25 },
-        { "category": "Entertainment", "amount": 100 }
-      ],
-      "monthlyTrend": [
-        { "date": "2026-03", "income": 0, "expenses": 380, "balance": -380 },
-        { "date": "2026-04", "income": 0, "expenses": 410, "balance": -410 },
-        { "date": "2026-05", "income": 0, "expenses": 395, "balance": -395 },
-        { "date": "2026-06", "income": 0, "expenses": 430, "balance": -430 },
-        { "date": "2026-07", "income": 0, "expenses": 415, "balance": -415 },
-        { "date": "2026-08", "income": 0, "expenses": 450.75, "balance": -450.75 }
-      ],
-      "dailyTrend": [
-        { "date": "2026-08-06", "income": 0, "expenses": 61.25, "balance": -61.25 },
-        { "date": "2026-08-07", "income": 0, "expenses": 0, "balance": 0 },
-        { "date": "2026-08-08", "income": 0, "expenses": 0, "balance": 0 },
-        { "date": "2026-08-09", "income": 0, "expenses": 0, "balance": 0 },
-        { "date": "2026-08-10", "income": 0, "expenses": 85.25, "balance": -85.25 },
-        { "date": "2026-08-11", "income": 0, "expenses": 0, "balance": 0 },
-        { "date": "2026-08-12", "income": 0, "expenses": 85.25, "balance": -85.25 }
-      ]
-    }
-  }
-]
+  ]
 }

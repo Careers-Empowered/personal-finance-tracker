@@ -17,14 +17,16 @@
   color: var(--color-charcoal);
 }
 .dashboard-header h1 {
-  font-size: clamp(1.85rem, 3vw, 2.35rem);
+  font-size: clamp(2rem, 3vw, 2.35rem);
   font-weight: 700;
   line-height: 1.15;
 }
+
 .dashboard-header p,
 .section-header p {
   color: var(--color-text-muted);
-  font-size: 0.88rem;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 .dashboard-header p {
   margin-top: 6px;
@@ -163,9 +165,11 @@
 .section-header {
   margin-bottom: 13px;
 }
+
 .section-header h2 {
-  font-size: 1.18rem;
-  font-weight: 650;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 .section-header p {
   margin-top: 3px;
@@ -357,10 +361,10 @@
   min-width: 0;
 }
 .dashboard-detail-grid--wide {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
 }
-
 .date-range-container {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
@@ -451,20 +455,20 @@
 .recent-transaction__details strong {
   overflow: hidden;
   color: var(--color-charcoal);
-  font-size: 0.79rem;
+  font-size: 0.95rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .recent-transaction__details span {
   overflow: hidden;
   color: var(--color-text-muted);
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .recent-transaction__amount {
   font-family: var(--font-heading);
-  font-size: 0.82rem;
+  font-size: 0.95rem;
 }
 .recent-transaction__amount--income {
   color: #4d7960;
@@ -563,32 +567,44 @@
 .trend-tooltip text + text {
   font-weight: 700;
 }
+/* =========================================
+   Spending By Category
+   ========================================= */
 
 .category-chart {
-  padding: 18px;
-  min-height: 278px;
+  width: 100%;
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--color-divider);
+  border-radius: 12px;
+  background: #fff;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .category-pie-layout {
-  display: flex;
-  min-height: 240px;
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
   align-items: center;
-  gap: 28px;
+  gap: 36px;
+  min-height: 280px;
 }
 
+/* Pie */
+
 .category-pie {
+  width: min(260px, 100%);
+  aspect-ratio: 1;
   display: grid;
-  flex: 0 0 190px;
-  width: 190px;
-  height: 190px;
   place-items: center;
+  justify-self: center;
   border-radius: 50%;
 }
 
 .category-pie__center {
+  width: 62%;
+  aspect-ratio: 1;
   display: flex;
-  width: 136px;
-  height: 136px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -599,49 +615,139 @@
 
 .category-pie__center span {
   color: var(--color-text-muted);
-  font-size: 0.72rem;
+  font-size: 0.85rem;
 }
+
 .category-pie__center strong {
-  margin-top: 4px;
+  margin-top: 5px;
   color: var(--color-charcoal);
   font-family: var(--font-heading);
-  font-size: 1rem;
+  font-size: 1.3rem;
+  line-height: 1.1;
 }
+
+/* Legend */
+
 .category-legend {
   display: grid;
-  flex: 1;
-  gap: 8px;
+  width: 100%;
+  gap: 13px;
   min-width: 0;
 }
+
 .category-legend__item {
   display: grid;
-  grid-template-columns: 9px minmax(0, 1fr) auto auto;
+  grid-template-columns: 10px minmax(0, 1fr) auto 42px;
   align-items: center;
-  gap: 7px;
+  gap: 9px;
+  min-width: 0;
 }
+
 .category-legend__dot {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
 }
+
 .category-legend__name {
+  min-width: 0;
   overflow: hidden;
   color: var(--color-text-dark);
-  font-size: 0.76rem;
+  font-size: 0.95rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .category-legend__item strong {
   color: var(--color-charcoal);
   font-family: var(--font-heading);
-  font-size: 0.78rem;
+  font-size: 0.95rem;
+  white-space: nowrap;
 }
+
 .category-legend__item small {
-  min-width: 27px;
+  min-width: 42px;
   color: var(--color-text-muted);
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   text-align: right;
 }
+
+/* =========================================
+   Tablet
+   ========================================= */
+
+@media (max-width: 900px) {
+  .category-pie-layout {
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+    gap: 26px;
+  }
+
+  .category-pie {
+    width: 220px;
+  }
+}
+
+/* =========================================
+   Mobile
+   ========================================= */
+
+@media (max-width: 600px) {
+  .category-chart {
+    padding: 18px;
+  }
+
+  .category-pie-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-height: 0;
+  }
+
+  .category-pie {
+    width: 190px;
+  }
+
+  .category-legend {
+    width: 100%;
+  }
+
+  .category-legend__item {
+    grid-template-columns: 9px minmax(0, 1fr) auto 38px;
+    gap: 7px;
+  }
+
+  .category-legend__name {
+    font-size: 0.75rem;
+  }
+
+  .category-legend__item strong {
+    font-size: 0.76rem;
+  }
+
+  .category-legend__item small {
+    min-width: 38px;
+    font-size: 0.68rem;
+  }
+}
+
+/* =========================================
+   Very Small Screens
+   ========================================= */
+
+@media (max-width: 400px) {
+  .category-chart {
+    padding: 14px;
+  }
+
+  .category-pie {
+    width: 165px;
+  }
+
+  .category-legend {
+    gap: 10px;
+  }
+}
+
 .account-table-container {
   overflow-x: auto;
 }
@@ -918,4 +1024,669 @@
   color: #5d6268;
   font-size: 14px;
   line-height: 1.5;
+}/* =========================================
+   Daily Activity Calendar
+   ========================================= */
+
+.daily-activity-card {
+  padding: 16px;
+  border: 1px solid var(--color-divider);
+  border-radius: 14px;
+  background: #fff;
+}
+
+/* Main responsive layout */
+
+.daily-activity-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.75fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+/* =========================================
+   Calendar Panel
+   ========================================= */
+
+.daily-calendar-panel {
+  min-width: 0;
+}
+
+/* Header */
+
+.daily-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.daily-calendar-header strong {
+  min-width: 150px;
+  color: var(--color-charcoal);
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.daily-calendar-nav {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--color-divider);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-charcoal);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.daily-calendar-nav:hover {
+  border-color: var(--color-primary);
+  background: #fff8f0;
+  color: var(--color-primary-hover);
+}
+
+.daily-calendar-nav:active {
+  transform: scale(0.94);
+}
+
+/* =========================================
+   Weekdays
+   ========================================= */
+
+.daily-calendar-weekdays,
+.daily-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.daily-calendar-weekdays {
+  margin-bottom: 6px;
+}
+
+.daily-calendar-weekdays span {
+  padding: 6px 4px;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* =========================================
+   Calendar Grid
+   ========================================= */
+
+.daily-calendar-grid {
+  gap: 6px;
+}
+
+.daily-calendar-day {
+  position: relative;
+  min-width: 0;
+  min-height: 92px;
+  padding: 9px;
+  border: 1px solid var(--color-divider);
+  border-radius: 10px;
+  background: #fcfbfa;
+  color: var(--color-charcoal);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+button.daily-calendar-day:hover {
+  border-color: #dfc09d;
+  background: #fffaf5;
+  box-shadow: 0 3px 10px rgb(35 31 32 / 6%);
+}
+
+.daily-calendar-day--empty {
+  border-color: transparent !important;
+  background: transparent !important;
+  cursor: default;
+  box-shadow: none !important;
+}
+
+.daily-calendar-day--active {
+  background: #fffaf5;
+}
+
+.daily-calendar-day--today {
+  border: 2px solid var(--color-primary);
+  background: #fffaf5;
+}
+
+.daily-calendar-day--selected {
+  border-color: var(--color-primary);
+  background: #fff3e4;
+  box-shadow: 0 0 0 2px rgb(211 131 51 / 12%);
+}
+
+.daily-calendar-day__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.daily-calendar-day__number {
+  color: var(--color-charcoal);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.daily-calendar-day--selected .daily-calendar-day__number {
+  color: var(--color-primary-hover);
+}
+
+/* Today badge */
+
+.daily-calendar-day__today {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fff0db;
+  color: var(--color-primary-hover);
+  font-size: 0.58rem;
+  font-weight: 700;
+}
+
+/* Balance */
+
+.daily-calendar-day__balance {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.daily-calendar-day__balance--positive {
+  color: #4d7960;
+}
+
+.daily-calendar-day__balance--negative {
+  color: #b5524c;
+}
+
+/* Activity pills */
+
+.daily-calendar-day__activity {
+  display: grid;
+  gap: 4px;
+  margin-top: 7px;
+}
+
+.daily-calendar-pill {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-family: var(--font-heading);
+  font-size: 0.61rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.daily-calendar-pill--income {
+  background: #edf6ef;
+  color: #4d7960;
+}
+
+.daily-calendar-pill--expense {
+  background: #fff0e3;
+  color: var(--color-primary-hover);
+}
+
+.daily-calendar-no-data {
+  display: block;
+  margin-top: 18px;
+  color: #c9c3be;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* =========================================
+   Legend
+   ========================================= */
+
+.daily-activity-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 13px;
+  margin-top: 12px;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+}
+
+.daily-activity-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.daily-activity-legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.daily-activity-legend__income {
+  background: #5d8a68;
+}
+
+.daily-activity-legend__expense {
+  border-radius: 2px !important;
+  background: var(--color-primary);
+}
+
+.daily-activity-legend__today {
+  border: 1px solid var(--color-primary);
+  background: #fff;
+}
+
+/* =========================================
+   Transactions Panel
+   ========================================= */
+
+.daily-calendar-transactions {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-divider);
+  border-radius: 12px;
+  background: #fcfbfa;
+}
+
+/* Header */
+
+.daily-calendar-transactions__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-divider);
+  background: #fff;
+}
+
+.daily-calendar-transactions__header h3 {
+  color: var(--color-charcoal);
+  font-family: var(--font-heading);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.daily-calendar-transactions__header p {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+}
+
+.daily-calendar-transactions__close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid var(--color-divider);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.daily-calendar-transactions__close:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
+}
+
+/* Empty */
+
+.daily-calendar-transactions__empty {
+  display: grid;
+  min-height: 180px;
+  padding: 24px;
+  place-items: center;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+/* Placeholder before date selection */
+
+.daily-calendar-transactions__placeholder {
+  display: flex;
+  min-height: 100%;
+  padding: 28px 22px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.daily-calendar-transactions__placeholder-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 12px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f1eee9;
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+.daily-calendar-transactions__placeholder h3 {
+  color: var(--color-charcoal);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+}
+
+.daily-calendar-transactions__placeholder p {
+  max-width: 210px;
+  margin-top: 5px;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+/* Transaction list */
+
+.daily-calendar-transactions__list {
+  display: grid;
+}
+
+.daily-calendar-transaction {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.daily-calendar-transaction:last-child {
+  border-bottom: 0;
+}
+
+.daily-calendar-transaction__icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.daily-calendar-transaction__icon--income {
+  background: #e8f3eb;
+  color: #4d7960;
+}
+
+.daily-calendar-transaction__icon--expense {
+  background: #fff0e3;
+  color: var(--color-primary-hover);
+}
+
+.daily-calendar-transaction__details {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.daily-calendar-transaction__details strong {
+  overflow: hidden;
+  color: var(--color-charcoal);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.daily-calendar-transaction__details span {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.daily-calendar-transaction__amount {
+  font-family: var(--font-heading);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.daily-calendar-transaction__amount--income {
+  color: #4d7960;
+}
+
+.daily-calendar-transaction__amount--expense {
+  color: #b5524c;
+}
+
+/* =========================================
+   Daily Activity - Responsive Calendar
+   ========================================= */
+
+.daily-activity-card {
+  min-width: 0;
+}
+
+/* Desktop calendar + transaction details */
+.daily-activity-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  gap: 18px;
+  min-width: 0;
+}
+
+.daily-calendar {
+  min-width: 0;
+}
+
+/* =========================================
+   Tablet
+   ========================================= */
+
+@media (max-width: 900px) {
+  .daily-activity-content {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-calendar-grid {
+    gap: 6px;
+  }
+
+  .daily-calendar-day {
+    min-height: 78px;
+  }
+}
+
+/* =========================================
+   Mobile
+   ========================================= */
+
+@media (max-width: 600px) {
+  .daily-activity-card {
+    padding: 12px;
+    overflow: hidden;
+  }
+
+  .daily-activity-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .daily-calendar {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Header */
+
+  .daily-calendar-header {
+    display: grid;
+    grid-template-columns: 36px 1fr 36px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 14px;
+  }
+
+  .daily-calendar-header strong {
+    min-width: 0;
+    font-size: 0.95rem;
+  }
+
+  .daily-calendar-nav {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Weekdays */
+
+  .daily-calendar-weekdays {
+    width: 100%;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  .daily-calendar-weekdays span {
+    min-width: 0;
+    padding: 5px 0;
+    font-size: 0.62rem;
+    white-space: nowrap;
+  }
+
+  /* Calendar */
+
+  .daily-calendar-grid {
+    width: 100%;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .daily-calendar-day {
+    min-width: 0;
+    min-height: 68px;
+    padding: 6px;
+    border-radius: 8px;
+  }
+
+  .daily-calendar-day__top {
+    min-width: 0;
+  }
+
+  .daily-calendar-day__number {
+    font-size: 0.68rem;
+  }
+
+  .daily-calendar-day__balance {
+    display: block;
+    overflow: hidden;
+    margin-top: 3px;
+    font-size: 0.58rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .daily-calendar-day__activity {
+    gap: 3px;
+    margin-top: 6px;
+  }
+
+  .daily-calendar-pill {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    padding: 3px 4px;
+    border-radius: 5px;
+    font-size: 0.55rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .daily-calendar-pill span {
+    font-size: 0.55rem;
+  }
+
+  .daily-calendar-no-data {
+    margin-top: 8px;
+    font-size: 0.58rem;
+  }
+
+  /* Selected-date / transaction panel */
+
+  .daily-activity-details {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .daily-activity-legend {
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+}
+
+/* =========================================
+   Very Small Screens
+   ========================================= */
+
+@media (max-width: 400px) {
+  .daily-activity-card {
+    padding: 8px;
+  }
+
+  .daily-calendar-grid {
+    gap: 3px;
+  }
+
+  .daily-calendar-day {
+    min-height: 62px;
+    padding: 5px;
+  }
+
+  .daily-calendar-weekdays span {
+    font-size: 0.56rem;
+  }
+
+  .daily-calendar-day__number {
+    font-size: 0.62rem;
+  }
+
+  .daily-calendar-day__balance {
+    font-size: 0.52rem;
+  }
+
+  .daily-calendar-pill {
+    padding: 2px 3px;
+    font-size: 0.5rem;
+  }
+
+  .daily-calendar-pill span {
+    display: none;
+  }
 }
