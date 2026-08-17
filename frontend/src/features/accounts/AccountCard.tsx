@@ -5,11 +5,12 @@ interface AccountCardProps {
   account: Account;
   onEdit: (account: Account) => void;
   onAdjustBalance: (account: Account) => void;
+  onTransfer: (account: Account) => void;
   onSetPrimary: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onAdjustBalance, onSetPrimary, onDelete }) => {
+const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onAdjustBalance, onTransfer, onSetPrimary, onDelete }) => {
   const isNegative = account.balance < 0;
   const formattedBalance = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -33,6 +34,18 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit, onAdjustBala
         {formattedBalance}
       </div>
       <div className="account-actions">
+        <button 
+          className="icon-btn" 
+          onClick={() => onTransfer(account)}
+          title="Transfer Funds"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m16 3 4 4-4 4" />
+            <path d="M20 7H4" />
+            <path d="m8 21-4-4 4-4" />
+            <path d="M4 17h16" />
+          </svg>
+        </button>
         <button 
           className="icon-btn" 
           onClick={() => onEdit(account)}
