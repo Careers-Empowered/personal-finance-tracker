@@ -173,10 +173,11 @@ function ImportValidation({
   ).length;
 
   /*
-   * Category is OPTIONAL.
+   * Category is REQUIRED (NOT NULL in the database).
    *
-   * Therefore, a missing category does not prevent
-   * the user from continuing.
+   * A row missing a category is therefore not valid, and
+   * Continue stays disabled until every non-excluded row
+   * either has a category or is excluded.
    */
   const canContinue = invalidCount === 0;
 
@@ -355,6 +356,10 @@ function ImportValidation({
 
   /**
    * Accept the suggested category.
+   *
+   * Accepting a suggestion also revalidates the row, since a
+   * category is required — a row that only lacked a category
+   * becomes valid once one is applied.
    */
   const handleAcceptCategory = (
     rowNumber: number
@@ -372,12 +377,18 @@ function ImportValidation({
           return row;
         }
 
+        const updatedData = {
+          ...row.data,
+          category: suggestion.category,
+        };
+
+        const revalidated =
+          validateTransactions([updatedData])[0];
+
         return {
-          ...row,
-          data: {
-            ...row.data,
-            category: suggestion.category,
-          },
+          ...revalidated,
+          row: rowNumber,
+          excluded: row.excluded,
         };
       })
     );
@@ -413,8 +424,8 @@ function ImportValidation({
   /**
    * Save manually entered category.
    *
-   * Category remains optional overall.
-   * But if the user enters one, it is saved.
+   * Category is required overall, so saving a non-empty
+   * category also revalidates the row.
    */
   const handleSaveCategory = (
     rowNumber: number
@@ -436,12 +447,18 @@ function ImportValidation({
           return row;
         }
 
+        const updatedData = {
+          ...row.data,
+          category,
+        };
+
+        const revalidated =
+          validateTransactions([updatedData])[0];
+
         return {
-          ...row,
-          data: {
-            ...row.data,
-            category,
-          },
+          ...revalidated,
+          row: rowNumber,
+          excluded: row.excluded,
         };
       })
     );
@@ -460,10 +477,8 @@ function ImportValidation({
   /**
    * Continue with all valid, non-excluded transactions.
    *
-   * CATEGORY IS OPTIONAL.
-   *
-   * Transactions without categories are still
-   * passed to the next stage.
+   * Category is required, so `row.isValid` already accounts
+   * for it — no transaction without a category can pass here.
    */
   const handleContinue = () => {
     const validRows = validatedRows.filter(
@@ -567,6 +582,24 @@ function ImportValidation({
           const categoryAccepted =
             acceptedCategories[row.row];
 
+          /*
+           * Category is required (NOT NULL in the DB), but a row
+           * whose ONLY problem is a missing category shouldn't be
+           * treated the same as a row with genuinely malformed
+           * data (bad date, missing account, etc). It just needs
+           * the user to pick a category — not "fix" anything.
+           */
+          const nonCategoryErrors = row.errors.filter(
+            (error) => error.field !== "category"
+          );
+
+          const needsCategoryOnly =
+            !row.isValid &&
+            nonCategoryErrors.length === 0 &&
+            row.errors.some(
+              (error) => error.field === "category"
+            );
+
           return (
             <div
               key={row.row}
@@ -580,6 +613,8 @@ function ImportValidation({
                     ? "#f8f9fa"
                     : row.isValid
                     ? "#ffffff"
+                    : needsCategoryOnly
+                    ? "#fffaf0"
                     : "#fff8f7",
               }}
             >
@@ -615,6 +650,16 @@ function ImportValidation({
                     }}
                   >
                     ✓ Valid
+                  </span>
+                ) : needsCategoryOnly ? (
+                  <span
+                    style={{
+                      color: "#b26a00",
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    ⓘ Category needed
                   </span>
                 ) : (
                   <span
@@ -677,17 +722,21 @@ function ImportValidation({
                     />
 
                     {/*
-                     * Category is optional.
-                     *
                      * Categorize button appears only when:
                      *
-                     * - Transaction is valid
+                     * - Transaction has no OTHER validation errors
+                     *   (bad date, missing account, etc)
                      * - Transaction is not excluded
                      * - Category is empty
                      * - No suggestion currently exists
                      * - User is not manually editing category
+                     *
+                     * Note: this intentionally does NOT require
+                     * row.isValid, since a category-only issue
+                     * makes row.isValid false but should still
+                     * show the Categorize action.
                      */}
-                    {row.isValid &&
+                    {nonCategoryErrors.length === 0 &&
                       !row.excluded &&
                       !row.data.category?.trim() &&
                       !suggestion &&
@@ -949,6 +998,7 @@ function ImportValidation({
                   <EditInput
                     label="Date"
                     value={row.data.date}
+                    placeholder="YYYY-MM-DD"
                     onChange={(value) =>
                       updateField(
                         row.row,
@@ -1038,6 +1088,7 @@ function ImportValidation({
                     value={
                       row.data.category || ""
                     }
+                    placeholder="e.g. Food, Salary"
                     onChange={(value) =>
                       updateField(
                         row.row,
@@ -1049,9 +1100,9 @@ function ImportValidation({
                 </div>
               )}
 
-              {/* Validation Errors */}
-              {!row.isValid &&
-                !row.excluded && (
+              {/* Validation Errors (excludes category — that has its own UI above) */}
+              {!row.excluded &&
+                nonCategoryErrors.length > 0 && (
                   <div
                     style={{
                       marginTop: "1rem",
@@ -1061,7 +1112,7 @@ function ImportValidation({
                         "#fff1f0",
                     }}
                   >
-                    {row.errors.map(
+                    {nonCategoryErrors.map(
                       (error, index) => (
                         <div
                           key={index}
@@ -1091,34 +1142,41 @@ function ImportValidation({
                       marginTop: "1rem",
                     }}
                   >
-                    {editingRow ===
-                    row.row ? (
-                      <button
-                        type="button"
-                        style={
-                          primaryButtonStyle
-                        }
-                        onClick={() =>
-                          saveFix(row.row)
-                        }
-                      >
-                        Save Fix
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        style={
-                          secondaryButtonStyle
-                        }
-                        onClick={() =>
-                          setEditingRow(
-                            row.row
-                          )
-                        }
-                      >
-                        Fix
-                      </button>
-                    )}
+                    {/*
+                     * The "Fix" flow is only for rows with
+                     * genuinely malformed fields. A row that
+                     * only needs a category is resolved via
+                     * the Categorize / Accept / Edit controls
+                     * above, not this generic edit form.
+                     */}
+                    {nonCategoryErrors.length > 0 &&
+                      (editingRow === row.row ? (
+                        <button
+                          type="button"
+                          style={
+                            primaryButtonStyle
+                          }
+                          onClick={() =>
+                            saveFix(row.row)
+                          }
+                        >
+                          Save Fix
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          style={
+                            secondaryButtonStyle
+                          }
+                          onClick={() =>
+                            setEditingRow(
+                              row.row
+                            )
+                          }
+                        >
+                          Fix
+                        </button>
+                      ))}
 
                     <button
                       type="button"
@@ -1268,11 +1326,13 @@ function EditInput({
   label,
   value,
   type = "text",
+  placeholder,
   onChange,
 }: {
   label: string;
   value: string;
   type?: string;
+  placeholder?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -1293,6 +1353,7 @@ function EditInput({
       <input
         type={type}
         value={value}
+        placeholder={placeholder}
         onChange={(event) =>
           onChange(event.target.value)
         }
