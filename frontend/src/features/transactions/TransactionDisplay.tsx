@@ -3,6 +3,7 @@ import { Transaction, CreateTransactionInput } from './types';
 import { Account } from '../accounts/types';
 import TransactionEditDelete from './TransactionEditDelete';
 import { getCurrencySymbol } from '../../shared/utils/currencyUtils';
+import './TransactionDisplay.css';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -18,12 +19,23 @@ const TransactionList: React.FC<TransactionListProps> = ({
   onDelete,
 }) => {
   const getAccountName = (accountId: string) => {
-    const account = accounts.find((account) => account.id === accountId);
+    const account = accounts.find(
+      (account) => account.id === accountId
+    );
+
     return account?.name ?? 'Unknown Account';
   };
 
+  const getAccount = (transaction: Transaction): Account | undefined => {
+    return accounts.find(
+      (account) => account.id === transaction.accountId
+    );
+  };
+
   const formatDate = (date: string) => {
-    const parsedDate = new Date(`${date}T00:00:00`);
+    const parsedDate = new Date(
+      `${date.split('T')[0]}T00:00:00`
+    );
 
     return parsedDate.toLocaleDateString('en-IN', {
       day: '2-digit',
@@ -39,6 +51,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
     });
   };
 
+  const getCategoryName = (transaction: Transaction) => {
+    return (
+      transaction.category?.name?.trim() ||
+      transaction.categoryId?.trim() ||
+      'Uncategorized'
+    );
+  };
+
   if (transactions.length === 0) {
     return (
       <div className="transactions-empty-state">
@@ -46,7 +66,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
           <span>₹</span>
         </div>
 
-        <h3>No transactions yet</h3>
+        <h3>No transactions found</h3>
 
         <p>
           Your added income and expenses will appear here.
@@ -59,12 +79,19 @@ const TransactionList: React.FC<TransactionListProps> = ({
     <div className="transaction-list">
       {transactions.map((transaction, index) => {
         const isIncome = transaction.type === 'INCOME';
-        const account = accounts.find((acc) => acc.id === transaction.accountId);
-        const currencySymbol = getCurrencySymbol(account?.currency || (transaction as any).account?.currency);
+
+        const account = getAccount(transaction);
+
+        const currencySymbol = getCurrencySymbol(
+          account?.currency
+        );
 
         return (
-          <div className="transaction-item" key={`${transaction.date}-${index}`}>
-            {/* Left */}
+          <div
+            className="transaction-item"
+            key={transaction.id || `${transaction.date}-${index}`}
+          >
+            {/* Left section */}
             <div className="transaction-main">
               <div
                 className={`transaction-icon ${
@@ -82,31 +109,43 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 </div>
 
                 <div className="transaction-meta">
-                  <span>{formatDate(transaction.date)}</span>
+                  <span>
+                    {formatDate(transaction.date)}
+                  </span>
 
-                  <span className="transaction-meta-dot">•</span>
+                  <span className="transaction-meta-dot">
+                    •
+                  </span>
 
                   <span>
-                    {transaction.category?.name || transaction.categoryId?.trim() || 'Uncategorized'}
+                    {getCategoryName(transaction)}
                   </span>
 
                   {transaction.subcategory?.name && (
                     <>
-                      <span className="transaction-meta-dot">•</span>
-                      <span>{transaction.subcategory.name}</span>
+                      <span className="transaction-meta-dot">
+                        •
+                      </span>
+
+                      <span>
+                        {transaction.subcategory.name}
+                      </span>
                     </>
                   )}
 
-                  <span className="transaction-meta-dot">•</span>
+                  <span className="transaction-meta-dot">
+                    •
+                  </span>
 
                   <span>
-                    {transaction.account?.name || getAccountName(transaction.accountId)}
+                    {account?.name ||
+                      getAccountName(transaction.accountId)}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Right */}
+            {/* Right section */}
             <div className="transaction-right">
               <div
                 className={`transaction-amount ${
@@ -115,11 +154,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     : 'transaction-expense-amount'
                 }`}
               >
-                {isIncome ? '+' : '-'}{currencySymbol}
+                {isIncome ? '+' : '-'}
+                {currencySymbol}
                 {formatAmount(transaction.amount)}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="transaction-actions">
                 <span
                   className={`transaction-type-badge ${
                     isIncome
