@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Transaction, CreateTransactionInput, TransactionType } from './types';
-import { Account } from '../accounts/types';
+import { Account } from '../accounts/types/types';
 import { AccountSelector, CategorySelector } from './TransactionModal';
 
 interface TransactionEditFormProps {

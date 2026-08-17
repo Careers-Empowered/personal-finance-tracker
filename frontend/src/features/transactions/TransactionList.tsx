@@ -1,6 +1,6 @@
 import React from 'react';
 import { CreateTransactionInput } from './types';
-import { Account } from '../accounts/types';
+import { Account } from '../accounts/types/types';
 import TransactionEditDelete from './TransactionEditDelete';
 
 interface TransactionListProps {

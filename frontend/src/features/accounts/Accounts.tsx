@@ -1,19 +1,19 @@
-import React, { useState } from "react";
-import { Account } from "./types";
-import mockData from "./mockData.json";
-import AccountCard from "./AccountCard";
-import AccountModal from "./AccountModal";
-import BalanceCorrectionModal from "./BalanceCorrectionModal";
-import PrimaryCurrencyModal from "./PrimaryCurrencyModal";
-import TransferModal from "./TransferModal";
-import { convertCurrency } from "./currencyUtils";
-import { useExchangeRates } from "./useExchangeRates"; // 👈 Import live rates hook
-import "./Accounts.css";
+import React, { useState, useEffect } from "react";
+import { Account } from "./types/types";
+import AccountCard from "./components/AccountCard";
+import AccountModal from "./components/AccountModal";
+import BalanceCorrectionModal from "./components/BalanceCorrectionModal";
+import PrimaryCurrencyModal from "./components/PrimaryCurrencyModal";
+import TransferModal from "./components/TransferModal";
+import { convertCurrency } from "./utils/currencyUtils";
+import { useExchangeRates } from "./hooks/useExchangeRates";
+import { accountApi } from "./api/account.api";
 
 const Accounts: React.FC = () => {
-  const [accounts, setAccounts] = useState<Account[]>(mockData as Account[]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [primaryCurrency, setPrimaryCurrency] = useState("USD");
-  const { rates, loading } = useExchangeRates(); // 👈 Live rates from API
+  const { rates, loading } = useExchangeRates(); 
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
 
   // Modals state
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -26,6 +26,22 @@ const Accounts: React.FC = () => {
   const [transferSourceAccount, setTransferSourceAccount] = useState<
     Account | undefined
   >(undefined);
+
+  const fetchAccounts = async () => {
+    try {
+      setIsLoadingAccounts(true);
+      const data = await accountApi.getAccounts();
+      setAccounts(data);
+    } catch (error) {
+      console.error("Failed to load accounts", error);
+    } finally {
+      setIsLoadingAccounts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
 
   // Dynamic Total Balance calculation using LIVE API rates
   const totalBalance = accounts.reduce((sum, account) => {
@@ -58,19 +74,17 @@ const Accounts: React.FC = () => {
     setIsTransferModalOpen(true);
   };
 
-  const handleSaveAccount = (accountData: Omit<Account, "id"> | Account) => {
-    if ("id" in accountData) {
-      setAccounts((prev) =>
-        prev.map((acc) =>
-          acc.id === accountData.id ? (accountData as Account) : acc,
-        ),
-      );
-    } else {
-      const newAccount: Account = {
-        ...accountData,
-        id: Math.random().toString(36).substr(2, 9),
-      };
-      setAccounts((prev) => [...prev, newAccount]);
+  const handleSaveAccount = async (accountData: Omit<Account, "id" | "createdAt" | "updatedAt"> | Account) => {
+    try {
+      if ("id" in accountData) {
+        await accountApi.updateAccount(accountData.id, accountData);
+      } else {
+        await accountApi.createAccount(accountData);
+      }
+      await fetchAccounts();
+    } catch (error) {
+      console.error("Failed to save account", error);
+      alert("Failed to save account");
     }
   };
 
@@ -79,57 +93,56 @@ const Accounts: React.FC = () => {
     setIsBalanceModalOpen(true);
   };
 
-  const handleSaveBalance = (id: string, newBalance: number) => {
-    setAccounts((prev) =>
-      prev.map((acc) =>
-        acc.id === id ? { ...acc, balance: newBalance } : acc,
-      ),
-    );
+  const handleSaveBalance = async (id: string, newBalance: number) => {
+    try {
+      await accountApi.updateBalance(id, newBalance);
+      await fetchAccounts();
+    } catch (error) {
+      console.error("Failed to update balance", error);
+      alert("Failed to update balance");
+    }
   };
 
-  const handleTransfer = (
+  const handleTransfer = async (
     sourceId: string,
     destId: string,
     sourceAmount: number,
     convertedAmount: number
   ) => {
-    setAccounts((prev) =>
-      prev.map((acc) => {
-        if (acc.id === sourceId) {
-          const newBalance = Math.round((acc.balance - sourceAmount) * 100) / 100;
-          return {
-            ...acc,
-            balance: newBalance,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        if (acc.id === destId) {
-          const newBalance = Math.round((acc.balance + convertedAmount) * 100) / 100;
-          return {
-            ...acc,
-            balance: newBalance,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        return acc;
-      })
-    );
-  };
-
-  const handleDeleteAccount = (id: string) => {
-    if (window.confirm("Are you sure you want to delete this account?")) {
-      setAccounts((prev) => prev.filter((acc) => acc.id !== id));
+    try {
+      await accountApi.transferBalance(sourceId, destId, sourceAmount, convertedAmount);
+      await fetchAccounts();
+    } catch (error) {
+      console.error("Failed to transfer balance", error);
+      alert("Failed to transfer balance");
     }
   };
 
-  const handleSetPrimary = (id: string) => {
-    setAccounts((prev) =>
-      prev.map((acc) => ({
-        ...acc,
-        isPrimary: acc.id === id,
-      })),
-    );
+  const handleDeleteAccount = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this account?")) {
+      try {
+        await accountApi.deleteAccount(id);
+        await fetchAccounts();
+      } catch (error) {
+        console.error("Failed to delete account", error);
+        alert("Failed to delete account");
+      }
+    }
   };
+
+  const handleSetPrimary = async (id: string) => {
+    try {
+      await accountApi.updateAccount(id, { isPrimary: true });
+      await fetchAccounts();
+    } catch (error) {
+      console.error("Failed to set primary account", error);
+      alert("Failed to set primary account");
+    }
+  };
+
+  if (isLoadingAccounts) {
+    return <div className="accounts-container">Loading accounts...</div>;
+  }
 
   return (
     <div className="accounts-container">
@@ -177,6 +190,11 @@ const Accounts: React.FC = () => {
             onDelete={handleDeleteAccount}
           />
         ))}
+        {accounts.length === 0 && (
+          <div style={{ color: "var(--color-text-muted)" }}>
+            No accounts found. Create one to get started.
+          </div>
+        )}
       </div>
 
       {/* Modals */}
@@ -185,7 +203,7 @@ const Accounts: React.FC = () => {
         onClose={() => setIsAccountModalOpen(false)}
         onSave={handleSaveAccount}
         accountToEdit={selectedAccount}
-        rates={rates} // 👈 Pass live rates to modal for accurate conversion
+        rates={rates}
       />
 
       <BalanceCorrectionModal
