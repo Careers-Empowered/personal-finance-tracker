@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import RecentTransactions from "../features/dashboard/components/RecentTransactions";
+import RecentTransactions from "../features/dashboard/components/Transactions";
 import type {
   Account,
   Transaction,

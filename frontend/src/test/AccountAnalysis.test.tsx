@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import AccountAnalysis from "../features/dashboard/components/AccountAnalysis";
+import AccountAnalysis from "../features/dashboard/components/FinancialInsights";
 
 import type {
   Account,

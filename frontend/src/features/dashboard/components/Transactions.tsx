@@ -37,8 +37,8 @@ const RecentTransactions = ({
     <section className="dashboard-section">
       <div className="section-header">
         <div>
-          <h2>Recent transactions</h2>
-          <p>Your latest financial activity</p>
+          <h2>Transactions</h2>
+          <p>Your financial activity</p>
         </div>
       </div>
 
