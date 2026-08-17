@@ -6,7 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
 // =========================
 // ENUMS
 // =========================
@@ -39,7 +38,6 @@ enum SuggestionStatus {
   OVERRIDDEN
 }
 
-
 // =========================
 // USER
 // =========================
@@ -61,7 +59,6 @@ model User {
   @@map("users")
 }
 
-
 // =========================
 // SESSION
 // =========================
@@ -79,14 +76,13 @@ model Session {
   @@map("sessions")
 }
 
-
 // =========================
 // ACCOUNT
 // =========================
 
 model Account {
-  id        String  @id @default(uuid()) @db.Uuid
-  userId    String  @map("user_id") @db.Uuid
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
   name      String
   currency  String   @default("INR")
   balance   Decimal  @default(0) @db.Decimal(15, 2)
@@ -94,13 +90,12 @@ model Account {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
   @@index([userId])
   @@map("accounts")
 }
-
 
 // =========================
 // CATEGORY
@@ -115,7 +110,7 @@ model Category {
   color     String?
   isDefault Boolean      @default(false) @map("is_default")
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
   subcategories       Subcategory[]
   transactions        Transaction[]
   categorizationRules CategorizationRule[]
@@ -126,19 +121,18 @@ model Category {
   @@map("categories")
 }
 
-
 // =========================
 // SUBCATEGORY
 // =========================
 
 model Subcategory {
-  id        String  @id @default(uuid()) @db.Uuid
-  categoryId String @map("category_id") @db.Uuid
-  userId    String? @map("user_id") @db.Uuid
-  name      String
-  icon      String?
-  color     String?
-  isDefault Boolean @default(false) @map("is_default")
+  id         String  @id @default(uuid()) @db.Uuid
+  categoryId String  @map("category_id") @db.Uuid
+  userId     String? @map("user_id") @db.Uuid
+  name       String
+  icon       String?
+  color      String?
+  isDefault  Boolean @default(false) @map("is_default")
 
   category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -148,7 +142,6 @@ model Subcategory {
   @@index([userId])
   @@map("subcategories")
 }
-
 
 // =========================
 // TRANSACTION
@@ -166,10 +159,10 @@ model Transaction {
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
 
-  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  subcategory  Subcategory?  @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
-  suggestions  Suggestion[]
+  account     Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory Subcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  suggestions Suggestion[]
 
   @@index([accountId])
   @@index([categoryId])
@@ -178,7 +171,6 @@ model Transaction {
   @@index([type])
   @@map("transactions")
 }
-
 
 // =========================
 // IMPORT
@@ -201,28 +193,26 @@ model Import {
   @@map("imports")
 }
 
-
 // =========================
 // CATEGORIZATION RULE
 // =========================
 
 model CategorizationRule {
-  id          String @id @default(uuid()) @db.Uuid
-  userId      String @map("user_id") @db.Uuid
-  categoryId  String @map("category_id") @db.Uuid
-  field       String
-  condition   String
-  value       String
-  createdAt   DateTime @default(now()) @map("created_at")
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  field      String
+  condition  String
+  value      String
+  createdAt  DateTime @default(now()) @map("created_at")
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([categoryId])
   @@map("categorization_rules")
 }
-
 
 // =========================
 // CATEGORY SUGGESTION

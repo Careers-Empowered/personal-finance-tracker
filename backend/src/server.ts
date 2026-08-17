@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
-
 import categoryRoutes from "./api/category.routes";
+import categoryMatcherRoutes from "./api/category-matcher.routes";
 
 const app = express();
 
@@ -19,10 +19,21 @@ app.get("/health", (_req, res) => {
   });
 });
 
-app.use("/api/categories", categoryRoutes);
+app.use(
+  "/api/categories",
+  categoryRoutes,
+);
 
-const PORT = Number(process.env.PORT) || 3000;
+app.use(
+  "/api/category-matcher",
+  categoryMatcherRoutes,
+);
+
+const PORT =
+  Number(process.env.PORT) || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Backend API running on http://localhost:${PORT}`);
+  console.log(
+    `Backend API running on http://localhost:${PORT}`,
+  );
 });
