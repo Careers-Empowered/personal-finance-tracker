@@ -5,6 +5,7 @@ import AccountCard from "./AccountCard";
 import AccountModal from "./AccountModal";
 import BalanceCorrectionModal from "./BalanceCorrectionModal";
 import PrimaryCurrencyModal from "./PrimaryCurrencyModal";
+import TransferModal from "./TransferModal";
 import { convertCurrency } from "./currencyUtils";
 import { useExchangeRates } from "./useExchangeRates"; // 👈 Import live rates hook
 import "./Accounts.css";
@@ -18,9 +19,13 @@ const Accounts: React.FC = () => {
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | undefined>(
     undefined,
   );
+  const [transferSourceAccount, setTransferSourceAccount] = useState<
+    Account | undefined
+  >(undefined);
 
   // Dynamic Total Balance calculation using LIVE API rates
   const totalBalance = accounts.reduce((sum, account) => {
@@ -46,6 +51,11 @@ const Accounts: React.FC = () => {
   const handleOpenEditModal = (account: Account) => {
     setSelectedAccount(account);
     setIsAccountModalOpen(true);
+  };
+
+  const handleOpenTransferModal = (account: Account) => {
+    setTransferSourceAccount(account);
+    setIsTransferModalOpen(true);
   };
 
   const handleSaveAccount = (accountData: Omit<Account, "id"> | Account) => {
@@ -74,6 +84,35 @@ const Accounts: React.FC = () => {
       prev.map((acc) =>
         acc.id === id ? { ...acc, balance: newBalance } : acc,
       ),
+    );
+  };
+
+  const handleTransfer = (
+    sourceId: string,
+    destId: string,
+    sourceAmount: number,
+    convertedAmount: number
+  ) => {
+    setAccounts((prev) =>
+      prev.map((acc) => {
+        if (acc.id === sourceId) {
+          const newBalance = Math.round((acc.balance - sourceAmount) * 100) / 100;
+          return {
+            ...acc,
+            balance: newBalance,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        if (acc.id === destId) {
+          const newBalance = Math.round((acc.balance + convertedAmount) * 100) / 100;
+          return {
+            ...acc,
+            balance: newBalance,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return acc;
+      })
     );
   };
 
@@ -133,6 +172,7 @@ const Accounts: React.FC = () => {
             account={account}
             onEdit={handleOpenEditModal}
             onAdjustBalance={handleOpenAdjustBalance}
+            onTransfer={handleOpenTransferModal}
             onSetPrimary={handleSetPrimary}
             onDelete={handleDeleteAccount}
           />
@@ -160,6 +200,15 @@ const Accounts: React.FC = () => {
         onClose={() => setIsCurrencyModalOpen(false)}
         currentCurrency={primaryCurrency}
         onSave={setPrimaryCurrency}
+      />
+
+      <TransferModal
+        isOpen={isTransferModalOpen}
+        onClose={() => setIsTransferModalOpen(false)}
+        onTransfer={handleTransfer}
+        sourceAccount={transferSourceAccount}
+        accounts={accounts}
+        rates={rates}
       />
     </div>
   );
