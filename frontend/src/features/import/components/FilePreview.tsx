@@ -286,6 +286,18 @@ function FilePreview({
 
     const transactions = convertToTransactions();
 
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      if (Number.isNaN(t.amount)) {
+        setError(`Row ${i + 1} has an invalid amount. The column mapped to 'Amount' must contain numbers.`);
+        return;
+      }
+      if (!t.date || !/\d/.test(t.date)) {
+        setError(`Row ${i + 1} has an invalid date. The column mapped to 'Date' must contain valid dates.`);
+        return;
+      }
+    }
+
     onConfirmMapping(transactions);
   };
 
@@ -393,14 +405,18 @@ function FilePreview({
                 Select column...
               </option>
 
-              {headers.map((header, index) => (
-                <option
-                  key={`${header}-${index}`}
-                  value={header}
-                >
-                  {header}
-                </option>
-              ))}
+              {headers.map((header, index) => {
+                const isMappedElsewhere = Object.values(mapping).includes(header) && mapping[field] !== header;
+                return (
+                  <option
+                    key={`${header}-${index}`}
+                    value={header}
+                    disabled={isMappedElsewhere}
+                  >
+                    {header} {isMappedElsewhere ? "(Already mapped)" : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
         ))}
