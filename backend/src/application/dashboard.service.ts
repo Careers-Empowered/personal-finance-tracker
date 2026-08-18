@@ -2,13 +2,17 @@ import { dashboardRepository } from "../repositories/dashboard.repository";
 import type {
     DashboardResponse,
 } from "../domain/dashboard/dashboard.types";
-
+import { currencyService } from "./currency.service";
 type DashboardTransaction = Awaited<
     ReturnType<typeof dashboardRepository.findTransactions>
 >[number];
 
 const toNumber = (value: unknown): number => {
     return Number(value);
+};
+
+const roundCurrency = (value: number): number => {
+    return Math.round(value * 100) / 100;
 };
 
 const getTransactionIncome = (
@@ -47,26 +51,45 @@ export const dashboardService = {
                 userId,
             );
 
-        let selectedAccount = null;
+        const selectedAccount = accountId
+            ? accounts.find(
+                (account) => account.id === accountId,
+            ) ?? null
+            : null;
 
-        if (accountId) {
-            selectedAccount =
-                await dashboardRepository.findAccountById(
-                    userId,
-                    accountId,
-                );
-
-            if (!selectedAccount) {
-                throw new Error("ACCOUNT_NOT_FOUND");
-            }
+        if (accountId && !selectedAccount) {
+            throw new Error("ACCOUNT_NOT_FOUND");
         }
+
+        const baseCurrency =
+            selectedAccount?.currency ?? "INR";
 
         const transactions =
             await dashboardRepository.findTransactions(
                 userId,
                 {
                     accountId,
+                    startDate,
+                    endDate,
                 },
+            );
+
+        const convertedTransactions =
+            await Promise.all(
+                transactions.map(async (transaction) => {
+                    const amount =
+                        roundCurrency(await currencyService.convert(
+                            toNumber(transaction.amount),
+                            transaction.account.currency,
+                            baseCurrency,
+                        ),
+                        );
+
+                    return {
+                        transaction,
+                        amount,
+                    };
+                }),
             );
 
         /*
@@ -75,15 +98,21 @@ export const dashboardService = {
          * -----------------------------------------
          */
 
-        const income = transactions.reduce(
-            (total, transaction) =>
-                total + getTransactionIncome(transaction),
+        const income = convertedTransactions.reduce(
+            (total, item) =>
+                total +
+                (item.transaction.type === "INCOME"
+                    ? item.amount
+                    : 0),
             0,
         );
 
-        const expenses = transactions.reduce(
-            (total, transaction) =>
-                total + getTransactionExpense(transaction),
+        const expenses = convertedTransactions.reduce(
+            (total, item) =>
+                total +
+                (item.transaction.type === "EXPENSE"
+                    ? item.amount
+                    : 0),
             0,
         );
 
@@ -110,7 +139,10 @@ export const dashboardService = {
             }
         >();
 
-        transactions.forEach((transaction) => {
+        convertedTransactions.forEach((item) => {
+            const transaction = item.transaction;
+            const amount = item.amount;
+
             const date = getDateKey(
                 transaction.date,
             );
@@ -120,11 +152,13 @@ export const dashboardService = {
                 expenses: 0,
             };
 
-            current.income +=
-                getTransactionIncome(transaction);
+            if (transaction.type === "INCOME") {
+                current.income += amount;
+            }
 
-            current.expenses +=
-                getTransactionExpense(transaction);
+            if (transaction.type === "EXPENSE") {
+                current.expenses += amount;
+            }
 
             dailyMap.set(date, current);
         });
@@ -157,21 +191,27 @@ export const dashboardService = {
             }
         >();
 
-        transactions.forEach((transaction) => {
+        convertedTransactions.forEach((item) => {
+            const transaction = item.transaction;
+            const amount = item.amount;
+
             const month = getMonthKey(
                 transaction.date,
             );
 
-            const current = monthlyMap.get(month) ?? {
-                income: 0,
-                expenses: 0,
-            };
+            const current =
+                monthlyMap.get(month) ?? {
+                    income: 0,
+                    expenses: 0,
+                };
 
-            current.income +=
-                getTransactionIncome(transaction);
+            if (transaction.type === "INCOME") {
+                current.income += amount;
+            }
 
-            current.expenses +=
-                getTransactionExpense(transaction);
+            if (transaction.type === "EXPENSE") {
+                current.expenses += amount;
+            }
 
             monthlyMap.set(month, current);
         });
@@ -201,7 +241,9 @@ export const dashboardService = {
             number
         >();
 
-        transactions.forEach((transaction) => {
+        convertedTransactions.forEach((item) => {
+            const transaction = item.transaction;
+
             if (
                 transaction.type !== "EXPENSE" ||
                 !transaction.category
@@ -215,7 +257,7 @@ export const dashboardService = {
             categoryMap.set(
                 category,
                 (categoryMap.get(category) ?? 0) +
-                toNumber(transaction.amount),
+                item.amount,
             );
         });
 
@@ -237,13 +279,30 @@ export const dashboardService = {
          */
 
         const mappedAccounts =
-            accounts.map((account) => ({
-                id: account.id,
-                name: account.name.trim(),
-                currency: account.currency,
-                balance: toNumber(account.balance),
-                isPrimary: account.isPrimary,
-            }));
+            await Promise.all(
+                accounts.map(async (account) => {
+                    const balance =
+                        toNumber(account.balance);
+
+                    const convertedBalance =
+                        roundCurrency(
+                            await currencyService.convert(
+                                balance,
+                                account.currency,
+                                baseCurrency,
+                            ),
+                        );
+
+                    return {
+                        id: account.id,
+                        name: account.name.trim(),
+                        currency: account.currency,
+                        balance,
+                        convertedBalance,
+                        isPrimary: account.isPrimary,
+                    };
+                }),
+            );
 
         const mappedSelectedAccount =
             selectedAccount
@@ -294,6 +353,7 @@ export const dashboardService = {
          */
 
         return {
+            baseCurrency,
             accounts: mappedAccounts,
 
             selectedAccount:
@@ -313,35 +373,35 @@ export const dashboardService = {
     },
 
     async getTransactionsForDate(
-  userId: string,
-  date: Date,
-  accountId?: string,
-) {
-  const transactions =
-    await dashboardRepository.findTransactionsForDate(
-      userId,
-      date,
-      accountId,
-    );
+        userId: string,
+        date: Date,
+        accountId?: string,
+    ) {
+        const transactions =
+            await dashboardRepository.findTransactionsForDate(
+                userId,
+                date,
+                accountId,
+            );
 
-  return transactions.map((transaction) => ({
-    id: transaction.id,
-    accountId: transaction.accountId,
-    date: transaction.date.toISOString(),
-    title: transaction.Title,
-    category:
-      transaction.category?.name ??
-      "Uncategorized",
-    subcategory:
-      transaction.subcategory?.name ??
-      "Uncategorized",
-    amount: toNumber(transaction.amount),
-    type:
-      transaction.type === "INCOME"
-        ? ("income" as const)
-        : ("expense" as const),
-    currency:
-      transaction.account.currency,
-  }));
-},
+        return transactions.map((transaction) => ({
+            id: transaction.id,
+            accountId: transaction.accountId,
+            date: transaction.date.toISOString(),
+            title: transaction.Title,
+            category:
+                transaction.category?.name ??
+                "Uncategorized",
+            subcategory:
+                transaction.subcategory?.name ??
+                "Uncategorized",
+            amount: toNumber(transaction.amount),
+            type:
+                transaction.type === "INCOME"
+                    ? ("income" as const)
+                    : ("expense" as const),
+            currency:
+                transaction.account.currency,
+        }));
+    },
 };

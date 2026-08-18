@@ -1,185 +1,213 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+
 import DailySummary from "../features/dashboard/components/DailySummary";
-import type { TrendDataPoint } from "../types/dashboard";
+
+import type {
+  Account,
+  Transaction,
+  TrendDataPoint,
+} from "../types/dashboard";
+
+const account: Account = {
+  id: "account-1",
+  name: "SBI",
+  balance: 5000,
+  convertedBalance: 5000,
+  currency: "USD",
+  isPrimary: true,
+};
+
+const data: TrendDataPoint[] = [
+  {
+    date: "2026-08-10",
+    income: 1000,
+    expenses: 400,
+    balance: 600,
+  },
+  {
+    date: "2026-08-11",
+    income: 500,
+    expenses: 200,
+    balance: 300,
+  },
+];
+
+const transactions: Transaction[] = [
+  {
+    id: "transaction-1",
+    accountId: "account-1",
+    date: "2026-08-10T00:00:00.000Z",
+    title: "Salary",
+    category: "Income",
+    subcategory: "Salary",
+    amount: 1000,
+    type: "income",
+    currency: "USD",
+  },
+  {
+    id: "transaction-2",
+    accountId: "account-1",
+    date: "2026-08-10T00:00:00.000Z",
+    title: "Groceries",
+    category: "Food",
+    subcategory: "Groceries",
+    amount: 400,
+    type: "expense",
+    currency: "USD",
+  },
+];
 
 describe("DailySummary", () => {
-  it("renders the daily activity heading and description", () => {
+  it("renders the daily activity heading", () => {
     render(<DailySummary />);
 
     expect(
-      screen.getByRole("heading", { name: "Daily activity" })
+      screen.getByRole("heading", {
+        name: "Daily activity",
+      }),
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText("Your income and spending over the last seven days")
+      screen.getByText(
+        "Your income and spending by day",
+      ),
     ).toBeInTheDocument();
   });
 
-  it("shows empty state when no data is provided", () => {
-    render(<DailySummary />);
+  it("renders monthly income and expense totals", () => {
+    render(
+      <DailySummary
+        data={data}
+        currency="USD"
+      />,
+    );
 
     expect(
-      screen.getByText("No daily activity available")
+      screen.getByText("$1,500.00"),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("$600.00"),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByText("+$900.00"),
     ).toBeInTheDocument();
   });
 
-  it("shows empty state when data array is empty", () => {
-    render(<DailySummary data={[]} />);
-
-    expect(
-      screen.getByText("No daily activity available")
-    ).toBeInTheDocument();
-  });
-
-  it("displays total income and expenses", () => {
-    const data: TrendDataPoint[] = [
-      {
-        date: "2026-08-10",
-        income: 1000,
-        expenses: 400,
-        balance: 600,
-      },
-      {
-        date: "2026-08-11",
-        income: 500,
-        expenses: 200,
-        balance: 300,
-      },
-    ];
-
-    render(<DailySummary data={data} />);
-
-expect(screen.getByText("$2K")).toBeInTheDocument();
-expect(screen.getByText("$600")).toBeInTheDocument();
-  });
-
-  it("renders the correct number of daily activity entries", () => {
-    const data: TrendDataPoint[] = [
-      {
-        date: "2026-08-10",
-        income: 1000,
-        expenses: 400,
-        balance: 600,
-      },
-      {
-        date: "2026-08-11",
-        income: 500,
-        expenses: 200,
-        balance: 300,
-      },
-      {
-        date: "2026-08-12",
-        income: 800,
-        expenses: 300,
-        balance: 500,
-      },
-    ];
-
-    render(<DailySummary data={data} />);
-
-    expect(
-      screen.getAllByTitle(/Income:/)
-    ).toHaveLength(3);
-
-    expect(
-      screen.getAllByTitle(/Expenses:/)
-    ).toHaveLength(3);
-  });
-
-  it("displays the correct day labels", () => {
-    const data: TrendDataPoint[] = [
-      {
-        date: "2026-08-10",
-        income: 1000,
-        expenses: 400,
-        balance: 600,
-      },
-      {
-        date: "2026-08-11",
-        income: 500,
-        expenses: 200,
-        balance: 300,
-      },
-    ];
-
-    render(<DailySummary data={data} />);
+  it("renders the calendar weekdays", () => {
+    render(
+      <DailySummary
+        data={data}
+        currency="USD"
+      />,
+    );
 
     expect(screen.getByText("Mon")).toBeInTheDocument();
     expect(screen.getByText("Tue")).toBeInTheDocument();
+    expect(screen.getByText("Wed")).toBeInTheDocument();
+    expect(screen.getByText("Thu")).toBeInTheDocument();
+    expect(screen.getByText("Fri")).toBeInTheDocument();
+    expect(screen.getByText("Sat")).toBeInTheDocument();
+    expect(screen.getByText("Sun")).toBeInTheDocument();
   });
 
-  it("renders income and expense bars with correct labels", () => {
-    const data: TrendDataPoint[] = [
-      {
-        date: "2026-08-10",
-        income: 1000,
-        expenses: 400,
-        balance: 600,
-      },
-    ];
-
-    render(<DailySummary data={data} />);
-
-    expect(
-      screen.getByLabelText("Income: $1K")
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByLabelText("Expenses: $400")
-    ).toBeInTheDocument();
-  });
-
-  it("renders the income and expenses legend", () => {
-    render(
+  it("renders transaction data when a date is selected", async () => {
+    const { container } = render(
       <DailySummary
-        data={[
-          {
-            date: "2026-08-10",
-            income: 1000,
-            expenses: 400,
-            balance: 600,
-          },
-        ]}
-      />
+        data={data}
+        transactions={transactions}
+        accounts={[account]}
+        currency="USD"
+      />,
     );
 
-    expect(screen.getByText("Income")).toBeInTheDocument();
-    expect(screen.getByText("Expenses")).toBeInTheDocument();
+    const dateButton =
+      container.querySelector(
+        'button[aria-label^="2026-08-10"]',
+      );
+
+    expect(dateButton).not.toBeNull();
+
+    (dateButton as HTMLButtonElement).click();
+
+    expect(
+      await screen.findByText("Salary"),
+    ).toBeInTheDocument();
+
+    expect(
+      await screen.findByText("Groceries"),
+    ).toBeInTheDocument();
   });
 
-  it("sets bar heights based on the maximum value", () => {
-    const data: TrendDataPoint[] = [
-      {
-        date: "2026-08-10",
-        income: 1000,
-        expenses: 500,
-        balance: 500,
-      },
-    ];
+  it("shows no transactions message for a selected date without transactions", async () => {
+    const { container } = render(
+      <DailySummary
+        data={data}
+        transactions={[]}
+        accounts={[account]}
+        currency="USD"
+      />,
+    );
 
-    render(<DailySummary data={data} />);
+    const dateButton =
+      container.querySelector(
+        'button[aria-label^="2026-08-10"]',
+      );
 
-    const incomeBar = screen.getByLabelText("Income: $1K");
-    const expenseBar = screen.getByLabelText("Expenses: $500");
+    expect(dateButton).not.toBeNull();
 
-    expect(incomeBar).toHaveStyle({ height: "100%" });
-    expect(expenseBar).toHaveStyle({ height: "50%" });
+    (dateButton as HTMLButtonElement).click();
+
+    expect(
+      await screen.findByText(
+        "No transactions were recorded on this date.",
+      ),
+    ).toBeInTheDocument();
   });
 
-  it("handles zero income and expenses", () => {
-    const data: TrendDataPoint[] = [
-      {
-        date: "2026-08-10",
-        income: 0,
-        expenses: 0,
-        balance: 0,
-      },
-    ];
+  it("uses the transaction title", async () => {
+    const { container } = render(
+      <DailySummary
+        data={data}
+        transactions={transactions}
+        accounts={[account]}
+        currency="USD"
+      />,
+    );
 
-    render(<DailySummary data={data} />);
+    const dateButton =
+      container.querySelector(
+        'button[aria-label^="2026-08-10"]',
+      );
 
-    expect(screen.getByLabelText("Income: $0")).toBeInTheDocument();
-    expect(screen.getByLabelText("Expenses: $0")).toBeInTheDocument();
+    expect(dateButton).not.toBeNull();
+
+    (dateButton as HTMLButtonElement).click();
+
+    expect(
+      await screen.findByText("Salary"),
+    ).toBeInTheDocument();
+
+    expect(
+      screen.queryByText("description"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders empty calendar days without crashing", () => {
+    render(
+      <DailySummary
+        data={[]}
+        transactions={[]}
+        accounts={[]}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", {
+        name: "Daily activity",
+      }),
+    ).toBeInTheDocument();
   });
 });

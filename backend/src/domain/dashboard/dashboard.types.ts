@@ -38,6 +38,7 @@ export interface DashboardCategorySpending {
 }
 
 export interface DashboardResponse {
+  baseCurrency: string;
   accounts: DashboardAccount[];
   selectedAccount: DashboardAccount | null;
   summary: DashboardSummary;

@@ -28,10 +28,73 @@ export const dashboardController = {
           ? req.query.accountId
           : undefined;
 
+      const startDate =
+        typeof req.query.startDate === "string"
+          ? req.query.startDate
+          : undefined;
+
+      const endDate =
+        typeof req.query.endDate === "string"
+          ? req.query.endDate
+          : undefined;
+
+      let parsedStartDate: Date | undefined;
+      let parsedEndDate: Date | undefined;
+
+      if (startDate) {
+        parsedStartDate = new Date(
+          `${startDate}T00:00:00`,
+        );
+
+        if (
+          Number.isNaN(
+            parsedStartDate.getTime(),
+          )
+        ) {
+          return res.status(400).json({
+            message: "Invalid startDate",
+          });
+        }
+      }
+
+      if (endDate) {
+        parsedEndDate = new Date(
+          `${endDate}T00:00:00`,
+        );
+
+        if (
+          Number.isNaN(
+            parsedEndDate.getTime(),
+          )
+        ) {
+          return res.status(400).json({
+            message: "Invalid endDate",
+          });
+        }
+
+        // Make the selected end date inclusive
+        parsedEndDate.setDate(
+          parsedEndDate.getDate() + 1,
+        );
+      }
+
+      if (
+        parsedStartDate &&
+        parsedEndDate &&
+        parsedStartDate >= parsedEndDate
+      ) {
+        return res.status(400).json({
+          message:
+            "startDate must be before endDate",
+        });
+      }
+
       const dashboard =
         await dashboardService.getDashboard(
           userId,
           accountId,
+          parsedStartDate,
+          parsedEndDate,
         );
 
       return res.status(200).json(
