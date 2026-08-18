@@ -11,6 +11,7 @@ let initializationPromise:
   | Promise<TextGenerationPipeline>
   | null = null;
 
+// Load Qwen3-0.6B only once.
 async function getGenerator(): Promise<TextGenerationPipeline> {
   if (generator) {
     return generator;
@@ -20,28 +21,39 @@ async function getGenerator(): Promise<TextGenerationPipeline> {
     return initializationPromise;
   }
 
-  // Detect WebGPU & shader-f16 support
+  // Prefer WebGPU for browser inference.
   let device = 'wasm';
-  let dtype = 'q8'; // Safe fallback for WASM / CPU
+  let dtype = 'q8';
 
   try {
     const gpu = (navigator as any).gpu;
+
     if (gpu) {
       const adapter = await gpu.requestAdapter();
+
       if (adapter) {
-        const hasFP16 = adapter.features.has('shader-f16');
         device = 'webgpu';
-        dtype = hasFP16 ? 'q4f16' : 'q4';
-        console.log(`SLM: WebGPU supported! Using device: ${device}, dtype: ${dtype}`);
+        dtype = 'q4f16';
+
+        console.log(
+          `SLM: WebGPU supported! Using device: ${device}, dtype: ${dtype}`
+        );
       }
     }
-  } catch (e) {
-    console.warn('WebGPU check failed, falling back to WASM/CPU:', e);
+  } catch (error) {
+    console.warn(
+      'WebGPU check failed, falling back to WASM/CPU:',
+      error
+    );
   }
 
   if (device === 'wasm') {
-    console.log('SLM: WebGPU is not supported. Running model on CPU (WASM).');
+    console.log(
+      'SLM: WebGPU is not supported. Running model on CPU (WASM).'
+    );
   }
+
+  console.log('SLM: Loading Qwen3-0.6B...');
 
   initializationPromise = pipeline(
     'text-generation',
@@ -54,23 +66,32 @@ async function getGenerator(): Promise<TextGenerationPipeline> {
 
   try {
     generator = await initializationPromise;
+
+    console.log(
+      'SLM: Qwen3-0.6B loaded successfully.'
+    );
+
     return generator;
   } finally {
     initializationPromise = null;
   }
 }
 
+// SLM provider interface.
 export interface SLMProvider {
   suggestCategory(
     description: string,
-    categories: SLMCategory[]
+    categories: SLMCategory[],
+    type: 'income' | 'expense'
   ): Promise<string | null>;
 }
 
+// Qwen3-0.6B provider.
 export class QwenProvider implements SLMProvider {
   async suggestCategory(
     description: string,
-    categories: SLMCategory[]
+    categories: SLMCategory[],
+    type: 'income' | 'expense'
   ): Promise<string | null> {
     if (!description.trim()) {
       return null;
@@ -80,63 +101,102 @@ export class QwenProvider implements SLMProvider {
       return null;
     }
 
+    // Only provide categories that belong to
+    // the current transaction type.
+    const relevantCategories = categories.filter(
+      (category) => category.type === type
+    );
+
+    if (relevantCategories.length === 0) {
+      return null;
+    }
+
     const model = await getGenerator();
 
-    const categoryNames = categories
+    const categoryNames = relevantCategories
       .map((category) => category.name)
       .join('\n');
 
+    /*
+     * The SLM performs the actual categorization.
+     * There are no keyword-based category mappings.
+     */
     const messages = [
       {
         role: 'system' as const,
         content: `
+/no_think
+
 You are a financial transaction categorization system.
 
-Read the complete transaction description and determine
-the most appropriate category.
+Understand the complete meaning and context of the
+transaction description.
 
 Choose exactly ONE category from the provided list.
 
+The category must match the transaction type.
+
 Never invent a category.
 Never return an explanation.
-Never return "Expense" or "Income".
 Never return multiple categories.
+Never return "Expense" or "Income".
 
 Return ONLY the exact category name.
 `.trim(),
       },
+
       {
         role: 'user' as const,
         content: `
-/no_think
-
 Transaction description:
 ${description}
+
+Transaction type:
+${type}
 
 Available categories:
 ${categoryNames}
 
-Choose the most appropriate category.
+Determine what this transaction is actually about.
+
+Choose the single category that best represents
+the transaction.
 
 Return ONLY the exact category name.
 `.trim(),
       },
     ];
 
-    console.log('Sending description to Qwen:', description);
-    console.log('Available categories:', categories);
+    console.log(
+      'Sending description to Qwen:',
+      description
+    );
+
+    console.log(
+      'Transaction type:',
+      type
+    );
+
+    console.log(
+      'Available categories:',
+      relevantCategories
+    );
 
     const output = await model(messages, {
       max_new_tokens: 16,
       do_sample: false,
     });
 
-    console.log('Qwen raw output:', output);
+    console.log(
+      'Qwen raw output:',
+      output
+    );
 
     return extractGeneratedText(output);
   }
 }
 
+// Extract the generated response.
 function extractGeneratedText(
   output: unknown
 ): string | null {
@@ -144,6 +204,10 @@ function extractGeneratedText(
     !Array.isArray(output) ||
     output.length === 0
   ) {
+    console.warn(
+      'Qwen returned an empty output.'
+    );
+
     return null;
   }
 
@@ -151,8 +215,10 @@ function extractGeneratedText(
     generated_text?: unknown;
   };
 
-  const generatedText = first?.generated_text;
+  const generatedText =
+    first?.generated_text;
 
+  // Chat-format response.
   if (Array.isArray(generatedText)) {
     const assistantMessage =
       generatedText
@@ -183,6 +249,7 @@ function extractGeneratedText(
     }
   }
 
+  // String-format response.
   if (typeof generatedText === 'string') {
     console.log(
       'Qwen string response:',
@@ -202,23 +269,25 @@ function extractGeneratedText(
   return null;
 }
 
+// Clean the model response.
 function cleanModelResponse(
   response: string
 ): string | null {
   let cleaned = response.trim();
 
-  // Remove Qwen thinking content.
+  // Remove Qwen thinking blocks.
   cleaned = cleaned.replace(
     /<think>[\s\S]*?<\/think>/gi,
     ''
   );
 
-  // Remove incomplete thinking content.
+  // Remove incomplete thinking blocks.
   cleaned = cleaned.replace(
     /<think>[\s\S]*$/gi,
     ''
   );
 
+  // Remove common prefixes.
   cleaned = cleaned
     .replace(
       /^category\s*:\s*/i,
@@ -230,7 +299,7 @@ function cleanModelResponse(
     )
     .trim();
 
-  // Keep first non-empty line.
+  // Keep only the first non-empty line.
   cleaned =
     cleaned
       .split('\n')
@@ -239,7 +308,7 @@ function cleanModelResponse(
         (line) => line.length > 0
       ) ?? '';
 
-  // Remove simple surrounding punctuation.
+  // Remove surrounding punctuation.
   cleaned = cleaned
     .replace(
       /^[`"'*]+|[`"'*.]+$/g,

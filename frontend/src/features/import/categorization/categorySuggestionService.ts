@@ -11,6 +11,10 @@ import type {
   TransactionType,
 } from "./types";
 
+import type {
+  SLMCategorySuggestion,
+} from "../slm/slmTypes";
+
 const qwenProvider = new QwenProvider();
 
 const slmService =
@@ -21,11 +25,11 @@ const slmService =
 export async function suggestCategory(
   description: string,
   type: TransactionType,
-): Promise<CategorySuggestion | null> {
+): Promise<
+  CategorySuggestion | SLMCategorySuggestion | null
+> {
 
-  // --------------------------------
   // STEP 1: Rule engine
-  // --------------------------------
 
   const ruleSuggestion =
     suggestCategoryByRules(
@@ -42,9 +46,7 @@ export async function suggestCategory(
     return ruleSuggestion;
   }
 
-  // --------------------------------
   // STEP 2: SLM fallback
-  // --------------------------------
 
   console.log(
     "No rule matched. Using SLM:",
@@ -53,7 +55,8 @@ export async function suggestCategory(
 
   const slmCategory =
     await slmService.suggestCategory(
-      description
+      description,
+      type
     );
 
   if (!slmCategory) {
@@ -63,6 +66,5 @@ export async function suggestCategory(
   return {
     category: slmCategory,
     source: "SLM",
-    confidence: 0.8,
   };
 }

@@ -13,8 +13,9 @@ export class CategorySuggestionService {
   ) {}
 
   async suggestCategory(
-    description: string
-  ): Promise<string | null> {
+  description: string,
+  type: 'income' | 'expense'
+): Promise<string | null> {
     if (!SLM_ENABLED) {
       return null;
     }
@@ -25,10 +26,11 @@ export class CategorySuggestionService {
 
     try {
       const modelResponse =
-        await this.slmProvider.suggestCategory(
-          description.trim(),
-          SLM_CATEGORIES
-        );
+  await this.slmProvider.suggestCategory(
+    description.trim(),
+    SLM_CATEGORIES,
+    type
+  );
 
       console.log(
         'SLM model response:',
@@ -50,11 +52,12 @@ export class CategorySuggestionService {
       }
 
       const matchedCategory =
-        SLM_CATEGORIES.find(
-          (category) =>
-            normalize(category.name) ===
-            normalizedResponse
-        );
+  SLM_CATEGORIES.find(
+    (category) =>
+      category.type === type &&
+      normalize(category.name) ===
+        normalizedResponse
+  );
 
       if (!matchedCategory) {
         console.warn(
