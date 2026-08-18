@@ -83,9 +83,13 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <AddTransactionForm
           type={type}
           accounts={accounts}
-          onSave={(data) => {
-            onSave(data);
-            onClose();
+          onSave={async (data) => {
+            try {
+              await onSave(data);
+              onClose();
+            } catch (err: any) {
+              setErrorMessage(err.message || 'Failed to save transaction.');
+            }
           }}
           onCancel={onClose}
           setErrorMessage={setErrorMessage}

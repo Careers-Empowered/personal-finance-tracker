@@ -165,9 +165,16 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
             subcategories={safeSubcategoriesList}
             selectedCategoryId={categoryId}
             selectedSubcategoryId={subcategoryId}
+            defaultType={type}
             onSelect={(catId, subId) => {
               setCategoryId(catId);
               setSubcategoryId(subId);
+            }}
+            onCategoryAdded={(newCat, newSub) => {
+              setCategoriesList((prev) => [...prev, newCat]);
+              if (newSub) {
+                setSubcategoriesList((prev) => [...prev, newSub]);
+              }
             }}
             required
           />

@@ -85,10 +85,9 @@ const Transactions: React.FC = () => {
         err
       );
 
-      setError(
-        err.message ||
-          'Failed to save transaction.'
-      );
+      const msg = err.message || 'Failed to save transaction.';
+      setError(msg);
+      throw new Error(msg);
     }
   };
 

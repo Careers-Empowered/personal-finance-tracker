@@ -10,6 +10,7 @@ router.use(authMiddleware);
 // Accounts & Categories Lookups
 router.get('/accounts', (req, res) => transactionsController.getAccounts(req, res));
 router.get('/categories', (req, res) => transactionsController.getCategories(req, res));
+router.post('/categories', (req, res) => transactionsController.createCategory(req, res));
 router.get('/subcategories', (req, res) => transactionsController.getSubcategories(req, res));
 
 // Summary & Aggregates

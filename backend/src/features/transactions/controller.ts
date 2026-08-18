@@ -33,6 +33,35 @@ export class TransactionsController {
   }
 
   /**
+   * POST /api/transactions/categories
+   */
+  async createCategory(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.userId!;
+      const { name, type, icon, color } = req.body;
+
+      if (!name || typeof name !== 'string' || !name.trim()) {
+        return res.status(400).json({ error: 'Category name is required' });
+      }
+
+      const catType = type === 'INCOME' ? 'INCOME' : 'EXPENSE';
+
+      const result = await transactionsService.createCategory(userId, {
+        name: name.trim(),
+        type: catType,
+        icon,
+        color,
+      });
+
+      return res.status(201).json(result);
+    } catch (error: any) {
+      console.error('Create category error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+
+  /**
    * GET /api/transactions/subcategories
    */
   async getSubcategories(req: AuthenticatedRequest, res: Response) {

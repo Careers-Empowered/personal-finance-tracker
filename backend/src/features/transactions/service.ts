@@ -34,10 +34,43 @@ export class TransactionsService {
        FROM categories
        WHERE user_id IS NULL OR user_id = $1
        ORDER BY name ASC`,
-      [userId]
+      [userId || null]
     );
 
     return rows;
+  }
+
+  /**
+   * Create custom category & default subcategory for user
+   */
+  async createCategory(
+    userId: string,
+    data: { name: string; type: 'INCOME' | 'EXPENSE'; icon?: string; color?: string }
+  ) {
+    const { name, type, icon = '🏷️', color = '#eff6ff' } = data;
+
+    const catRes = await query(
+      `INSERT INTO categories (id, user_id, name, type, icon, color, is_default)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, false)
+       RETURNING id, name, type, icon, color, is_default`,
+      [userId || null, name, type, icon, color]
+    );
+
+    const newCategory = catRes.rows[0];
+
+    const subRes = await query(
+      `INSERT INTO subcategories (id, category_id, user_id, name, icon, color, is_default)
+       VALUES (gen_random_uuid(), $1, $2, 'General', $3, $4, false)
+       RETURNING id, name, icon, category_id as "categoryId"`,
+      [newCategory.id, userId || null, icon, color]
+    );
+
+    const newSubcategory = subRes.rows[0];
+
+    return {
+      category: newCategory,
+      subcategory: newSubcategory,
+    };
   }
 
   /**
@@ -162,7 +195,8 @@ export class TransactionsService {
   async createTransaction(userId: string, dto: CreateTransactionDTO) {
     const { accountId, categoryId, subcategoryId, amount, type, date, title } = dto;
 
-    let subId = subcategoryId;
+    let subId = subcategoryId && typeof subcategoryId === 'string' && subcategoryId.trim() !== '' ? subcategoryId.trim() : null;
+
     if (!subId) {
       const subRes = await query('SELECT id FROM subcategories WHERE category_id = $1 LIMIT 1', [categoryId]);
       if (subRes.rows.length > 0) {
@@ -195,9 +229,11 @@ export class TransactionsService {
       `SELECT 
          json_build_object('id', a.id, 'name', a.name) as account,
          json_build_object('id', c.id, 'name', c.name, 'type', c.type, 'icon', c.icon, 'color', c.color) as category,
-         json_build_object('id', s.id, 'name', s.name) as subcategory
-       FROM accounts a, categories c, subcategories s
-       WHERE a.id = $1 AND c.id = $2 AND s.id = $3`,
+         CASE WHEN s.id IS NOT NULL THEN json_build_object('id', s.id, 'name', s.name) ELSE NULL END as subcategory
+       FROM accounts a
+       LEFT JOIN categories c ON c.id = $2
+       LEFT JOIN subcategories s ON s.id = $3
+       WHERE a.id = $1`,
       [accountId, categoryId, subId]
     );
 
@@ -228,7 +264,13 @@ export class TransactionsService {
     const newTitle = dto.title !== undefined ? dto.title : existing.Title;
     const newAccountId = dto.accountId || existing.account_id;
     const newCategoryId = dto.categoryId || existing.category_id;
-    const newSubcategoryId = dto.subcategoryId || existing.subcategory_id;
+    let subId = dto.subcategoryId && typeof dto.subcategoryId === 'string' && dto.subcategoryId.trim() !== '' ? dto.subcategoryId.trim() : existing.subcategory_id;
+    if (!subId && newCategoryId) {
+      const subRes = await query('SELECT id FROM subcategories WHERE category_id = $1 LIMIT 1', [newCategoryId]);
+      if (subRes.rows.length > 0) {
+        subId = subRes.rows[0].id;
+      }
+    }
     const newDate = dto.date ? new Date(dto.date) : existing.date;
 
     const updateRes = await query(
@@ -236,7 +278,7 @@ export class TransactionsService {
        SET account_id = $1, category_id = $2, subcategory_id = $3, amount = $4, type = $5, date = $6, "Title" = $7, updated_at = NOW()
        WHERE id = $8
        RETURNING id, account_id as "accountId", category_id as "categoryId", subcategory_id as "subcategoryId", amount, type, date, "Title" as title, created_at as "createdAt", updated_at as "updatedAt"`,
-      [newAccountId, newCategoryId, newSubcategoryId, newAmount, newType, newDate, newTitle, id]
+      [newAccountId, newCategoryId, subId, newAmount, newType, newDate, newTitle, id]
     );
 
     const updatedTx = updateRes.rows[0];
@@ -245,10 +287,12 @@ export class TransactionsService {
       `SELECT 
          json_build_object('id', a.id, 'name', a.name) as account,
          json_build_object('id', c.id, 'name', c.name, 'type', c.type, 'icon', c.icon, 'color', c.color) as category,
-         json_build_object('id', s.id, 'name', s.name) as subcategory
-       FROM accounts a, categories c, subcategories s
-       WHERE a.id = $1 AND c.id = $2 AND s.id = $3`,
-      [newAccountId, newCategoryId, newSubcategoryId]
+         CASE WHEN s.id IS NOT NULL THEN json_build_object('id', s.id, 'name', s.name) ELSE NULL END as subcategory
+       FROM accounts a
+       LEFT JOIN categories c ON c.id = $2
+       LEFT JOIN subcategories s ON s.id = $3
+       WHERE a.id = $1`,
+      [newAccountId, newCategoryId, subId]
     );
 
     const rels = detailsRes.rows[0] || {};
