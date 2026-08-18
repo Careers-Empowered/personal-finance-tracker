@@ -1,7 +1,11 @@
-import SubcategoryManagement from "./SubcategoryManagement";
+import React from 'react';
 
-function SubcategoryTestPage() {
-  return <SubcategoryManagement />;
-}
+const SubcategoryTestPage: React.FC = () => {
+  return (
+    <div className="page-container">
+      <h1 className="page-title">Subcategory Test Page</h1>
+    </div>
+  );
+};
 
 export default SubcategoryTestPage;
