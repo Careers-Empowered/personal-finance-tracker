@@ -52,6 +52,233 @@ router.get(
   }
 );
 
+// ============================================================
+// CHECK EXISTING TRANSACTIONS
+// POST /api/transactions/check-existing
+//
+// Checks whether imported transactions already exist
+// in the selected account.
+//
+// Matching fields:
+// - accountId
+// - date
+// - title
+// - amount
+// - type
+//
+// Category and subcategory are intentionally NOT compared.
+// ============================================================
+
+router.post(
+  '/check-existing',
+  async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
+    try {
+      const userId = req.userId!;
+
+      const { transactions } = req.body;
+
+      // --------------------------------------------------------
+      // 1. BASIC VALIDATION
+      // --------------------------------------------------------
+
+      if (!Array.isArray(transactions)) {
+        return res.status(400).json({
+          error: 'transactions must be an array',
+        });
+      }
+
+      if (transactions.length === 0) {
+        return res.json({
+          existingTransactions: [],
+        });
+      }
+
+      // --------------------------------------------------------
+      // 2. CHECK EACH IMPORTED TRANSACTION
+      // --------------------------------------------------------
+
+      const results = [];
+
+      for (const transaction of transactions) {
+        const {
+          accountId,
+          date,
+          title,
+          amount,
+          type,
+          row,
+        } = transaction;
+
+        const normalizedType =
+          String(type).toUpperCase();
+
+        if (
+          !accountId ||
+          !date ||
+          !title ||
+          amount === undefined ||
+          !type
+        ) {
+          continue;
+        }
+
+        // ------------------------------------------------------
+        // 3. VERIFY ACCOUNT BELONGS TO CURRENT USER
+        // ------------------------------------------------------
+
+        const account =
+          await prisma.account.findFirst({
+            where: {
+              id: accountId,
+              userId,
+            },
+            select: {
+              id: true,
+              name: true,
+            },
+          });
+
+        if (!account) {
+          return res.status(403).json({
+            error:
+              'Forbidden: Account does not belong to the current user',
+          });
+        }
+
+        // ------------------------------------------------------
+        // 4. NORMALIZE VALUES
+        // ------------------------------------------------------
+
+        const parsedDate = new Date(date);
+        const parsedAmount = Number(amount);
+
+        if (
+          isNaN(parsedDate.getTime()) ||
+          isNaN(parsedAmount)
+        ) {
+          continue;
+        }
+
+        if (
+          normalizedType !== 'INCOME' &&
+          normalizedType !== 'EXPENSE'
+        ) {
+          continue;
+        }
+
+        const startOfDay = new Date(parsedDate);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(parsedDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // ------------------------------------------------------
+        // 5. SEARCH DATABASE
+        // ------------------------------------------------------
+
+        const existing =
+          await prisma.transaction.findFirst({
+            where: {
+              accountId: account.id,
+
+              type: normalizedType as 'INCOME' | 'EXPENSE',
+
+              Title: {
+                equals: String(title).trim(),
+                mode: 'insensitive',
+              },
+
+              amount: parsedAmount,
+
+              date: {
+                gte: startOfDay,
+                lte: endOfDay,
+              },
+            },
+
+            select: {
+              id: true,
+              accountId: true,
+              amount: true,
+              type: true,
+              date: true,
+              Title: true,
+
+              account: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          });
+
+        // ------------------------------------------------------
+        // 6. EXISTING TRANSACTION FOUND
+        // ------------------------------------------------------
+
+        if (existing) {
+          results.push({
+            row,
+
+            exists: true,
+
+            existingTransaction: {
+              id: existing.id,
+
+              accountId:
+                existing.accountId,
+
+              account:
+                existing.account,
+
+              amount:
+                Number(existing.amount),
+
+              type:
+                existing.type,
+
+              date:
+                existing.date
+                  .toISOString()
+                  .split('T')[0],
+
+              title:
+                existing.Title,
+            },
+          });
+        } else {
+          results.push({
+            row,
+
+            exists: false,
+          });
+        }
+      }
+
+      // --------------------------------------------------------
+      // 7. RESPONSE
+      // --------------------------------------------------------
+
+      return res.json({
+        existingTransactions: results,
+      });
+
+    } catch (error) {
+      console.error(
+        'Check existing transactions error:',
+        error
+      );
+
+      return res.status(500).json({
+        error: 'Internal Server Error',
+      });
+    }
+  }
+);
 
 // ============================================================
 // 2. FETCH CATEGORIES

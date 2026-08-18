@@ -81,6 +81,22 @@ function FilePreview({
   const [rows, setRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
+  const [editRowValues, setEditRowValues] = useState<string[]>([]);
+
+  const handleStartEdit = (rowIndex: number, row: string[]) => {
+    setEditingRowIndex(rowIndex);
+    setEditRowValues([...row]);
+  };
+
+  const handleSaveEdit = (rowIndex: number) => {
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[rowIndex] = [...editRowValues];
+      return newRows;
+    });
+    setEditingRowIndex(null);
+  };
 
   useEffect(() => {
     const reader = new FileReader();
@@ -377,28 +393,78 @@ function FilePreview({
                   {header}
                 </th>
               ))}
+              <th
+                style={{
+                  padding: "0.75rem",
+                  textAlign: "left",
+                  backgroundColor: "var(--color-background)",
+                  borderBottom: "1px solid var(--color-divider)",
+                  color: "var(--color-text-dark)",
+                  fontWeight: 600,
+                }}
+              >
+                Actions
+              </th>
             </tr>
           </thead>
 
           <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {headers.map((_, columnIndex) => (
+            {rows.map((row, rowIndex) => {
+              const isEditing = editingRowIndex === rowIndex;
+              return (
+                <tr key={rowIndex}>
+                  {headers.map((_, columnIndex) => (
+                    <td
+                      key={columnIndex}
+                      style={{
+                        padding: "0.75rem",
+                        borderBottom:
+                          "1px solid var(--color-divider)",
+                        color:
+                          "var(--color-text-muted)",
+                      }}
+                    >
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editRowValues[columnIndex] ?? ""}
+                          onChange={(e) => {
+                            const newVals = [...editRowValues];
+                            newVals[columnIndex] = e.target.value;
+                            setEditRowValues(newVals);
+                          }}
+                          style={{ width: "100%", padding: "4px" }}
+                        />
+                      ) : (
+                        row[columnIndex] ?? ""
+                      )}
+                    </td>
+                  ))}
                   <td
-                    key={columnIndex}
                     style={{
                       padding: "0.75rem",
-                      borderBottom:
-                        "1px solid var(--color-divider)",
-                      color:
-                        "var(--color-text-muted)",
+                      borderBottom: "1px solid var(--color-divider)",
                     }}
                   >
-                    {row[columnIndex] ?? ""}
+                    {isEditing ? (
+                      <button
+                        onClick={() => handleSaveEdit(rowIndex)}
+                        style={{ cursor: "pointer", background: "none", border: "1px solid var(--color-primary)", color: "var(--color-primary)", padding: "4px 8px", borderRadius: "4px", fontSize: "0.8rem", fontWeight: 600 }}
+                      >
+                        Save
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleStartEdit(rowIndex, row)}
+                        style={{ cursor: "pointer", background: "none", border: "1px solid var(--color-divider)", padding: "4px 8px", borderRadius: "4px", fontSize: "0.8rem" }}
+                      >
+                        Edit
+                      </button>
+                    )}
                   </td>
-                ))}
-              </tr>
-            ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -237,12 +237,29 @@ function extractTransactionSummary(
   };
 }
 
+interface AccountOption {
+  id: string;
+  name: string;
+  currency?: string;
+}
+
+interface FileUploadAccountProps {
+  accounts: AccountOption[];
+  selectedAccountId: string;
+  onAccountChange: (accountId: string) => void;
+  accountsLoading?: boolean;
+}
+
 function FileUpload({
   mode,
   onModeChange,
   onFileSelected,
   onPreview,
-}: FileUploadProps) {
+  accounts,
+  selectedAccountId,
+  onAccountChange,
+  accountsLoading = false,
+}: FileUploadProps & FileUploadAccountProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedFile, setSelectedFile] =
@@ -310,6 +327,12 @@ function FileUpload({
   };
 
   const handleChooseFile = () => {
+    if (!selectedAccountId) {
+      setError("Select the account for further actions");
+      return;
+    }
+
+    setError("");
     fileInputRef.current?.click();
   };
 
@@ -396,6 +419,64 @@ function FileUpload({
           Upload a CSV file containing your financial
           transactions.
         </p>
+      </div>
+
+      {/* ACCOUNT SELECTION */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          gap: "0.75rem",
+          marginBottom: "1.5rem",
+          flexWrap: "wrap",
+        }}
+      >
+        <label
+          htmlFor="import-account"
+          style={{
+            fontFamily: "var(--font-body)",
+            fontSize: "0.9rem",
+            fontWeight: 600,
+            color: "var(--color-text-dark)",
+          }}
+        >
+          Import Into
+        </label>
+
+        <select
+          id="import-account"
+          value={selectedAccountId}
+          onChange={(event) => {
+            onAccountChange(event.target.value);
+            setError("");
+          }}
+          disabled={accountsLoading}
+          style={{
+            minWidth: "250px",
+            padding: "0.7rem 0.9rem",
+            border: "1px solid var(--color-divider)",
+            borderRadius: "8px",
+            backgroundColor: "#ffffff",
+            color: "var(--color-text-dark)",
+            fontFamily: "var(--font-body)",
+            fontSize: "0.9rem",
+            cursor: accountsLoading ? "not-allowed" : "pointer",
+          }}
+        >
+          <option value="">
+            {accountsLoading
+              ? "Loading accounts..."
+              : "Select an account"}
+          </option>
+
+          {accounts.map((account) => (
+            <option key={account.id} value={account.id}>
+              {account.name}
+              {account.currency ? ` (${account.currency})` : ""}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* IMPORT MODE */}
