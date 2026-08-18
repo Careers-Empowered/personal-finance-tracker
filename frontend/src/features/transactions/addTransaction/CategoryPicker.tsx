@@ -44,6 +44,9 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeSubcategories = Array.isArray(subcategories) ? subcategories : [];
+
   // Track currently selected parent category in the picker left column
   const [activeCategory, setActiveCategory] = useState<CategoryItem | null>(null);
   
@@ -52,12 +55,12 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
   // Set initial active category based on current selection or first category
   useEffect(() => {
     if (selectedCategoryId) {
-      const found = categories.find((c) => c.id === selectedCategoryId);
+      const found = safeCategories.find((c) => c.id === selectedCategoryId);
       if (found) setActiveCategory(found);
-    } else if (categories.length > 0 && !activeCategory) {
-      setActiveCategory(categories[0]);
+    } else if (safeCategories.length > 0 && !activeCategory) {
+      setActiveCategory(safeCategories[0]);
     }
-  }, [selectedCategoryId, categories]);
+  }, [selectedCategoryId, safeCategories, activeCategory]);
 
   // Handle clicking outside to close popover
   useEffect(() => {
@@ -75,12 +78,13 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
   }, [isOpen]);
 
   // Filter categories by search query
-  const filteredCategories = categories.filter((cat) => {
+  const filteredCategories = safeCategories.filter((cat) => {
+    if (!cat || !cat.name) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     const matchesCat = cat.name.toLowerCase().includes(q);
-    const hasMatchingSub = subcategories.some(
-      (sub) => sub.categoryId === cat.id && sub.name.toLowerCase().includes(q)
+    const hasMatchingSub = safeSubcategories.some(
+      (sub) => sub && sub.categoryId === cat.id && sub.name && sub.name.toLowerCase().includes(q)
     );
     return matchesCat || hasMatchingSub;
   });
@@ -90,15 +94,15 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
 
   // Filter subcategories for the active category + search query
   const currentSubcategories = currentCategory
-    ? subcategories.filter((sub) => {
-        if (sub.categoryId !== currentCategory.id) return false;
+    ? safeSubcategories.filter((sub) => {
+        if (!sub || sub.categoryId !== currentCategory.id) return false;
         if (!searchQuery.trim()) return true;
-        return sub.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return sub.name && sub.name.toLowerCase().includes(searchQuery.toLowerCase());
       })
     : [];
 
-  const selectedCatObj = categories.find((c) => c.id === selectedCategoryId);
-  const selectedSubObj = subcategories.find((s) => s.id === selectedSubcategoryId);
+  const selectedCatObj = safeCategories.find((c) => c && c.id === selectedCategoryId);
+  const selectedSubObj = safeSubcategories.find((s) => s && s.id === selectedSubcategoryId);
 
   const triggerLabel = selectedCatObj
     ? (selectedSubObj ? `${selectedSubObj.name}` : selectedCatObj.name)
@@ -113,7 +117,7 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
 
   const handleSelectCategoryDirect = (cat: CategoryItem) => {
     setActiveCategory(cat);
-    const subs = subcategories.filter((s) => s.categoryId === cat.id);
+    const subs = safeSubcategories.filter((s) => s && s.categoryId === cat.id);
     if (subs.length === 0) {
       onSelect(cat.id, '');
       setIsOpen(false);

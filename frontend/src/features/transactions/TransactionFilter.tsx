@@ -19,9 +19,18 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('ALL');
 
+  const safeTransactions = useMemo(
+    () => (Array.isArray(transactions) ? transactions : []),
+    [transactions]
+  );
+  const safeAccounts = useMemo(
+    () => (Array.isArray(accounts) ? accounts : []),
+    [accounts]
+  );
+
   // Extract unique category names from all transactions
   const categories = useMemo(() => {
-    const categoryNames = transactions
+    const categoryNames = safeTransactions
       .map(
         (transaction) =>
           transaction.category?.name?.trim() ||
@@ -33,7 +42,7 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
       );
 
     return Array.from(new Set(categoryNames)).sort();
-  }, [transactions]);
+  }, [safeTransactions]);
 
   // Reset category filter if the selected category is no longer present in transactions
   useEffect(() => {
@@ -44,7 +53,7 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
 
   // Compute filtered transactions reactively
   const filteredTransactions = useMemo(() => {
-    return transactions.filter((transaction) => {
+    return safeTransactions.filter((transaction) => {
       const matchesType =
         selectedType === 'ALL' ||
         transaction.type === selectedType;
@@ -80,7 +89,7 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
         matchesAccount
       );
     });
-  }, [transactions, selectedType, selectedDate, selectedCategory, selectedAccountId]);
+  }, [safeTransactions, selectedType, selectedDate, selectedCategory, selectedAccountId]);
 
   // Call onFilterChange callback when filtered list updates
   useEffect(() => {
@@ -170,7 +179,7 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
           All Accounts
         </option>
 
-        {accounts.map((account) => (
+        {safeAccounts.map((account) => (
           <option
             key={account.id}
             value={account.id}

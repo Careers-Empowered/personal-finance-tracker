@@ -45,8 +45,8 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
         apiFetch('/api/transactions/subcategories')
       ])
         .then(([catData, subData]) => {
-          setCategoriesList(catData);
-          setSubcategoriesList(subData);
+          setCategoriesList(Array.isArray(catData) ? catData : []);
+          setSubcategoriesList(Array.isArray(subData) ? subData : []);
         })
         .catch((err) => {
           console.error('Error fetching categories/subcategories in edit form:', err);
@@ -69,8 +69,11 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
     }
   }, [isOpen, transaction]);
 
+  const safeCategoriesList = Array.isArray(categoriesList) ? categoriesList : [];
+  const safeSubcategoriesList = Array.isArray(subcategoriesList) ? subcategoriesList : [];
+
   // Filter categories shown to match type
-  const filteredCategories = categoriesList.filter((cat) => cat.type === type);
+  const filteredCategories = safeCategoriesList.filter((cat) => cat && cat.type === type);
 
   if (!isOpen) return null;
 
@@ -239,7 +242,7 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
               <label className="form-group-label">Category *</label>
               <CategoryPicker
                 categories={filteredCategories}
-                subcategories={subcategoriesList}
+                subcategories={safeSubcategoriesList}
                 selectedCategoryId={categoryId}
                 selectedSubcategoryId={subcategoryId}
                 onSelect={(catId, subId) => {

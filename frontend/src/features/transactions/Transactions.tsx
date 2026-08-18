@@ -41,9 +41,12 @@ const Transactions: React.FC = () => {
         apiFetch('/api/transactions/accounts'),
       ]);
 
-      setTransactions(txs);
-      setFilteredTransactions(txs);
-      setAccounts(accs);
+      const safeTxs = Array.isArray(txs) ? txs : [];
+      const safeAccs = Array.isArray(accs) ? accs : [];
+
+      setTransactions(safeTxs);
+      setFilteredTransactions(safeTxs);
+      setAccounts(safeAccs);
     } catch (err: any) {
       console.error(
         'Error loading transactions data:',

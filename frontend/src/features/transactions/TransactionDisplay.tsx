@@ -59,7 +59,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
     );
   };
 
-  if (transactions.length === 0) {
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+
+  if (safeTransactions.length === 0) {
     return (
       <div className="transactions-empty-state">
         <div className="transactions-empty-icon">
@@ -77,7 +79,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <div className="transaction-list">
-      {transactions.map((transaction, index) => {
+      {safeTransactions.map((transaction, index) => {
         const isIncome = transaction.type === 'INCOME';
 
         const account = getAccount(transaction);

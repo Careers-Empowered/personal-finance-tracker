@@ -18,7 +18,9 @@ export const AccountPicker: React.FC<AccountPickerProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selectedAccount = accounts.find((acc) => acc.id === value);
+  const safeAccounts = Array.isArray(accounts) ? accounts : [];
+
+  const selectedAccount = safeAccounts.find((acc) => acc && acc.id === value);
 
   // Close when clicking outside
   useEffect(() => {
@@ -35,7 +37,8 @@ export const AccountPicker: React.FC<AccountPickerProps> = ({
     };
   }, [isOpen]);
 
-  const filteredAccounts = accounts.filter((acc) => {
+  const filteredAccounts = safeAccounts.filter((acc) => {
+    if (!acc || !acc.name) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return acc.name.toLowerCase().includes(q) || (acc.currency && acc.currency.toLowerCase().includes(q));
@@ -71,7 +74,7 @@ export const AccountPicker: React.FC<AccountPickerProps> = ({
       {isOpen && (
         <div className="account-picker-popover">
           {/* Search Filter */}
-          {accounts.length > 4 && (
+          {safeAccounts.length > 4 && (
             <div className="account-picker-search-container">
               <span className="account-picker-search-icon">🔍</span>
               <input

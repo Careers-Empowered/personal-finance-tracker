@@ -51,8 +51,8 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
       apiFetch('/api/transactions/subcategories')
     ])
       .then(([catData, subData]) => {
-        setCategoriesList(catData);
-        setSubcategoriesList(subData);
+        setCategoriesList(Array.isArray(catData) ? catData : []);
+        setSubcategoriesList(Array.isArray(subData) ? subData : []);
       })
       .catch((err) => {
         console.error('Error fetching categories/subcategories in form:', err);
@@ -60,7 +60,9 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
       });
   }, [setErrorMessage]);
 
-  const filteredCategories = categoriesList.filter((cat) => cat.type === type);
+  const safeCategoriesList = Array.isArray(categoriesList) ? categoriesList : [];
+  const safeSubcategoriesList = Array.isArray(subcategoriesList) ? subcategoriesList : [];
+  const filteredCategories = safeCategoriesList.filter((cat) => cat && cat.type === type);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,7 +162,7 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
           <label className="form-group-label">Category *</label>
           <CategoryPicker
             categories={filteredCategories}
-            subcategories={subcategoriesList}
+            subcategories={safeSubcategoriesList}
             selectedCategoryId={categoryId}
             selectedSubcategoryId={subcategoryId}
             onSelect={(catId, subId) => {

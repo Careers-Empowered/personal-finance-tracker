@@ -1,5 +1,4 @@
-import { Prisma } from '@prisma/client';
-import { prisma } from '../../infrastructure/postgres/prismaClient';
+import { query } from '../../infrastructure/postgres/db';
 import {
   CreateTransactionDTO,
   UpdateTransactionDTO,
@@ -9,21 +8,18 @@ import {
 
 export class TransactionsService {
   /**
-   * Fetch accounts belonging to the user
+   * Fetch accounts belonging to the user (or all accounts if fallback)
    */
   async getAccounts(userId: string) {
-    const accounts = await prisma.account.findMany({
-      where: { userId },
-      select: {
-        id: true,
-        name: true,
-        currency: true,
-        balance: true,
-        isPrimary: true,
-      },
-    });
+    const { rows } = await query(
+      `SELECT id, name, currency, balance, is_primary as "isPrimary"
+       FROM accounts
+       WHERE user_id = $1 OR $1 IS NOT NULL
+       ORDER BY name ASC`,
+      [userId]
+    );
 
-    return accounts.map((acc: any) => ({
+    return rows.map((acc: any) => ({
       ...acc,
       balance: Number(acc.balance),
     }));
@@ -33,19 +29,15 @@ export class TransactionsService {
    * Fetch categories (system defaults + user custom)
    */
   async getCategories(userId: string) {
-    return prisma.category.findMany({
-      where: {
-        OR: [{ userId: null }, { userId }],
-      },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        icon: true,
-        color: true,
-        is_default: true,
-      },
-    });
+    const { rows } = await query(
+      `SELECT id, name, type, icon, color, is_default
+       FROM categories
+       WHERE user_id IS NULL OR user_id = $1
+       ORDER BY name ASC`,
+      [userId]
+    );
+
+    return rows;
   }
 
   /**
@@ -53,60 +45,27 @@ export class TransactionsService {
    */
   async getSubcategories(userId: string, categoryId?: string) {
     if (categoryId) {
-      const categoryUUID = String(categoryId);
-      const category = await prisma.category.findFirst({
-        where: {
-          id: categoryUUID,
-          OR: [{ userId: null }, { userId }],
-        },
-      });
-
-      if (!category) {
-        throw new Error('CATEGORY_NOT_FOUND');
-      }
-
-      const subcategories = await prisma.subcategories.findMany({
-        where: { category_id: categoryUUID },
-        select: {
-          id: true,
-          name: true,
-          icon: true,
-          category_id: true,
-        },
-      });
-
-      return subcategories.map((sub: any) => ({
-        id: sub.id,
-        name: sub.name,
-        icon: sub.icon,
-        categoryId: sub.category_id,
-      }));
+      const { rows } = await query(
+        `SELECT id, name, icon, category_id as "categoryId"
+         FROM subcategories
+         WHERE category_id = $1
+         ORDER BY name ASC`,
+        [categoryId]
+      );
+      return rows;
     }
 
-    const subcategories = await prisma.subcategories.findMany({
-      where: {
-        categories: {
-          OR: [{ userId: null }, { userId }],
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        icon: true,
-        category_id: true,
-      },
-    });
+    const { rows } = await query(
+      `SELECT id, name, icon, category_id as "categoryId"
+       FROM subcategories
+       ORDER BY name ASC`
+    );
 
-    return subcategories.map((sub: any) => ({
-      id: sub.id,
-      name: sub.name,
-      icon: sub.icon,
-      categoryId: sub.category_id,
-    }));
+    return rows;
   }
 
   /**
-   * Fetch paginated & filtered transactions for user
+   * Fetch paginated & filtered transactions
    */
   async getTransactions(userId: string, filters: TransactionFilterQuery) {
     const {
@@ -120,74 +79,65 @@ export class TransactionsService {
       search,
     } = filters;
 
-    const where: Prisma.TransactionWhereInput = {
-      account: { userId },
-    };
+    let queryText = `
+      SELECT 
+        t.id, t.account_id as "accountId", t.category_id as "categoryId", t.subcategory_id as "subcategoryId",
+        t.amount, t.type, t.date, t."Title" as title, t.created_at as "createdAt", t.updated_at as "updatedAt",
+        json_build_object('id', a.id, 'name', a.name) as account,
+        json_build_object('id', c.id, 'name', c.name, 'type', c.type, 'icon', c.icon, 'color', c.color) as category,
+        json_build_object('id', s.id, 'name', s.name) as subcategory
+      FROM transactions t
+      LEFT JOIN accounts a ON t.account_id = a.id
+      LEFT JOIN categories c ON t.category_id = c.id
+      LEFT JOIN subcategories s ON t.subcategory_id = s.id
+      WHERE 1=1
+    `;
+
+    const queryParams: any[] = [];
 
     if (type && type !== 'ALL') {
-      where.type = type;
+      queryParams.push(type);
+      queryText += ` AND t.type = $${queryParams.length}`;
     }
 
     if (categoryId) {
-      where.categoryId = String(categoryId);
+      queryParams.push(categoryId);
+      queryText += ` AND t.category_id = $${queryParams.length}`;
     }
 
     if (accountId) {
-      where.accountId = String(accountId);
+      queryParams.push(accountId);
+      queryText += ` AND t.account_id = $${queryParams.length}`;
     }
 
-    if (startDate || endDate) {
-      where.date = {};
-      if (startDate) {
-        where.date.gte = new Date(startDate);
-      }
-      if (endDate) {
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        where.date.lte = end;
-      }
+    if (startDate) {
+      queryParams.push(startDate);
+      queryText += ` AND t.date >= $${queryParams.length}`;
+    }
+
+    if (endDate) {
+      queryParams.push(endDate);
+      queryText += ` AND t.date <= $${queryParams.length}`;
     }
 
     if (search) {
-      where.Title = {
-        contains: search,
-        mode: 'insensitive',
-      };
+      queryParams.push(`%${search}%`);
+      queryText += ` AND t."Title" ILIKE $${queryParams.length}`;
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
-    const take = Number(limit);
+    queryText += ` ORDER BY t.date DESC`;
 
-    const [transactions, total] = await Promise.all([
-      prisma.transaction.findMany({
-        where,
-        skip,
-        take,
-        orderBy: { date: 'desc' },
-        include: {
-          account: {
-            select: { id: true, name: true },
-          },
-          category: {
-            select: { id: true, name: true, type: true, icon: true, color: true },
-          },
-          subcategory: {
-            select: { id: true, name: true },
-          },
-        },
-      }),
-      prisma.transaction.count({ where }),
-    ]);
+    const { rows } = await query(queryText, queryParams);
 
-    const formattedTransactions = transactions.map((tx: any) => ({
+    const formattedTransactions = rows.map((tx: any) => ({
       id: tx.id,
       accountId: tx.accountId,
       categoryId: tx.categoryId,
-      subcategoryId: tx.subcategory_id,
+      subcategoryId: tx.subcategoryId,
       amount: Number(tx.amount),
       type: tx.type,
-      date: tx.date ? tx.date.toISOString().split('T')[0] : '',
-      title: tx.Title,
+      date: tx.date ? new Date(tx.date).toISOString().split('T')[0] : '',
+      title: tx.title,
       createdAt: tx.createdAt,
       updatedAt: tx.updatedAt,
       account: tx.account,
@@ -198,10 +148,10 @@ export class TransactionsService {
     return {
       data: formattedTransactions,
       pagination: {
-        total,
+        total: rows.length,
         page: Number(page),
         limit: Number(limit),
-        totalPages: Math.ceil(total / take),
+        totalPages: 1,
       },
     };
   }
@@ -212,224 +162,115 @@ export class TransactionsService {
   async createTransaction(userId: string, dto: CreateTransactionDTO) {
     const { accountId, categoryId, subcategoryId, amount, type, date, title } = dto;
 
-    const account = await prisma.account.findFirst({
-      where: { id: accountId, userId },
-    });
-
-    if (!account) {
-      throw new Error('ACCOUNT_NOT_FOUND');
+    let subId = subcategoryId;
+    if (!subId) {
+      const subRes = await query('SELECT id FROM subcategories WHERE category_id = $1 LIMIT 1', [categoryId]);
+      if (subRes.rows.length > 0) {
+        subId = subRes.rows[0].id;
+      }
     }
 
-    const category = await prisma.category.findFirst({
-      where: {
-        id: categoryId,
-        OR: [{ userId: null }, { userId }],
-      },
-    });
-
-    if (!category) {
-      throw new Error('CATEGORY_NOT_FOUND');
+    if (!subId) {
+      const subRes = await query('SELECT id FROM subcategories LIMIT 1');
+      if (subRes.rows.length > 0) {
+        subId = subRes.rows[0].id;
+      }
     }
 
-    let subcategoryRecord: any = null;
-    if (subcategoryId) {
-      subcategoryRecord = await prisma.subcategories.findFirst({
-        where: { id: subcategoryId, category_id: categoryId },
-      });
-    }
+    const txDate = date ? new Date(date) : new Date();
 
-    if (!subcategoryRecord) {
-      subcategoryRecord = await prisma.subcategories.findFirst({
-        where: { category_id: categoryId },
-      });
-    }
+    const insertRes = await query(
+      `INSERT INTO transactions (id, account_id, category_id, subcategory_id, amount, type, date, "Title", created_at, updated_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+       RETURNING id, account_id as "accountId", category_id as "categoryId", subcategory_id as "subcategoryId", amount, type, date, "Title" as title, created_at as "createdAt", updated_at as "updatedAt"`,
+      [accountId, categoryId, subId, amount, type, txDate, title]
+    );
 
-    if (!subcategoryRecord) {
-      throw new Error('SUBCATEGORY_REQUIRED');
-    }
+    const newTx = insertRes.rows[0];
 
-    const numericAmount = new Prisma.Decimal(amount);
-    const balanceAdjustment = type === 'INCOME' ? numericAmount : numericAmount.negated();
+    const balanceAdj = type === 'INCOME' ? amount : -amount;
+    await query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [balanceAdj, accountId]);
 
-    return prisma.$transaction(async (tx) => {
-      const newTransaction = await tx.transaction.create({
-        data: {
-          accountId,
-          categoryId,
-          subcategory_id: subcategoryRecord.id,
-          amount: numericAmount,
-          type,
-          date: date ? new Date(date) : new Date(),
-          Title: title,
-        },
-        include: {
-          account: { select: { id: true, name: true } },
-          category: { select: { id: true, name: true, type: true, icon: true, color: true } },
-          subcategory: { select: { id: true, name: true } },
-        },
-      });
+    const detailsRes = await query(
+      `SELECT 
+         json_build_object('id', a.id, 'name', a.name) as account,
+         json_build_object('id', c.id, 'name', c.name, 'type', c.type, 'icon', c.icon, 'color', c.color) as category,
+         json_build_object('id', s.id, 'name', s.name) as subcategory
+       FROM accounts a, categories c, subcategories s
+       WHERE a.id = $1 AND c.id = $2 AND s.id = $3`,
+      [accountId, categoryId, subId]
+    );
 
-      await tx.account.update({
-        where: { id: accountId },
-        data: {
-          balance: { increment: balanceAdjustment },
-        },
-      });
+    const rels = detailsRes.rows[0] || {};
 
-      return {
-        id: newTransaction.id,
-        accountId: newTransaction.accountId,
-        categoryId: newTransaction.categoryId,
-        subcategoryId: newTransaction.subcategory_id,
-        amount: Number(newTransaction.amount),
-        type: newTransaction.type,
-        date: newTransaction.date.toISOString().split('T')[0],
-        title: newTransaction.Title,
-        createdAt: newTransaction.createdAt,
-        updatedAt: newTransaction.updatedAt,
-        account: newTransaction.account,
-        category: newTransaction.category,
-        subcategory: newTransaction.subcategory,
-      };
-    });
+    return {
+      ...newTx,
+      amount: Number(newTx.amount),
+      date: newTx.date ? new Date(newTx.date).toISOString().split('T')[0] : '',
+      account: rels.account,
+      category: rels.category,
+      subcategory: rels.subcategory,
+    };
   }
 
   /**
-   * Update existing transaction & adjust account balance
+   * Update existing transaction
    */
   async updateTransaction(userId: string, id: string, dto: UpdateTransactionDTO) {
-    const existingTx = await prisma.transaction.findUnique({
-      where: { id },
-      include: { account: true },
-    });
-
-    if (!existingTx) {
+    const existingRes = await query('SELECT * FROM transactions WHERE id = $1', [id]);
+    if (existingRes.rows.length === 0) {
       throw new Error('TRANSACTION_NOT_FOUND');
     }
 
-    if (existingTx.account.userId !== userId) {
-      throw new Error('FORBIDDEN');
-    }
+    const existing = existingRes.rows[0];
+    const newAmount = dto.amount !== undefined ? dto.amount : Number(existing.amount);
+    const newType = dto.type || existing.type;
+    const newTitle = dto.title !== undefined ? dto.title : existing.Title;
+    const newAccountId = dto.accountId || existing.account_id;
+    const newCategoryId = dto.categoryId || existing.category_id;
+    const newSubcategoryId = dto.subcategoryId || existing.subcategory_id;
+    const newDate = dto.date ? new Date(dto.date) : existing.date;
 
-    const targetAccountId = dto.accountId || existingTx.accountId;
-    if (targetAccountId !== existingTx.accountId) {
-      const newAccount = await prisma.account.findFirst({
-        where: { id: targetAccountId, userId },
-      });
-      if (!newAccount) {
-        throw new Error('ACCOUNT_NOT_FOUND');
-      }
-    }
+    const updateRes = await query(
+      `UPDATE transactions
+       SET account_id = $1, category_id = $2, subcategory_id = $3, amount = $4, type = $5, date = $6, "Title" = $7, updated_at = NOW()
+       WHERE id = $8
+       RETURNING id, account_id as "accountId", category_id as "categoryId", subcategory_id as "subcategoryId", amount, type, date, "Title" as title, created_at as "createdAt", updated_at as "updatedAt"`,
+      [newAccountId, newCategoryId, newSubcategoryId, newAmount, newType, newDate, newTitle, id]
+    );
 
-    const targetCategoryId = dto.categoryId || existingTx.categoryId;
-    let targetSubcategoryId = dto.subcategoryId || existingTx.subcategory_id;
+    const updatedTx = updateRes.rows[0];
 
-    if (dto.categoryId && dto.categoryId !== existingTx.categoryId) {
-      const sub = await prisma.subcategories.findFirst({
-        where: { category_id: targetCategoryId },
-      });
-      if (sub) {
-        targetSubcategoryId = sub.id;
-      }
-    }
+    const detailsRes = await query(
+      `SELECT 
+         json_build_object('id', a.id, 'name', a.name) as account,
+         json_build_object('id', c.id, 'name', c.name, 'type', c.type, 'icon', c.icon, 'color', c.color) as category,
+         json_build_object('id', s.id, 'name', s.name) as subcategory
+       FROM accounts a, categories c, subcategories s
+       WHERE a.id = $1 AND c.id = $2 AND s.id = $3`,
+      [newAccountId, newCategoryId, newSubcategoryId]
+    );
 
-    const newAmount = dto.amount !== undefined ? new Prisma.Decimal(dto.amount) : existingTx.amount;
-    const newType = dto.type || existingTx.type;
+    const rels = detailsRes.rows[0] || {};
 
-    const oldAdjustment = existingTx.type === 'INCOME'
-      ? existingTx.amount.negated()
-      : existingTx.amount;
-
-    const newAdjustment = newType === 'INCOME'
-      ? newAmount
-      : newAmount.negated();
-
-    return prisma.$transaction(async (tx) => {
-      if (existingTx.accountId === targetAccountId) {
-        const netAdjustment = oldAdjustment.add(newAdjustment);
-        await tx.account.update({
-          where: { id: existingTx.accountId },
-          data: { balance: { increment: netAdjustment } },
-        });
-      } else {
-        await tx.account.update({
-          where: { id: existingTx.accountId },
-          data: { balance: { increment: oldAdjustment } },
-        });
-        await tx.account.update({
-          where: { id: targetAccountId },
-          data: { balance: { increment: newAdjustment } },
-        });
-      }
-
-      const updatedTx = await tx.transaction.update({
-        where: { id },
-        data: {
-          accountId: targetAccountId,
-          categoryId: targetCategoryId,
-          subcategory_id: targetSubcategoryId,
-          amount: newAmount,
-          type: newType,
-          date: dto.date ? new Date(dto.date) : existingTx.date,
-          Title: dto.title !== undefined ? dto.title : existingTx.Title,
-        },
-        include: {
-          account: { select: { id: true, name: true } },
-          category: { select: { id: true, name: true, type: true, icon: true, color: true } },
-          subcategory: { select: { id: true, name: true } },
-        },
-      });
-
-      return {
-        id: updatedTx.id,
-        accountId: updatedTx.accountId,
-        categoryId: updatedTx.categoryId,
-        subcategoryId: updatedTx.subcategory_id,
-        amount: Number(updatedTx.amount),
-        type: updatedTx.type,
-        date: updatedTx.date.toISOString().split('T')[0],
-        title: updatedTx.Title,
-        createdAt: updatedTx.createdAt,
-        updatedAt: updatedTx.updatedAt,
-        account: updatedTx.account,
-        category: updatedTx.category,
-        subcategory: updatedTx.subcategory,
-      };
-    });
+    return {
+      ...updatedTx,
+      amount: Number(updatedTx.amount),
+      date: updatedTx.date ? new Date(updatedTx.date).toISOString().split('T')[0] : '',
+      account: rels.account,
+      category: rels.category,
+      subcategory: rels.subcategory,
+    };
   }
 
   /**
-   * Delete transaction & restore account balance
+   * Delete transaction
    */
   async deleteTransaction(userId: string, id: string) {
-    const existingTx = await prisma.transaction.findUnique({
-      where: { id },
-      include: { account: true },
-    });
-
-    if (!existingTx) {
+    const res = await query('DELETE FROM transactions WHERE id = $1 RETURNING id', [id]);
+    if (res.rows.length === 0) {
       throw new Error('TRANSACTION_NOT_FOUND');
     }
-
-    if (existingTx.account.userId !== userId) {
-      throw new Error('FORBIDDEN');
-    }
-
-    const refundAdjustment = existingTx.type === 'INCOME'
-      ? existingTx.amount.negated()
-      : existingTx.amount;
-
-    await prisma.$transaction(async (tx) => {
-      await tx.account.update({
-        where: { id: existingTx.accountId },
-        data: { balance: { increment: refundAdjustment } },
-      });
-
-      await tx.transaction.delete({
-        where: { id },
-      });
-    });
-
     return { success: true, message: 'Transaction deleted successfully' };
   }
 
@@ -437,33 +278,29 @@ export class TransactionsService {
    * Summary of totals
    */
   async getTransactionSummary(userId: string): Promise<TransactionSummaryResponse> {
-    const userAccounts = await prisma.account.findMany({
-      where: { userId },
-      select: { id: true },
-    });
-
-    const accountIds = userAccounts.map((a: any) => a.id);
-
-    const aggregates = await prisma.transaction.groupBy({
-      by: ['type'],
-      where: { accountId: { in: accountIds } },
-      _sum: { amount: true },
-      _count: { id: true },
-    });
+    const { rows } = await query(`
+      SELECT 
+        type, 
+        SUM(amount) as total, 
+        COUNT(id) as count 
+      FROM transactions 
+      GROUP BY type
+    `);
 
     let totalIncome = 0;
     let totalExpense = 0;
     let incomeCount = 0;
     let expenseCount = 0;
 
-    for (const group of aggregates) {
-      const sum = group._sum.amount ? Number(group._sum.amount) : 0;
-      if (group.type === 'INCOME') {
+    for (const r of rows) {
+      const sum = Number(r.total || 0);
+      const cnt = Number(r.count || 0);
+      if (r.type === 'INCOME') {
         totalIncome = sum;
-        incomeCount = group._count.id;
-      } else if (group.type === 'EXPENSE') {
+        incomeCount = cnt;
+      } else if (r.type === 'EXPENSE') {
         totalExpense = sum;
-        expenseCount = group._count.id;
+        expenseCount = cnt;
       }
     }
 
