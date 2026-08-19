@@ -173,10 +173,11 @@ function ImportValidation({
   ).length;
 
   /*
-   * Category is OPTIONAL.
+   * Category is REQUIRED (NOT NULL in the database).
    *
-   * Therefore, a missing category does not prevent
-   * the user from continuing.
+   * A row missing a category is therefore not valid, and
+   * Continue stays disabled until every non-excluded row
+   * either has a category or is excluded.
    */
   const canContinue = invalidCount === 0;
 
@@ -271,6 +272,28 @@ function ImportValidation({
   };
 
   /**
+   * Re-include a previously excluded transaction.
+   *
+   * The row's last-known validity is preserved as-is (its data
+   * hasn't changed), so it drops back into either "Valid",
+   * "Category needed", or "Needs Attention" — whichever applied
+   * before it was excluded — letting the user Fix/Categorize it
+   * again if needed.
+   */
+  const handleInclude = (rowNumber: number) => {
+    setValidatedRows((currentRows) =>
+      currentRows.map((row) =>
+        row.row === rowNumber
+          ? {
+              ...row,
+              excluded: false,
+            }
+          : row
+      )
+    );
+  };
+
+  /**
    * Trigger the Categorization feature.
    *
    * This component does NOT contain:
@@ -355,6 +378,10 @@ function ImportValidation({
 
   /**
    * Accept the suggested category.
+   *
+   * Accepting a suggestion also revalidates the row, since a
+   * category is required — a row that only lacked a category
+   * becomes valid once one is applied.
    */
   const handleAcceptCategory = (
     rowNumber: number
@@ -372,12 +399,18 @@ function ImportValidation({
           return row;
         }
 
+        const updatedData = {
+          ...row.data,
+          category: suggestion.category,
+        };
+
+        const revalidated =
+          validateTransactions([updatedData])[0];
+
         return {
-          ...row,
-          data: {
-            ...row.data,
-            category: suggestion.category,
-          },
+          ...revalidated,
+          row: rowNumber,
+          excluded: row.excluded,
         };
       })
     );
@@ -413,8 +446,8 @@ function ImportValidation({
   /**
    * Save manually entered category.
    *
-   * Category remains optional overall.
-   * But if the user enters one, it is saved.
+   * Category is required overall, so saving a non-empty
+   * category also revalidates the row.
    */
   const handleSaveCategory = (
     rowNumber: number
@@ -436,12 +469,18 @@ function ImportValidation({
           return row;
         }
 
+        const updatedData = {
+          ...row.data,
+          category,
+        };
+
+        const revalidated =
+          validateTransactions([updatedData])[0];
+
         return {
-          ...row,
-          data: {
-            ...row.data,
-            category,
-          },
+          ...revalidated,
+          row: rowNumber,
+          excluded: row.excluded,
         };
       })
     );
@@ -460,10 +499,8 @@ function ImportValidation({
   /**
    * Continue with all valid, non-excluded transactions.
    *
-   * CATEGORY IS OPTIONAL.
-   *
-   * Transactions without categories are still
-   * passed to the next stage.
+   * Category is required, so `row.isValid` already accounts
+   * for it — no transaction without a category can pass here.
    */
   const handleContinue = () => {
     const validRows = validatedRows.filter(
@@ -567,6 +604,24 @@ function ImportValidation({
           const categoryAccepted =
             acceptedCategories[row.row];
 
+          /*
+           * Category is required (NOT NULL in the DB), but a row
+           * whose ONLY problem is a missing category shouldn't be
+           * treated the same as a row with genuinely malformed
+           * data (bad date, missing account, etc). It just needs
+           * the user to pick a category — not "fix" anything.
+           */
+          const nonCategoryErrors = row.errors.filter(
+            (error) => error.field !== "category"
+          );
+
+          const needsCategoryOnly =
+            !row.isValid &&
+            nonCategoryErrors.length === 0 &&
+            row.errors.some(
+              (error) => error.field === "category"
+            );
+
           return (
             <div
               key={row.row}
@@ -580,6 +635,8 @@ function ImportValidation({
                     ? "#f8f9fa"
                     : row.isValid
                     ? "#ffffff"
+                    : needsCategoryOnly
+                    ? "#fffaf0"
                     : "#fff8f7",
               }}
             >
@@ -615,6 +672,16 @@ function ImportValidation({
                     }}
                   >
                     ✓ Valid
+                  </span>
+                ) : needsCategoryOnly ? (
+                  <span
+                    style={{
+                      color: "#b26a00",
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                    }}
+                  >
+                    ⓘ Category needed
                   </span>
                 ) : (
                   <span
@@ -677,38 +744,65 @@ function ImportValidation({
                     />
 
                     {/*
-                     * Category is optional.
-                     *
                      * Categorize button appears only when:
                      *
-                     * - Transaction is valid
+                     * - Transaction has no OTHER validation errors
+                     *   (bad date, missing account, etc)
                      * - Transaction is not excluded
                      * - Category is empty
                      * - No suggestion currently exists
                      * - User is not manually editing category
+                     *
+                     * Note: this intentionally does NOT require
+                     * row.isValid, since a category-only issue
+                     * makes row.isValid false but should still
+                     * show the Categorize action.
                      */}
-                    {row.isValid &&
+                    {nonCategoryErrors.length === 0 &&
                       !row.excluded &&
                       !row.data.category?.trim() &&
                       !suggestion &&
                       !isCategoryEditing && (
-                        <button
-                          type="button"
+                        <div
                           style={{
-                            ...categoryButtonStyle,
+                            display: "flex",
+                            gap: "0.5rem",
                             marginTop: "0.5rem",
                           }}
-                          onClick={() =>
-                            handleCategorize(row)
-                          }
-                          disabled={
-                            isCategorizing
-                          }
                         >
-                          {isCategorizing
-                            ? "Categorizing..."
-                            : "✨ Categorize"}
-                        </button>
+                          <button
+                            type="button"
+                            style={categoryButtonStyle}
+                            onClick={() =>
+                              handleCategorize(row)
+                            }
+                            disabled={
+                              isCategorizing
+                            }
+                          >
+                            {isCategorizing
+                              ? "Categorizing..."
+                              : "✨ Categorize"}
+                          </button>
+
+                          {/*
+                           * Manual entry doesn't require waiting
+                           * on a suggestion first — the user can
+                           * just type the category directly.
+                           */}
+                          <button
+                            type="button"
+                            style={secondaryButtonStyle}
+                            onClick={() =>
+                              handleEditCategory(row)
+                            }
+                            disabled={
+                              isCategorizing
+                            }
+                          >
+                            Fix
+                          </button>
+                        </div>
                       )}
 
                     {/* Categorization message */}
@@ -908,28 +1002,80 @@ function ImportValidation({
                         >
                           Save
                         </button>
+
+                        {/*
+                         * Entering manual edit (via "Fix" or the
+                         * ✎ edit icon) must be reversible. Without
+                         * Cancel, a user who opens this by mistake
+                         * has no way back to the AI "Categorize"
+                         * option other than saving something.
+                         */}
+                        <button
+                          type="button"
+                          style={secondaryButtonStyle}
+                          onClick={() =>
+                            setEditingCategoryRow(null)
+                          }
+                        >
+                          Cancel
+                        </button>
                       </div>
                     )}
 
                     {/* Category Confirmed */}
                     {categoryAccepted &&
-                      row.data.category && (
+                      row.data.category &&
+                      !isCategoryEditing && (
                         <div
                           style={{
                             marginTop: "0.5rem",
                             display: "flex",
                             alignItems:
                               "center",
-                            gap: "0.4rem",
-                            color: "#188038",
-                            fontFamily:
-                              "var(--font-body)",
-                            fontSize:
-                              "0.75rem",
-                            fontWeight: 600,
+                            gap: "0.5rem",
                           }}
                         >
-                          ✓ Category confirmed
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems:
+                                "center",
+                              gap: "0.4rem",
+                              color: "#188038",
+                              fontFamily:
+                                "var(--font-body)",
+                              fontSize:
+                                "0.75rem",
+                              fontWeight: 600,
+                            }}
+                          >
+                            ✓ Category confirmed
+                          </div>
+
+                          {/*
+                           * A confirmed category is not final —
+                           * the user can still change it.
+                           */}
+                          <button
+                            type="button"
+                            title="Edit category"
+                            aria-label="Edit category"
+                            style={{
+                              ...iconButtonStyle,
+                              width: "24px",
+                              height: "24px",
+                              fontSize: "0.8rem",
+                              color:
+                                "var(--color-primary)",
+                            }}
+                            onClick={() =>
+                              handleEditCategory(
+                                row
+                              )
+                            }
+                          >
+                            ✎
+                          </button>
                         </div>
                       )}
                   </div>
@@ -949,6 +1095,7 @@ function ImportValidation({
                   <EditInput
                     label="Date"
                     value={row.data.date}
+                    placeholder="YYYY-MM-DD"
                     onChange={(value) =>
                       updateField(
                         row.row,
@@ -1038,6 +1185,7 @@ function ImportValidation({
                     value={
                       row.data.category || ""
                     }
+                    placeholder="e.g. Food, Salary"
                     onChange={(value) =>
                       updateField(
                         row.row,
@@ -1049,9 +1197,9 @@ function ImportValidation({
                 </div>
               )}
 
-              {/* Validation Errors */}
-              {!row.isValid &&
-                !row.excluded && (
+              {/* Validation Errors (excludes category — that has its own UI above) */}
+              {!row.excluded &&
+                nonCategoryErrors.length > 0 && (
                   <div
                     style={{
                       marginTop: "1rem",
@@ -1061,7 +1209,7 @@ function ImportValidation({
                         "#fff1f0",
                     }}
                   >
-                    {row.errors.map(
+                    {nonCategoryErrors.map(
                       (error, index) => (
                         <div
                           key={index}
@@ -1091,34 +1239,43 @@ function ImportValidation({
                       marginTop: "1rem",
                     }}
                   >
-                    {editingRow ===
-                    row.row ? (
-                      <button
-                        type="button"
-                        style={
-                          primaryButtonStyle
-                        }
-                        onClick={() =>
-                          saveFix(row.row)
-                        }
-                      >
-                        Save Fix
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        style={
-                          secondaryButtonStyle
-                        }
-                        onClick={() =>
-                          setEditingRow(
-                            row.row
-                          )
-                        }
-                      >
-                        Fix
-                      </button>
-                    )}
+                    {/*
+                     * Only rows with genuinely malformed fields get
+                     * a Fix button here. Rows that only need a
+                     * category are handled entirely by the
+                     * Categorize / Fix pair next to the Category
+                     * field above — repeating "Fix" down here would
+                     * just be a second way to trigger the same
+                     * manual-entry mode.
+                     */}
+                    {nonCategoryErrors.length > 0 &&
+                      (editingRow === row.row ? (
+                        <button
+                          type="button"
+                          style={
+                            primaryButtonStyle
+                          }
+                          onClick={() =>
+                            saveFix(row.row)
+                          }
+                        >
+                          Save Fix
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          style={
+                            secondaryButtonStyle
+                          }
+                          onClick={() =>
+                            setEditingRow(
+                              row.row
+                            )
+                          }
+                        >
+                          Fix
+                        </button>
+                      ))}
 
                     <button
                       type="button"
@@ -1136,6 +1293,32 @@ function ImportValidation({
                     </button>
                   </div>
                 )}
+
+              {/*
+               * Exclusion is reversible. Bringing a row back in
+               * restores its previous Valid / Category needed /
+               * Needs Attention state (its data hasn't changed),
+               * so the user can Fix or Categorize it again.
+               */}
+              {row.excluded && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.75rem",
+                    marginTop: "1rem",
+                  }}
+                >
+                  <button
+                    type="button"
+                    style={secondaryButtonStyle}
+                    onClick={() =>
+                      handleInclude(row.row)
+                    }
+                  >
+                    Include
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
@@ -1268,11 +1451,13 @@ function EditInput({
   label,
   value,
   type = "text",
+  placeholder,
   onChange,
 }: {
   label: string;
   value: string;
   type?: string;
+  placeholder?: string;
   onChange: (value: string) => void;
 }) {
   return (
@@ -1293,6 +1478,7 @@ function EditInput({
       <input
         type={type}
         value={value}
+        placeholder={placeholder}
         onChange={(event) =>
           onChange(event.target.value)
         }
