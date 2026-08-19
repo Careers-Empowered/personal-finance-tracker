@@ -20,6 +20,7 @@ export async function getAccountById(req: Request, res: Response) {
     const accountId = Array.isArray(id) ? id[0] : id;
 
     const account = await accountService.getAccountById(accountId);
+
     if (!account) {
       res.status(404).json({ error: "Account not found" });
       return;
@@ -66,13 +67,20 @@ export async function updateAccount(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const accountId = Array.isArray(id) ? id[0] : id;
-    const { name, currency, isPrimary } = req.body;
 
-    const account = await accountService.updateAccount(accountId, DUMMY_USER_ID, {
-      name: name?.trim(),
-      currency,
-      isPrimary: isPrimary !== undefined ? Boolean(isPrimary) : undefined,
-    });
+    const { name, currency, balance, isPrimary } = req.body;
+
+    const account = await accountService.updateAccount(
+      accountId,
+      DUMMY_USER_ID,
+      {
+        name: name?.trim(),
+        currency,
+        balance: balance !== undefined ? Number(balance) : undefined,
+        isPrimary:
+          isPrimary !== undefined ? Boolean(isPrimary) : undefined,
+      }
+    );
 
     res.status(200).json({ data: account });
   } catch (error) {
@@ -92,7 +100,11 @@ export async function updateBalance(req: Request, res: Response) {
       return;
     }
 
-    const account = await accountService.updateBalance(accountId, Number(balance));
+    const account = await accountService.updateBalance(
+      accountId,
+      Number(balance)
+    );
+
     res.status(200).json({ data: account });
   } catch (error) {
     console.error("Failed to update balance:", error);
@@ -106,6 +118,7 @@ export async function deleteAccount(req: Request, res: Response) {
     const accountId = Array.isArray(id) ? id[0] : id;
 
     await accountService.deleteAccount(accountId);
+
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Failed to delete account:", error);
@@ -115,7 +128,12 @@ export async function deleteAccount(req: Request, res: Response) {
 
 export async function transferBalance(req: Request, res: Response) {
   try {
-    const { sourceId, destId, sourceAmount, convertedAmount } = req.body;
+    const {
+      sourceId,
+      destId,
+      sourceAmount,
+      convertedAmount,
+    } = req.body;
 
     if (
       !sourceId ||

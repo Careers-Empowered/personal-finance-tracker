@@ -47,7 +47,7 @@ model Session {
 }
 
 // =========================
-// BANKING & TRANSACTIONS
+// BANKING & ACCOUNTS
 // =========================
 
 model Account {
@@ -67,32 +67,6 @@ model Account {
   @@map("accounts")
 }
 
-model Transaction {
-  id                   String          @id @default(uuid()) @db.Uuid
-  accountId            String          @map("account_id") @db.Uuid
-  categoryId           String          @map("category_id") @db.Uuid
-  subcategory_id       String          @db.Uuid
-  amount               Decimal         @db.Decimal(15, 2)
-  type                 TransactionType
-  date                 DateTime
-  Title                String
-  createdAt            DateTime        @default(now()) @map("created_at")
-  updatedAt            DateTime        @updatedAt @map("updated_at")
-  importedWithOverride Boolean         @default(false) @map("imported_with_override")
-  overrideNote         String?         @map("override_note")
-
-  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category    Category    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  subcategory Subcategory @relation(fields: [subcategory_id], references: [id], onDelete: SetNull)
-
-  @@index([accountId])
-  @@index([categoryId])
-  @@index([subcategory_id])
-  @@index([date])
-  @@index([type])
-  @@map("transactions")
-}
-
 // =========================
 // CATEGORISATION
 // =========================
@@ -107,9 +81,11 @@ model Category {
   is_default    Boolean       @default(false)
   aliases       String[]      @default([])
 
-  user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subcategories Subcategory[]
-  transactions  Transaction[]
+  user                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subcategories       Subcategory[]
+  transactions        Transaction[]
+  categorizationRules CategorizationRule[]
+  suggestions         Suggestion[]
 
   @@index([userId])
   @@index([type])
@@ -135,19 +111,39 @@ model Subcategory {
   @@map("subcategories")
 }
 
-model CategorizationRule {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
+// =========================
+// TRANSACTIONS
+// =========================
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Transaction {
+  id                   String          @id @default(uuid()) @db.Uuid
+  accountId            String          @map("account_id") @db.Uuid
+  categoryId           String          @map("category_id") @db.Uuid
+  subcategory_id       String          @db.Uuid
+  amount               Decimal         @db.Decimal(15, 2)
+  type                 TransactionType
+  date                 DateTime
+  Title                String
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+  importedWithOverride Boolean         @default(false) @map("imported_with_override")
+  overrideNote         String?         @map("override_note")
 
-  @@index([userId])
-  @@map("categorization_rules")
+  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory Subcategory @relation(fields: [subcategory_id], references: [id], onDelete: SetNull)
+  suggestions Suggestion[]
+
+  @@index([accountId])
+  @@index([categoryId])
+  @@index([subcategory_id])
+  @@index([date])
+  @@index([type])
+  @@map("transactions")
 }
 
 // =========================
-// IMPORTS & ENUMS
+// IMPORTS
 // =========================
 
 model Import {
@@ -167,7 +163,58 @@ model Import {
   @@map("imports")
 }
 
+// =========================
+// CATEGORIZATION RULE
+// =========================
+
+model CategorizationRule {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  categoryId  String?  @map("category_id") @db.Uuid
+  field       String?
+  condition   String?
+  value       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([categoryId])
+  @@map("categorization_rules")
+}
+
+// =========================
+// CATEGORY SUGGESTION
+// =========================
+
+model Suggestion {
+  id            String           @id @default(uuid()) @db.Uuid
+  transactionId String           @map("transaction_id") @db.Uuid
+  categoryId    String           @map("category_id") @db.Uuid
+  source        SuggestionSource
+  confidence    Decimal?         @db.Decimal(5, 4)
+  status        SuggestionStatus @default(PENDING)
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@index([categoryId])
+  @@map("suggestions")
+}
+
+// =========================
+// ENUMS
+// =========================
+
 enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum CategoryType {
   INCOME
   EXPENSE
 }
@@ -188,9 +235,4 @@ enum SuggestionStatus {
   PENDING
   ACCEPTED
   OVERRIDDEN
-}
-
-enum CategoryType {
-  INCOME
-  EXPENSE
 }
