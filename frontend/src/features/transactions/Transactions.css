@@ -230,10 +230,18 @@
   color: #d93025;
 }
 
-.transaction-details {
-  min-width: 0;
+.form-error-alert {
+  background-color: #fce8e6;
+  border: 1px solid #fad2cf;
+  color: #c5221f;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
 }
 
+.transaction-title,
 .transaction-description {
   margin-bottom: 0.35rem;
   color: var(--color-text-dark, #231f20);
@@ -383,64 +391,32 @@
   }
 }
 
-
-/* ============================================================================
-   TRANSACTION FILTER
-   ============================================================================ */
-
-.transaction-filter {
+/* Dynamic Currency Amount Input Container */
+.amount-input-container {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem;
-  background-color: #f5f5f5;
-  border-radius: 10px;
+  width: 100%;
 }
 
-.transaction-filter-btn {
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted, #6b6b6b);
-  padding: 0.5rem 0.9rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
+.currency-symbol-prefix {
+  position: absolute;
+  left: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  background-color: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.amount-input-with-symbol {
+  padding-left: 54px !important;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
 }
 
-.transaction-filter-btn:hover {
-  color: var(--color-text-dark, #231f20);
-}
 
-.transaction-filter-btn.active {
-  background-color: #ffffff;
-  color: var(--color-text-dark, #231f20);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-}
-
-.transaction-filter-btn.active.income-filter {
-  color: #1e8e3e;
-}
-
-.transaction-filter-btn.active.expense-filter {
-  color: #d93025;
-}
-
-/* Responsive */
-
-@media (max-width: 650px) {
-  .transactions-list-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .transaction-filter {
-    width: 100%;
-  }
-
-  .transaction-filter-btn {
-    flex: 1;
-  }
-}
