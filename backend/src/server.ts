@@ -6,6 +6,7 @@ import categoryMatcherRoutes from "./api/category-matcher.routes";
 import accountRoutes from "./api/account.routes";
 import authRoutes from "./api/auth.routes";
 import { authMiddleware } from "./security/auth.middleware";
+import transactionsRouter from "./api/transactions";
 import { prisma } from "./infrastructure/postgres/prisma";
 
 const app = express();
@@ -26,6 +27,9 @@ app.get("/health", (_req, res) => {
 
 // Auth APIs
 app.use("/api/auth", authRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/accounts", accountRoutes);
+app.use("/api/transactions", transactionsRouter);
 
 // Category APIs
 app.use("/api/categories", authMiddleware, categoryRoutes);
