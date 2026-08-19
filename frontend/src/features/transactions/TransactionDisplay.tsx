@@ -223,27 +223,24 @@ const TransactionDisplay: React.FC<TransactionDisplayProps> = ({
                     ADD ANYWAY NOTE - EYE ICON
                     ================================= */}
                 {transaction.importedWithOverride &&
-                transaction.overrideNote ? (
-                  <button
-                    type="button"
-                    className="transaction-note-button"
-                    title="View import override note"
-                    aria-label="View import override note"
-                    onClick={() =>
-                      setSelectedOverrideNote(
-                        transaction.overrideNote ?? null
-                      )
-                    }
-                  >
-                    <span className="eye-icon">👁</span>
-                  </button>
-                ) : (
-                  <span
-                    className="transaction-note-placeholder"
-                    aria-hidden="true"
-                  />
-                )}
-
+                  transaction.overrideNote ? (
+                    <button
+                      type="button"
+                      className="transaction-note-button"
+                      onClick={() => {
+                        setSelectedOverrideNote(transaction.overrideNote ?? null);
+                      }}
+                      aria-label="View import override note"
+                      title="View import override note"
+                    >
+                      <span className="eye-icon">👁</span>
+                    </button>
+                  ) : (
+                    <span
+                      className="transaction-note-placeholder"
+                      aria-hidden="true"
+                    />
+                  )}
                 {/* Existing Edit / Delete */}
                 <TransactionEditDelete
                   transaction={transaction}

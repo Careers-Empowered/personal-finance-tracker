@@ -133,18 +133,38 @@ export class TransactionsService {
     } = filters;
 
     let queryText = `
-      SELECT 
-        t.id, t.account_id as "accountId", t.category_id as "categoryId", t.subcategory_id as "subcategoryId",
-        t.amount, t.type, t.date, t."Title" as title, t.created_at as "createdAt", t.updated_at as "updatedAt",
-        json_build_object('id', a.id, 'name', a.name) as account,
-        json_build_object('id', c.id, 'name', c.name, 'type', c.type, 'icon', c.icon, 'color', c.color) as category,
-        json_build_object('id', s.id, 'name', s.name) as subcategory
-      FROM transactions t
-      LEFT JOIN accounts a ON t.account_id = a.id
-      LEFT JOIN categories c ON t.category_id = c.id
-      LEFT JOIN subcategories s ON t.subcategory_id = s.id
-      WHERE 1=1
-    `;
+  SELECT 
+    t.id,
+    t.account_id as "accountId",
+    t.category_id as "categoryId",
+    t.subcategory_id as "subcategoryId",
+    t.amount,
+    t.type,
+    t.date,
+    t."Title" as title,
+    t.created_at as "createdAt",
+    t.updated_at as "updatedAt",
+    t.imported_with_override as "importedWithOverride",
+    t.override_note as "overrideNote",
+    json_build_object('id', a.id, 'name', a.name) as account,
+    json_build_object(
+      'id', c.id,
+      'name', c.name,
+      'type', c.type,
+      'icon', c.icon,
+      'color', c.color
+    ) as category,
+    CASE
+      WHEN s.id IS NOT NULL
+      THEN json_build_object('id', s.id, 'name', s.name)
+      ELSE NULL
+    END as subcategory
+  FROM transactions t
+  LEFT JOIN accounts a ON t.account_id = a.id
+  LEFT JOIN categories c ON t.category_id = c.id
+  LEFT JOIN subcategories s ON t.subcategory_id = s.id
+  WHERE 1=1
+`;
 
     const queryParams: any[] = [];
 
@@ -183,20 +203,26 @@ export class TransactionsService {
     const { rows } = await query(queryText, queryParams);
 
     const formattedTransactions = rows.map((tx: any) => ({
-      id: tx.id,
-      accountId: tx.accountId,
-      categoryId: tx.categoryId,
-      subcategoryId: tx.subcategoryId,
-      amount: Number(tx.amount),
-      type: tx.type,
-      date: tx.date ? new Date(tx.date).toISOString().split('T')[0] : '',
-      title: tx.title,
-      createdAt: tx.createdAt,
-      updatedAt: tx.updatedAt,
-      account: tx.account,
-      category: tx.category,
-      subcategory: tx.subcategory,
-    }));
+  id: tx.id,
+  accountId: tx.accountId,
+  categoryId: tx.categoryId,
+  subcategoryId: tx.subcategoryId,
+  amount: Number(tx.amount),
+  type: tx.type,
+  date: tx.date ? new Date(tx.date).toISOString().split('T')[0] : '',
+  title: tx.title,
+  createdAt: tx.createdAt,
+  updatedAt: tx.updatedAt,
+
+  // Import override information
+  importedWithOverride: tx.importedWithOverride ?? false,
+  overrideNote: tx.overrideNote ?? null,
+
+  // Relations
+  account: tx.account,
+  category: tx.category,
+  subcategory: tx.subcategory,
+}));
 
     return {
       data: formattedTransactions,
