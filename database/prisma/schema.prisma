@@ -5,29 +5,18 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// =========================
-// USER & AUTH
-// =========================
-
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  passwordHash String?  @map("password_hash")
-  googleId     String?  @unique @map("google_id")
-  name         String?
-  picture      String?
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  sessions            Session[]
-  accounts            Account[]
-  categories          Category[]
-  subcategories       Subcategory[]
-  imports             Import[]
-  categorizationRules CategorizationRule[]
+  id            String        @id @default(uuid()) @db.Uuid
+  email         String        @unique
+  passwordHash  String        @map("password_hash")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  accounts      Account[]
+  categories    Category[]
+  sessions      Session[]
+  subcategories Subcategory[]
 
   @@map("users")
 }
@@ -38,16 +27,11 @@ model Session {
   token     String   @unique
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("sessions")
 }
-
-// =========================
-// BANKING & TRANSACTIONS
-// =========================
 
 model Account {
   id           String        @id @default(uuid()) @db.Uuid
@@ -58,7 +42,6 @@ model Account {
   isPrimary    Boolean       @default(false) @map("is_primary")
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
-
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
@@ -79,10 +62,9 @@ model Transaction {
   updatedAt            DateTime        @updatedAt @map("updated_at")
   importedWithOverride Boolean         @default(false) @map("imported_with_override")
   overrideNote         String?         @map("override_note")
-
-  account     Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category    Category    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  subcategory Subcategory @relation(fields: [subcategory_id], references: [id], onDelete: SetNull)
+  account              Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category             Category        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory          Subcategory     @relation(fields: [subcategory_id], references: [id], onDelete: SetNull)
 
   @@index([accountId])
   @@index([categoryId])
@@ -91,10 +73,6 @@ model Transaction {
   @@index([type])
   @@map("transactions")
 }
-
-// =========================
-// CATEGORISATION
-// =========================
 
 model Category {
   id            String        @id @default(uuid()) @db.Uuid
@@ -105,7 +83,6 @@ model Category {
   color         String?
   is_default    Boolean       @default(false)
   aliases       String[]      @default([])
-
   user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   subcategories Subcategory[]
   transactions  Transaction[]
@@ -116,15 +93,14 @@ model Category {
 }
 
 model Subcategory {
-  id          String   @id @default(uuid()) @db.Uuid
-  category_id String   @db.Uuid
-  user_id     String?  @db.Uuid
-  name        String
-  icon        String?
-  color       String?
-  is_default  Boolean  @default(false)
-  aliases     String[] @default([])
-
+  id           String        @id @default(uuid()) @db.Uuid
+  category_id  String        @db.Uuid
+  user_id      String?       @db.Uuid
+  name         String
+  icon         String?
+  color        String?
+  is_default   Boolean       @default(false)
+  aliases      String[]      @default([])
   categories   Category      @relation(fields: [category_id], references: [id], onDelete: Cascade)
   users        User?         @relation(fields: [user_id], references: [id], onDelete: Cascade)
   transactions Transaction[]
@@ -132,38 +108,6 @@ model Subcategory {
   @@index([category_id])
   @@index([user_id])
   @@map("subcategories")
-}
-
-model CategorizationRule {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  createdAt DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("categorization_rules")
-}
-
-// =========================
-// IMPORTS & ENUMS
-// =========================
-
-model Import {
-  id          String       @id @default(uuid()) @db.Uuid
-  userId      String       @map("user_id") @db.Uuid
-  fileName    String       @map("file_name")
-  fileType    String       @map("file_type")
-  status      ImportStatus @default(PENDING)
-  totalRows   Int          @default(0) @map("total_rows")
-  validRows   Int          @default(0) @map("valid_rows")
-  invalidRows Int          @default(0) @map("invalid_rows")
-  createdAt   DateTime     @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("imports")
 }
 
 enum TransactionType {
