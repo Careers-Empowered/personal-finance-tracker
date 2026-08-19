@@ -549,4 +549,3 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
 };
 
 export default CategoryPicker;
-
