@@ -59,6 +59,7 @@ const Accounts: React.FC = () => {
     currency: primaryCurrency,
   }).format(totalBalance);
 
+  // Handlers for Account Modal (Create / Edit)
   const handleOpenCreateModal = () => {
     setSelectedAccount(undefined);
     setIsAccountModalOpen(true);
@@ -88,6 +89,7 @@ const Accounts: React.FC = () => {
     }
   };
 
+  // Handlers for Balance Correction
   const handleOpenAdjustBalance = (account: Account) => {
     setSelectedAccount(account);
     setIsBalanceModalOpen(true);
@@ -149,23 +151,9 @@ const Accounts: React.FC = () => {
       <div className="accounts-header">
         <div className="total-balance-section">
           <h1>{formattedTotal}</h1>
-          <p
-            onClick={() => setIsCurrencyModalOpen(true)}
-            style={{ cursor: "pointer" }}
-          >
-            Total Balance in {primaryCurrency}{" "}
-            {loading ? "(Updating rates...)" : ""}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+          <p onClick={() => setIsCurrencyModalOpen(true)}>
+            Total Balance in {primaryCurrency}
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 20h9" />
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
             </svg>
@@ -198,9 +186,9 @@ const Accounts: React.FC = () => {
       </div>
 
       {/* Modals */}
-      <AccountModal
-        isOpen={isAccountModalOpen}
-        onClose={() => setIsAccountModalOpen(false)}
+      <AccountModal 
+        isOpen={isAccountModalOpen} 
+        onClose={() => setIsAccountModalOpen(false)} 
         onSave={handleSaveAccount}
         accountToEdit={selectedAccount}
         rates={rates}

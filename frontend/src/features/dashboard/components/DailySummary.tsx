@@ -19,16 +19,6 @@ const formatCurrency = (amount: number, currency: string) =>
     maximumFractionDigits: 2,
   }).format(amount);
 
-const formatCompactCurrency = (
-  amount: number,
-  currency: string,
-) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-    notation: "compact",
-  }).format(amount);
 
 const formatMonth = (date: Date) =>
   new Intl.DateTimeFormat("en-US", {
@@ -62,7 +52,7 @@ const DailySummary = ({
   data = [],
   transactions = [],
   accounts = [],
-  currency = "USD",
+  currency = "INR",
 }: DailySummaryProps) => {
   const initialMonth = useMemo(() => {
     if (data.length === 0) {
@@ -117,23 +107,22 @@ const DailySummary = ({
   /*
    * Transactions for the selected date.
    */
-  const selectedDateTransactions = useMemo(() => {
-    if (!selectedDate) {
-      return [];
-    }
+const selectedDateTransactions = useMemo(() => {
+  if (!selectedDate) {
+    return [];
+  }
 
-    return transactions
-      .filter(
-        (transaction) =>
-          transaction.date === selectedDate,
-      )
-      .sort((first, second) => {
-        return first.description.localeCompare(
-          second.description,
-        );
-      });
-  }, [transactions, selectedDate]);
-
+  return transactions
+    .filter(
+      (transaction) =>
+        transaction.date.slice(0, 10) === selectedDate,
+    )
+    .sort((first, second) => {
+      return first.title.localeCompare(
+        second.title,
+      );
+    });
+}, [transactions, selectedDate]);
   const totalIncome = [...monthData.values()].reduce(
     (sum, point) => sum + point.income,
     0,
@@ -242,7 +231,7 @@ const DailySummary = ({
           <span>
             In{" "}
             <strong>
-              {formatCompactCurrency(
+              {formatCurrency(
                 totalIncome,
                 currency,
               )}
@@ -252,7 +241,7 @@ const DailySummary = ({
           <span>
             Out{" "}
             <strong>
-              {formatCompactCurrency(
+              {formatCurrency(
                 totalExpenses,
                 currency,
               )}
@@ -269,7 +258,7 @@ const DailySummary = ({
               }
             >
               {netBalance >= 0 ? "+" : ""}
-              {formatCompactCurrency(
+              {formatCurrency(
                 netBalance,
                 currency,
               )}
@@ -398,7 +387,7 @@ const DailySummary = ({
                     }`}
                   >
                     {point.balance >= 0 ? "+" : ""}
-                    {formatCompactCurrency(
+                    {formatCurrency(
                       point.balance,
                       currency,
                     )}
@@ -408,7 +397,7 @@ const DailySummary = ({
                     {point.income > 0 && (
                       <span className="daily-calendar-pill daily-calendar-pill--income">
                         <span>↑</span>
-                        {formatCompactCurrency(
+                        {formatCurrency(
                           point.income,
                           currency,
                         )}
@@ -418,7 +407,7 @@ const DailySummary = ({
                     {point.expenses > 0 && (
                       <span className="daily-calendar-pill daily-calendar-pill--expense">
                         <span>↓</span>
-                        {formatCompactCurrency(
+                        {formatCurrency(
                           point.expenses,
                           currency,
                         )}
@@ -498,7 +487,9 @@ const DailySummary = ({
                 );
 
                 const transactionCurrency =
-                  account?.currency ?? currency;
+  transaction.currency ??
+  account?.currency ??
+  currency;
 
                 return (
                   <div
@@ -515,7 +506,7 @@ const DailySummary = ({
 
                     <div className="daily-calendar-transaction__details">
                       <strong>
-                        {transaction.description}
+                        {transaction.title}
                       </strong>
 
                       <span>
