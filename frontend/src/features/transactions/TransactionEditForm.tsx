@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Transaction, CreateTransactionInput, TransactionType } from './types';
-import { Account } from '../accounts/types/types';
-import { AccountSelector, CategorySelector } from './TransactionModal';
+import { Account } from '../accounts/types';
+import { AccountSelector, CategoryPicker } from './addTransaction';
+import { apiFetch } from '../../shared/utils/api';
+import { getCurrencySymbol } from '../../shared/utils/currencyUtils';
 
 interface TransactionEditFormProps {
   isOpen: boolean;
@@ -21,40 +23,110 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
   const [type, setType] = useState<TransactionType>('EXPENSE');
   const [amount, setAmount] = useState<string>('');
   const [accountId, setAccountId] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [subcategoryId, setSubcategoryId] = useState<string>('');
   const [date, setDate] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
+  const [title, setTitle] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
 
+  // Find currently selected account & currency symbol
+  const selectedAccount = accounts.find((acc) => acc.id === accountId);
+  const currencySymbol = getCurrencySymbol(selectedAccount?.currency);
+
+  // Dropdowns option lists
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  const [subcategoriesList, setSubcategoriesList] = useState<any[]>([]);
+
+  // Fetch categories & all subcategories when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      Promise.all([
+        apiFetch('/api/transactions/categories'),
+        apiFetch('/api/transactions/subcategories')
+      ])
+        .then(([catData, subData]) => {
+          setCategoriesList(Array.isArray(catData) ? catData : []);
+          setSubcategoriesList(Array.isArray(subData) ? subData : []);
+        })
+        .catch((err) => {
+          console.error('Error fetching categories/subcategories in edit form:', err);
+          setErrorMessage('Unable to load categories.');
+        });
+    }
+  }, [isOpen]);
+
+  // Load transaction values when open
   useEffect(() => {
     if (isOpen && transaction) {
       setType(transaction.type);
       setAmount(transaction.amount.toString());
       setAccountId(transaction.accountId);
-      setCategory(transaction.categoryId || '');
+      setCategoryId(transaction.categoryId || '');
+      setSubcategoryId(transaction.subcategoryId || '');
       setDate(transaction.date);
-      setDescription(transaction.description || '');
+      setTitle(transaction.title || '');
+      setErrorMessage('');
     }
   }, [isOpen, transaction]);
+
+  const safeCategoriesList = Array.isArray(categoriesList) ? categoriesList : [];
+  const safeSubcategoriesList = Array.isArray(subcategoriesList) ? subcategoriesList : [];
+
+  // Filter categories shown to match type
+  const filteredCategories = safeCategoriesList.filter((cat) => cat && cat.type === type);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
 
+    const trimmedTitle = title.trim();
+    const trimmedAccountId = accountId.trim();
+    const trimmedCategoryId = categoryId.trim();
+    const trimmedSubcategoryId = subcategoryId.trim();
+    const trimmedDate = date.trim();
     const numericAmount = parseFloat(amount);
+
     if (isNaN(numericAmount) || numericAmount <= 0) {
+      setErrorMessage('Please enter a valid amount greater than 0.');
       return;
     }
 
-    // Preserve other original properties (e.g. id, createdAt) if it's a Transaction
+    if (!trimmedAccountId) {
+      setErrorMessage('Please select a valid Account.');
+      return;
+    }
+
+    if (!trimmedCategoryId) {
+      setErrorMessage('Category is required.');
+      return;
+    }
+
+    if (!trimmedSubcategoryId) {
+      setErrorMessage('Subcategory is required.');
+      return;
+    }
+
+    if (!trimmedDate) {
+      setErrorMessage('Date is required.');
+      return;
+    }
+
+    if (!trimmedTitle) {
+      setErrorMessage('Title is required.');
+      return;
+    }
+
     const updatedTransaction: Transaction | CreateTransactionInput = {
       ...transaction,
       type,
       amount: numericAmount,
-      accountId,
-      date,
-      categoryId: category.trim() ? category.trim() : undefined,
-      description: description.trim() ? description.trim() : undefined,
+      accountId: trimmedAccountId,
+      date: trimmedDate,
+      categoryId: trimmedCategoryId,
+      subcategoryId: trimmedSubcategoryId,
+      title: trimmedTitle,
     } as Transaction | CreateTransactionInput;
 
     onSave(updatedTransaction);
@@ -83,7 +155,11 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
             className={`type-toggle-btn ${
               type === 'EXPENSE' ? 'active-expense' : ''
             }`}
-            onClick={() => setType('EXPENSE')}
+            onClick={() => {
+              setType('EXPENSE');
+              setCategoryId('');
+              setSubcategoryId('');
+            }}
           >
             <span>↓</span> Expense
           </button>
@@ -92,45 +168,97 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
             className={`type-toggle-btn ${
               type === 'INCOME' ? 'active-income' : ''
             }`}
-            onClick={() => setType('INCOME')}
+            onClick={() => {
+              setType('INCOME');
+              setCategoryId('');
+              setSubcategoryId('');
+            }}
           >
             <span>↑</span> Income
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="editTransactionAmount" className="form-group-label">
-                Amount *
-              </label>
-              <input
-                type="number"
-                id="editTransactionAmount"
-                className="form-control-enhanced"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                step="0.01"
-                min="0.01"
-                required
-                placeholder="0.00"
-              />
-            </div>
+        {errorMessage && (
+          <div className="form-error-alert" role="alert">
+            {errorMessage}
+          </div>
+        )}
 
-            {/* Decoupled Account Selector Field */}
-            <AccountSelector
-              value={accountId}
-              onChange={setAccountId}
-              accounts={accounts}
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label
+              htmlFor="editTransactionTitle"
+              className="form-group-label"
+            >
+              Title *
+            </label>
+            <input
+              type="text"
+              id="editTransactionTitle"
+              className="form-control-enhanced"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Grocery Shopping"
+              required
             />
           </div>
 
           <div className="form-row">
-            {/* Decoupled Category Selector Field */}
-            <CategorySelector
-              value={category}
-              onChange={setCategory}
-            />
+            {/* Decoupled Account Selector Field */}
+            <div className="form-group">
+              <label className="form-group-label">Account *</label>
+              <AccountSelector
+                value={accountId}
+                onChange={setAccountId}
+                accounts={accounts}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="editTransactionAmount" className="form-group-label">
+                Amount ({selectedAccount?.currency || 'INR'}) *
+              </label>
+              <div className="amount-input-container">
+                <span className="currency-symbol-prefix">{currencySymbol}</span>
+                <input
+                  type="number"
+                  id="editTransactionAmount"
+                  className="form-control-enhanced amount-input-with-symbol"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  step="0.01"
+                  min="0.01"
+                  required
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-row">
+            {/* Rich 2-Column Category & Subcategory Picker */}
+            <div className="form-group">
+              <label className="form-group-label">Category *</label>
+              <CategoryPicker
+                categories={filteredCategories}
+                subcategories={safeSubcategoriesList}
+                selectedCategoryId={categoryId}
+                selectedSubcategoryId={subcategoryId}
+                defaultType={type}
+                onSelect={(catId, subId) => {
+                  setCategoryId(catId);
+                  setSubcategoryId(subId);
+                }}
+                onCategoryAdded={(newCat, newSub) => {
+                  setCategoriesList((prev) => [...prev, newCat]);
+                  if (newSub) {
+                    setSubcategoriesList((prev) => [...prev, newSub]);
+                  }
+                }}
+                required
+              />
+            </div>
 
             <div className="form-group">
               <label htmlFor="editTransactionDate" className="form-group-label">
@@ -145,23 +273,6 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
                 required
               />
             </div>
-          </div>
-
-          <div className="form-group">
-            <label
-              htmlFor="editTransactionDescription"
-              className="form-group-label"
-            >
-              Description
-            </label>
-            <input
-              type="text"
-              id="editTransactionDescription"
-              className="form-control-enhanced"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Weekly supermarket shopping"
-            />
           </div>
 
           <div className="modal-actions">

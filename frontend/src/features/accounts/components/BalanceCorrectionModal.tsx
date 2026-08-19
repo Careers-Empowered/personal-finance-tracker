@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Account } from './types';
+import { Account } from '../types/types';
 
 interface BalanceCorrectionModalProps {
   isOpen: boolean;
