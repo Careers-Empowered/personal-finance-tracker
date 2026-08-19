@@ -1,12 +1,10 @@
 import type { Request, Response } from "express";
 import { accountService } from "../application/account.service";
 
-// Dummy user ID for now until Auth is implemented (matches existing DB records)
-const DUMMY_USER_ID = "9a1b181c-d789-4d6b-873f-c12140a32456";
-
 export async function getAccounts(req: Request, res: Response) {
   try {
-    const accounts = await accountService.getAccounts(DUMMY_USER_ID);
+    const userId = (req as any).userId;
+    const accounts = await accountService.getAccounts(userId);
     res.status(200).json({ data: accounts });
   } catch (error) {
     console.error("Failed to fetch accounts:", error);
@@ -16,14 +14,15 @@ export async function getAccounts(req: Request, res: Response) {
 
 export async function getAccountById(req: Request, res: Response) {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { id } = req.params;
+    const userId = (req as any).userId;
     const account = await accountService.getAccountById(id);
     if (!account) {
       res.status(404).json({ error: "Account not found" });
       return;
     }
-    // Simple check to ensure account belongs to dummy user (for safety)
-    if (account.userId !== DUMMY_USER_ID) {
+    // Simple check to ensure account belongs to authenticated user (for safety)
+    if (account.userId !== userId) {
       res.status(403).json({ error: "Forbidden" });
       return;
     }
@@ -37,6 +36,7 @@ export async function getAccountById(req: Request, res: Response) {
 export async function createAccount(req: Request, res: Response) {
   try {
     const { name, currency, balance, isPrimary } = req.body;
+    const userId = (req as any).userId;
 
     if (!name || typeof name !== "string") {
       res.status(400).json({ error: "Account name is required" });
@@ -44,7 +44,7 @@ export async function createAccount(req: Request, res: Response) {
     }
 
     const account = await accountService.createAccount({
-      userId: DUMMY_USER_ID,
+      userId,
       name: name.trim(),
       currency: currency || "INR",
       balance: Number(balance) || 0,
@@ -60,10 +60,11 @@ export async function createAccount(req: Request, res: Response) {
 
 export async function updateAccount(req: Request, res: Response) {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const { name, currency, balance, isPrimary } = req.body;
+    const { id } = req.params;
+    const { name, currency, isPrimary } = req.body;
+    const userId = (req as any).userId;
 
-    const account = await accountService.updateAccount(id, DUMMY_USER_ID, {
+    const account = await accountService.updateAccount(id, userId, {
       name: name?.trim(),
       currency,
       balance: balance !== undefined ? Number(balance) : undefined,

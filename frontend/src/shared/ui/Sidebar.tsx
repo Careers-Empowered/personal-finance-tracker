@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 interface NavItem {
   name: string;
@@ -8,6 +9,37 @@ interface NavItem {
 }
 
 const Sidebar: React.FC = () => {
+  const navigate = useNavigate();
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+
+  const getDisplayName = () => {
+    if (!user || !user.email) return 'User';
+    const username = user.email.split('@')[0];
+    return username
+      .split(/[._-]/)
+      .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await axios.post('http://localhost:3000/api/auth/logout', {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      delete axios.defaults.headers.common['Authorization'];
+      navigate('/auth');
+    }
+  };
+
   const navItems: NavItem[] = [
     {
       name: 'Dashboard',
@@ -101,6 +133,47 @@ const Sidebar: React.FC = () => {
           </NavLink>
         ))}
       </nav>
+      <div className="sidebar-footer" style={{
+        padding: '1rem',
+        borderTop: '1px solid var(--color-sidebar-divider)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem'
+      }}>
+        {user && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <span style={{ color: '#ffffff', fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {getDisplayName()}
+            </span>
+            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.email}
+            </span>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="sidebar-item"
+          style={{
+            background: 'rgba(231, 76, 60, 0.1)',
+            border: 'none',
+            color: '#f1948a',
+            width: '100%',
+            justifyContent: 'flex-start',
+            gap: '0.75rem',
+            padding: '0.6rem 0.85rem',
+            borderRadius: '6px'
+          }}
+        >
+          <span className="sidebar-item-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </span>
+          <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Log Out</span>
+        </button>
+      </div>
     </aside>
   );
 };
