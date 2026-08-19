@@ -8,6 +8,17 @@ export interface CreateTransactionDTO {
   type: TransactionType;
   date?: string;
   title: string;
+  importedWithOverride?: boolean;
+  overrideNote?: string | null;
+}
+
+export interface CheckExistingTransactionInput {
+  row: number;
+  accountId: string;
+  date: string;
+  title: string;
+  amount: number;
+  type: 'INCOME' | 'EXPENSE';
 }
 
 export interface UpdateTransactionDTO {

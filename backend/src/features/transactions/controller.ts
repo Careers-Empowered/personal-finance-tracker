@@ -112,6 +112,26 @@ export class TransactionsController {
   }
 
   /**
+   * POST /api/transactions/check-existing
+   */
+  async checkExisting(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { transactions } = req.body;
+
+      if (!Array.isArray(transactions) || transactions.length === 0) {
+        return res.status(400).json({ error: 'transactions array is required' });
+      }
+
+      const results = await transactionsService.checkExisting(transactions);
+
+      return res.json({ existingTransactions: results });
+    } catch (error: any) {
+      console.error('Check existing transactions error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  /**
    * GET /api/transactions/summary
    */
   async getSummary(req: AuthenticatedRequest, res: Response) {
@@ -166,7 +186,7 @@ export class TransactionsController {
   async createTransaction(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!;
-      const { accountId, categoryId, subcategoryId, amount, type, date, title } = req.body;
+      const { accountId, categoryId, subcategoryId, amount, type, date, title, importedWithOverride, overrideNote } = req.body;
 
       if (!accountId || !categoryId || amount === undefined || !type || !title) {
         return res.status(400).json({
@@ -190,6 +210,8 @@ export class TransactionsController {
         type,
         date,
         title,
+        importedWithOverride: importedWithOverride ?? false,
+        overrideNote: overrideNote ?? null,
       });
 
       return res.status(201).json(transaction);
