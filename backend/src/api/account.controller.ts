@@ -67,6 +67,7 @@ export async function updateAccount(req: Request, res: Response) {
     const account = await accountService.updateAccount(id, userId, {
       name: name?.trim(),
       currency,
+      balance: balance !== undefined ? Number(balance) : undefined,
       isPrimary: isPrimary !== undefined ? Boolean(isPrimary) : undefined,
     });
 
@@ -79,7 +80,7 @@ export async function updateAccount(req: Request, res: Response) {
 
 export async function updateBalance(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const { balance } = req.body;
 
     if (balance === undefined || isNaN(Number(balance))) {
@@ -97,7 +98,7 @@ export async function updateBalance(req: Request, res: Response) {
 
 export async function deleteAccount(req: Request, res: Response) {
   try {
-    const { id } = req.params;
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     await accountService.deleteAccount(id);
     res.status(200).json({ success: true });
   } catch (error) {

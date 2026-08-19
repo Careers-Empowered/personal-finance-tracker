@@ -39,6 +39,7 @@ export const accountRepository = {
     data: {
       name?: string;
       currency?: string;
+      balance?: number;
       isPrimary?: boolean;
     },
   ) {
