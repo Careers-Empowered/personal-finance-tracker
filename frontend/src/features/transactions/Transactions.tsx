@@ -3,7 +3,6 @@ import { AddTransactionModal as TransactionModal } from './addTransaction';
 import TransactionDisplay from './TransactionDisplay';
 import TransactionFilter from './TransactionFilter';
 import { useTransactions } from './useTransactions.ts';
-import '../accounts/Accounts.css';
 import './Transactions.css';
 
 const Transactions: React.FC = () => {
