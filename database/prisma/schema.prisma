@@ -1,22 +1,25 @@
 generator client {
-  provider = "prisma-client-js"
-    output   = "../../backend/node_modules/.prisma/client"
+  provider        = "prisma-client-js"
+  output          = "../../backend/node_modules/.prisma/client"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String        @id @default(uuid()) @db.Uuid
-  email         String        @unique
-  passwordHash  String        @map("password_hash")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
+  id            String          @id @default(uuid()) @db.Uuid
+  email         String          @unique
+  passwordHash  String          @map("password_hash")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
   accounts      Account[]
   categories    Category[]
+  imports       Import[]
   sessions      Session[]
-  subcategories Subcategory[]
+  subcategories subcategories[]
 
   @@map("users")
 }
@@ -50,16 +53,15 @@ model Account {
 }
 
 model Category {
-  id            String        @id @default(uuid()) @db.Uuid
-  userId        String?       @map("user_id") @db.Uuid
+  id            String          @id @default(uuid()) @db.Uuid
+  userId        String?         @map("user_id") @db.Uuid
   name          String
   type          CategoryType
   icon          String?
   color         String?
-  isDefault     Boolean       @default(false) @map("is_default")
-  aliases       String[]      @default([])
-  user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subcategories Subcategory[]
+  is_default    Boolean         @default(false)
+  user          User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subcategories subcategories[]
   transactions  Transaction[]
 
   @@index([userId])
@@ -67,55 +69,62 @@ model Category {
   @@map("categories")
 }
 
-model Subcategory {
-  id           String        @id @default(uuid()) @db.Uuid
-  categoryId   String        @map("category_id") @db.Uuid
-  userId       String?       @map("user_id") @db.Uuid
-  name         String
-  icon         String?
-  color        String?
-  isDefault    Boolean       @default(false) @map("is_default")
-  aliases      String[]      @default([])
-  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-
-  @@index([categoryId])
-  @@index([userId])
-  @@map("subcategories")
-}
-
 model Transaction {
-  id                     String          @id @default(uuid()) @db.Uuid
-  accountId              String          @map("account_id") @db.Uuid
-  categoryId             String          @map("category_id") @db.Uuid
-  subcategoryId          String          @map("subcategory_id") @db.Uuid
-  amount                 Decimal         @db.Decimal(15, 2)
-  type                   TransactionType
-  date                   DateTime
-  Title                  String
-  createdAt              DateTime        @default(now()) @map("created_at")
-  updatedAt              DateTime        @updatedAt @map("updated_at")
-  imported_with_override Boolean         @default(false)
-  override_note          String?
-  account                Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category               Category        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  subcategory            Subcategory     @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  id             String          @id @default(uuid()) @db.Uuid
+  accountId      String          @map("account_id") @db.Uuid
+  categoryId     String          @map("category_id") @db.Uuid
+  subcategory_id String          @db.Uuid
+  amount         Decimal         @db.Decimal(15, 2)
+  type           TransactionType
+  date           DateTime
+  Title          String
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  account        Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category       Category        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory    subcategories   @relation(fields: [subcategory_id], references: [id], onDelete: SetNull)
 
   @@index([accountId])
   @@index([categoryId])
-  @@index([subcategoryId])
   @@index([date])
   @@index([type])
+  @@index([subcategory_id])
   @@map("transactions")
 }
 
-enum TransactionType {
-  INCOME
-  EXPENSE
+model Import {
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @map("user_id") @db.Uuid
+  fileName    String       @map("file_name")
+  fileType    String       @map("file_type")
+  status      ImportStatus @default(PENDING)
+  totalRows   Int          @default(0) @map("total_rows")
+  validRows   Int          @default(0) @map("valid_rows")
+  invalidRows Int          @default(0) @map("invalid_rows")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("imports")
 }
 
-enum CategoryType {
+model subcategories {
+  id           String        @id @db.Uuid
+  category_id  String        @db.Uuid
+  user_id      String?       @db.Uuid
+  name         String
+  icon         String?
+  color        String?
+  is_default   Boolean       @default(false)
+  categories   Category      @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  users        User?         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([category_id])
+  @@index([user_id])
+}
+
+enum TransactionType {
   INCOME
   EXPENSE
 }
@@ -136,4 +145,9 @@ enum SuggestionStatus {
   PENDING
   ACCEPTED
   OVERRIDDEN
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
 }
