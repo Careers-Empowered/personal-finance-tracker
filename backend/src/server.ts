@@ -3,6 +3,7 @@ import cors from "cors";
 
 import categoryRoutes from "./api/category.routes";
 import accountRoutes from "./api/account.routes";
+import transactionsRouter from "./api/transactions";
 import { prisma } from "./infrastructure/postgres/prisma";
 
 const app = express();
@@ -23,6 +24,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/api/categories", categoryRoutes);
 app.use("/api/accounts", accountRoutes);
+app.use("/api/transactions", transactionsRouter);
 
 const PORT = Number(process.env.PORT) || 3000;
 
