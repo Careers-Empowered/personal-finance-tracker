@@ -44,12 +44,27 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
     return Array.from(new Set(categoryNames)).sort();
   }, [safeTransactions]);
 
+  // Extract unique account IDs that are present in transactions
+  const activeAccounts = useMemo(() => {
+    const transactionAccountIds = new Set(
+      safeTransactions.map((tx) => tx.accountId)
+    );
+    return safeAccounts.filter((account) => transactionAccountIds.has(account.id));
+  }, [safeTransactions, safeAccounts]);
+
   // Reset category filter if the selected category is no longer present in transactions
   useEffect(() => {
     if (selectedCategory !== 'ALL' && !categories.includes(selectedCategory)) {
       setSelectedCategory('ALL');
     }
   }, [categories, selectedCategory]);
+
+  // Reset account filter if the selected account is no longer present in activeAccounts
+  useEffect(() => {
+    if (selectedAccountId !== 'ALL' && !activeAccounts.some(acc => acc.id === selectedAccountId)) {
+      setSelectedAccountId('ALL');
+    }
+  }, [activeAccounts, selectedAccountId]);
 
   // Compute filtered transactions reactively
   const filteredTransactions = useMemo(() => {
@@ -58,8 +73,10 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
         selectedType === 'ALL' ||
         transaction.type === selectedType;
 
-      const transactionDate =
-        transaction.date?.split('T')[0];
+      // Better date parsing using ISO format
+      const transactionDate = new Date(transaction.date)
+        .toISOString()
+        .split('T')[0];
 
       const matchesDate =
         selectedDate === '' ||
@@ -70,9 +87,10 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
         transaction.categoryId?.trim() ||
         '';
 
+      // Case-insensitive category matching
       const matchesCategory =
         selectedCategory === 'ALL' ||
-        categoryName === selectedCategory;
+        categoryName.toLowerCase() === selectedCategory.toLowerCase();
 
       const transactionAccountId =
         transaction.account?.id ||
@@ -80,7 +98,7 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
 
       const matchesAccount =
         selectedAccountId === 'ALL' ||
-        transactionAccountId === selectedAccountId;
+        String(transactionAccountId) === String(selectedAccountId);
 
       return (
         matchesType &&
@@ -179,7 +197,7 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
           All Accounts
         </option>
 
-        {safeAccounts.map((account) => (
+        {activeAccounts.map((account) => (
           <option
             key={account.id}
             value={account.id}
