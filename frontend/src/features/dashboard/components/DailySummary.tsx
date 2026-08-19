@@ -52,7 +52,7 @@ const DailySummary = ({
   data = [],
   transactions = [],
   accounts = [],
-  currency = "USD",
+  currency = "INR",
 }: DailySummaryProps) => {
   const initialMonth = useMemo(() => {
     if (data.length === 0) {
