@@ -248,6 +248,8 @@ interface FileUploadAccountProps {
   selectedAccountId: string;
   onAccountChange: (accountId: string) => void;
   accountsLoading?: boolean;
+
+  onTransactionContinue?: (file: File) => void;
 }
 
 function FileUpload({
@@ -259,6 +261,7 @@ function FileUpload({
   selectedAccountId,
   onAccountChange,
   accountsLoading = false,
+  onTransactionContinue,
 }: FileUploadProps & FileUploadAccountProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -372,6 +375,16 @@ function FileUpload({
 
   const handleTransactionContinue = () => {
     if (!selectedFile || !transactionSummary) {
+      setError(
+        "Please select a transaction data file first."
+      );
+      return;
+    }
+
+    if (!selectedAccountId) {
+      setError(
+        "Select the account for further actions"
+      );
       return;
     }
 
@@ -381,9 +394,10 @@ function FileUpload({
       transactionSummary
     );
 
-    // Continue with transaction-data import logic later.
+    if (onTransactionContinue) {
+      onTransactionContinue(selectedFile);
+    }
   };
-
   const isTransactionMode = mode === "transaction";
 
   return (
