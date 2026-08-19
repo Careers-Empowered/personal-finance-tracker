@@ -889,7 +889,8 @@ function Import() {
 
   const handleAccountMappingContinue = async (
     accountId: string,
-    transactionsToCheck: ValidatedTransaction[]
+    transactionsToCheck: ValidatedTransaction[],
+    decisions: DuplicateDecision[] = duplicateDecisions
   ) => {
     if (!accountId) {
       alert("Please select an account before continuing.");
@@ -958,7 +959,7 @@ function Import() {
       // Import the exact transaction array that was checked.
       await handleImportTransactions(
         transactionsToCheck,
-        duplicateDecisions,
+        decisions,
         accountId
       );
 
@@ -1438,41 +1439,38 @@ function Import() {
           }
 
           onContinue={(
+          uniqueTransactions,
+          decisions
+        ) => {
+          console.log(
+            "Unique transactions:",
+            uniqueTransactions
+          );
+
+          console.log(
+            "Duplicate decisions:",
+            decisions
+          );
+
+          setDuplicateDecisions(
+            decisions
+          );
+
+          setTransactionsForImport(
+            uniqueTransactions
+          );
+
+          /*
+          * IMPORTANT:
+          * Pass the current decisions directly.
+          * Do not wait for React state to update.
+          */
+          void handleAccountMappingContinue(
+            selectedAccountId,
             uniqueTransactions,
             decisions
-          ) => {
-            console.log(
-              "Unique transactions:",
-              uniqueTransactions
-            );
-
-            console.log(
-              "Duplicate decisions:",
-              decisions
-            );
-
-            setDuplicateDecisions(
-              decisions
-            );
-
-            setTransactionsForImport(
-              uniqueTransactions
-            );
-
-            /*
-            * IMPORTANT:
-            *
-            * Do NOT read transactionsForImport here.
-            * React state updates asynchronously.
-            *
-            * Pass uniqueTransactions directly to the
-            * database duplicate check.
-            */
-            void handleAccountMappingContinue(
-              selectedAccountId,
-              uniqueTransactions
-            );
-          }}
+          );
+        }}
         />
       )}
 
