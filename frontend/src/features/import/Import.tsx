@@ -15,6 +15,7 @@ import type {
 } from "./types/import";
 
 import { suggestCategoryByRules } from "./categorization/ruleCategorizationService";
+import { suggestCategory } from "./categorization/categorySuggestionService";
 
 import api from "../../shared/utils/api";
 
@@ -1369,8 +1370,8 @@ function Import() {
         )}
 
       {/* ======================================================
-          STEP 3: VALIDATION + CATEGORIZATION
-          ====================================================== */}
+    STEP 3: VALIDATION + CATEGORIZATION
+    ====================================================== */}
 
       {step === "validation" && (
         <ImportValidation
@@ -1389,6 +1390,31 @@ function Import() {
           onCategorize={async (
             transaction
           ) => {
+            /*
+            * Use the teammate's category suggestion
+            * service first.
+            *
+            * If it cannot provide a category,
+            * fall back to the existing rule-based
+            * categorization.
+            */
+            try {
+              const suggestedCategory =
+                await suggestCategory(
+                  transaction.title,
+                  transaction.type
+                );
+
+              if (suggestedCategory) {
+                return suggestedCategory;
+              }
+            } catch (error) {
+              console.warn(
+                "SLM category suggestion failed. Falling back to rules.",
+                error
+              );
+            }
+
             return suggestCategoryByRules(
               transaction.title,
               transaction.type
