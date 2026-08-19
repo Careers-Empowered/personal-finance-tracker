@@ -1,6 +1,18 @@
 {
   "compilerOptions": {
     "target": "ES2022",
+<<<<<<< HEAD
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"]
+=======
     "module": "CommonJS",
     "lib": ["ES2022"],
     "strict": true,
@@ -12,4 +24,5 @@
     "resolveJsonModule": true
   },
   "include": ["src/**/*"]
+>>>>>>> develop
 }

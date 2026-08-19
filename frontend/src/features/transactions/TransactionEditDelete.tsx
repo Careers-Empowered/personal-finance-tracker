@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Transaction, CreateTransactionInput } from './types';
-import { Account } from '../accounts/types';
+import { Account } from '../accounts/types/types';
 import TransactionEditForm from './TransactionEditForm';
 import TransactionDeleteConfirm from './TransactionDeleteConfirm';
 import './TransactionEditDelete.css';
