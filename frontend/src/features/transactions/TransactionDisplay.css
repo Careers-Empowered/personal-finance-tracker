@@ -1,0 +1,239 @@
+/* Transaction list container */
+
+.transactions-list-container {
+  margin-top: 2rem;
+  background: #ffffff;
+  border: 1px solid var(--color-divider, #e5e5e5);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.transactions-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-divider, #e5e5e5);
+}
+
+.transactions-list-header h2 {
+  margin: 0;
+  color: var(--color-text-dark, #231f20);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.transaction-count {
+  color: var(--color-text-muted, #6b6b6b);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Transaction items */
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid #eeeeee;
+  transition: background-color 0.2s ease;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-item:hover {
+  background-color: #fafafa;
+}
+
+/* Left section */
+
+.transaction-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.transaction-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.transaction-icon-income {
+  background-color: #eaf7ee;
+  color: #1e8e3e;
+}
+
+.transaction-icon-expense {
+  background-color: #fff0ee;
+  color: #d93025;
+}
+
+.transaction-title,
+.transaction-description {
+  margin-bottom: 0.35rem;
+  color: var(--color-text-dark, #231f20);
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-text-muted, #777777);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.transaction-meta-dot {
+  color: #b5b5b5;
+}
+
+/* Right section */
+
+.transaction-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.transaction-amount {
+  font-size: 0.98rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.transaction-income-amount {
+  color: #1e8e3e;
+}
+
+.transaction-expense-amount {
+  color: #d93025;
+}
+
+/* Transaction type badge */
+
+.transaction-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.transaction-income-badge {
+  background-color: #eaf7ee;
+  color: #1e8e3e;
+}
+
+.transaction-expense-badge {
+  background-color: #fff0ee;
+  color: #d93025;
+}
+
+/* Empty state */
+
+.transactions-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.transactions-empty-icon {
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  border-radius: 16px;
+  background-color: #f7f3ee;
+}
+
+.transactions-empty-icon span {
+  color: var(--color-primary, #d38333);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.transactions-empty-state h3 {
+  margin: 0 0 0.4rem;
+  color: var(--color-text-dark, #231f20);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.transactions-empty-state p {
+  max-width: 300px;
+  margin: 0;
+  color: var(--color-text-muted, #777777);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* Responsive */
+
+@media (max-width: 650px) {
+  .transactions-list-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .transaction-item {
+    align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .transaction-main {
+    gap: 0.75rem;
+  }
+
+  .transaction-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  .transaction-meta {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .transaction-right {
+    gap: 0.3rem;
+  }
+
+  .transaction-amount {
+    font-size: 0.9rem;
+  }
+}
