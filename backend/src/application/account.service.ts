@@ -28,6 +28,7 @@ export const accountService = {
     data: {
       name?: string;
       currency?: string;
+      balance?: number;
       isPrimary?: boolean;
     },
   ) {

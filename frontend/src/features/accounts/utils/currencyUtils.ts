@@ -34,10 +34,20 @@ export function convertCurrency(
   toCurrency: string,
   rates: Record<string, number> = DEFAULT_RATES,
 ): number {
+  if (!amount || isNaN(amount)) return 0;
+  if (fromCurrency === toCurrency) {
+    const val = Object.is(amount, -0) ? 0 : amount;
+    return Math.round(val * 100) / 100;
+  }
+
   const fromRate = rates[fromCurrency] || 1.0;
   const toRate = rates[toCurrency] || 1.0;
 
   // Convert to USD base first, then to target currency
   const amountInUSD = amount / fromRate;
-  return amountInUSD * toRate;
+  const converted = amountInUSD * toRate;
+  const rounded = Math.round(converted * 100) / 100;
+
+  return Object.is(rounded, -0) ? 0 : rounded;
 }
+
