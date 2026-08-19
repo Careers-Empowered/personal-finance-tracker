@@ -50,4 +50,3 @@ export function convertCurrency(
 
   return Object.is(rounded, -0) ? 0 : rounded;
 }
-

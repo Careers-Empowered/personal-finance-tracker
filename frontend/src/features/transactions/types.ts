@@ -40,4 +40,3 @@ export interface CreateTransactionInput {
   date: string;
   title: string;
 }
-

@@ -15,17 +15,22 @@ export async function getAccounts(req: Request, res: Response) {
 export async function getAccountById(req: Request, res: Response) {
   try {
     const { id } = req.params;
+    const accountId = Array.isArray(id) ? id[0] : id;
     const userId = (req as any).userId;
-    const account = await accountService.getAccountById(id);
+
+    const account = await accountService.getAccountById(accountId);
+
     if (!account) {
       res.status(404).json({ error: "Account not found" });
       return;
     }
-    // Simple check to ensure account belongs to authenticated user (for safety)
+
+    // Ensure the account belongs to the authenticated user.
     if (account.userId !== userId) {
       res.status(403).json({ error: "Forbidden" });
       return;
     }
+
     res.status(200).json({ data: account });
   } catch (error) {
     console.error("Failed to fetch account:", error);
@@ -61,15 +66,21 @@ export async function createAccount(req: Request, res: Response) {
 export async function updateAccount(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { name, currency, isPrimary } = req.body;
+    const accountId = Array.isArray(id) ? id[0] : id;
+    const { name, currency, balance, isPrimary } = req.body;
     const userId = (req as any).userId;
 
-    const account = await accountService.updateAccount(id, userId, {
-      name: name?.trim(),
-      currency,
-      balance: balance !== undefined ? Number(balance) : undefined,
-      isPrimary: isPrimary !== undefined ? Boolean(isPrimary) : undefined,
-    });
+    const account = await accountService.updateAccount(
+      accountId,
+      userId,
+      {
+        name: name?.trim(),
+        currency,
+        balance: balance !== undefined ? Number(balance) : undefined,
+        isPrimary:
+          isPrimary !== undefined ? Boolean(isPrimary) : undefined,
+      }
+    );
 
     res.status(200).json({ data: account });
   } catch (error) {
@@ -80,7 +91,8 @@ export async function updateAccount(req: Request, res: Response) {
 
 export async function updateBalance(req: Request, res: Response) {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { id } = req.params;
+    const accountId = Array.isArray(id) ? id[0] : id;
     const { balance } = req.body;
 
     if (balance === undefined || isNaN(Number(balance))) {
@@ -88,7 +100,11 @@ export async function updateBalance(req: Request, res: Response) {
       return;
     }
 
-    const account = await accountService.updateBalance(id, Number(balance));
+    const account = await accountService.updateBalance(
+      accountId,
+      Number(balance)
+    );
+
     res.status(200).json({ data: account });
   } catch (error) {
     console.error("Failed to update balance:", error);
@@ -98,8 +114,11 @@ export async function updateBalance(req: Request, res: Response) {
 
 export async function deleteAccount(req: Request, res: Response) {
   try {
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    await accountService.deleteAccount(id);
+    const { id } = req.params;
+    const accountId = Array.isArray(id) ? id[0] : id;
+
+    await accountService.deleteAccount(accountId);
+
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Failed to delete account:", error);
@@ -109,9 +128,19 @@ export async function deleteAccount(req: Request, res: Response) {
 
 export async function transferBalance(req: Request, res: Response) {
   try {
-    const { sourceId, destId, sourceAmount, convertedAmount } = req.body;
+    const {
+      sourceId,
+      destId,
+      sourceAmount,
+      convertedAmount,
+    } = req.body;
 
-    if (!sourceId || !destId || isNaN(Number(sourceAmount)) || isNaN(Number(convertedAmount))) {
+    if (
+      !sourceId ||
+      !destId ||
+      isNaN(Number(sourceAmount)) ||
+      isNaN(Number(convertedAmount))
+    ) {
       res.status(400).json({ error: "Invalid transfer parameters" });
       return;
     }

@@ -39,12 +39,12 @@ const BalanceCorrectionModal: React.FC<BalanceCorrectionModalProps> = ({ isOpen,
           </div>
           <div className="form-group">
             <label htmlFor="newBalance">Corrected Balance ({account.currency})</label>
-            <input 
-              type="number" 
-              id="newBalance" 
-              className="form-control" 
-              value={balance} 
-              onChange={(e) => setBalance(Math.max(0, parseFloat(e.target.value) || 0))} 
+            <input
+              type="number"
+              id="newBalance"
+              className="form-control"
+              value={balance}
+              onChange={(e) => setBalance(Math.max(0, parseFloat(e.target.value) || 0))}
               min="0"
               step="0.01"
               required
