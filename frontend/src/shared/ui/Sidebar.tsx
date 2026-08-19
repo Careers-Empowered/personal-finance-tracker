@@ -13,6 +13,15 @@ const Sidebar: React.FC = () => {
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
 
+  const getDisplayName = () => {
+    if (!user || !user.email) return 'User';
+    const username = user.email.split('@')[0];
+    return username
+      .split(/[._-]/)
+      .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  };
+
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -134,7 +143,7 @@ const Sidebar: React.FC = () => {
         {user && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             <span style={{ color: '#ffffff', fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {user.name || 'User'}
+              {getDisplayName()}
             </span>
             <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user.email}

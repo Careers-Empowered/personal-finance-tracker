@@ -6,7 +6,7 @@ const Auth: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -19,21 +19,38 @@ const Auth: React.FC = () => {
     setActiveTab(tab);
     setErrorMsg(null);
     setSuggestTab(null);
+    setPassword("");
+    setConfirmPassword("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg(null);
     setSuggestTab(null);
+
+    // Validate password only on Sign Up
+    if (activeTab === "signup") {
+      if (password.length < 8) {
+        setErrorMsg("Password must be at least 8 characters long.");
+        return;
+      }
+      if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+        setErrorMsg("Password must contain at least one letter and one number.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMsg("Passwords do not match.");
+        return;
+      }
+    }
+
+    setLoading(true);
 
     const url = activeTab === "login"
       ? "http://localhost:3000/api/auth/login"
       : "http://localhost:3000/api/auth/register";
 
-    const payload = activeTab === "login"
-      ? { email, password }
-      : { email, password, name };
+    const payload = { email, password };
 
     try {
       const response = await axios.post(url, payload);
@@ -108,24 +125,7 @@ const Auth: React.FC = () => {
           </div>
         )}
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {activeTab === "signup" && (
-            <div className="form-group">
-              <label className="form-label" htmlFor="auth-name">
-                Full Name
-              </label>
-              <input
-                id="auth-name"
-                className="form-input"
-                type="text"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-          )}
-
+        <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
           <div className="form-group">
             <label className="form-label" htmlFor="auth-email">
               Email Address
@@ -134,27 +134,28 @@ const Auth: React.FC = () => {
               id="auth-email"
               className="form-input"
               type="email"
-              placeholder="you@example.com"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="off"
             />
           </div>
 
           <div className="form-group">
             <label className="form-label" htmlFor="auth-password">
-              Password
+              {activeTab === "signup" ? "Create Password" : "Password"}
             </label>
             <div className="password-input-wrapper">
               <input
                 id="auth-password"
                 className="form-input"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={4}
+                autoComplete="new-password"
               />
               <button
                 type="button"
@@ -176,6 +177,26 @@ const Auth: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {activeTab === "signup" && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="auth-confirm-password">
+                Confirm Password
+              </label>
+              <div className="password-input-wrapper">
+                <input
+                  id="auth-confirm-password"
+                  className="form-input"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Confirm your password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+          )}
 
           <button className="auth-btn" type="submit" disabled={loading}>
             {loading ? "Processing..." : activeTab === "login" ? "Log In" : "Sign Up"}
