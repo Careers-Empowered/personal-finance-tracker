@@ -83,6 +83,35 @@ export class TransactionsController {
   }
 
   /**
+   * POST /api/transactions/subcategories
+   */
+  async createSubcategory(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.userId!;
+      const { categoryId, name, icon } = req.body;
+
+      if (!categoryId || typeof categoryId !== 'string') {
+        return res.status(400).json({ error: 'categoryId is required' });
+      }
+
+      if (!name || typeof name !== 'string' || !name.trim()) {
+        return res.status(400).json({ error: 'Subcategory name is required' });
+      }
+
+      const result = await transactionsService.createSubcategory(userId, {
+        categoryId,
+        name: name.trim(),
+        icon,
+      });
+
+      return res.status(201).json(result);
+    } catch (error: any) {
+      console.error('Create subcategory error:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  /**
    * GET /api/transactions/summary
    */
   async getSummary(req: AuthenticatedRequest, res: Response) {

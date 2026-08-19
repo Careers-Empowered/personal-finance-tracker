@@ -24,6 +24,7 @@ interface CategoryPickerProps {
   selectedSubcategoryId: string;
   onSelect: (categoryId: string, subcategoryId: string) => void;
   onCategoryAdded?: (newCategory: CategoryItem, newSubcategory?: SubcategoryItem) => void;
+  onSubcategoryAdded?: (newSubcategory: SubcategoryItem) => void;
   defaultType?: 'EXPENSE' | 'INCOME' | string;
   required?: boolean;
 }
@@ -44,6 +45,7 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
   selectedSubcategoryId,
   onSelect,
   onCategoryAdded,
+  onSubcategoryAdded,
   defaultType = 'EXPENSE',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -72,6 +74,11 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
   const [inlineCatName, setInlineCatName] = useState('');
   const [isSubmittingInline, setIsSubmittingInline] = useState(false);
 
+  // Inline add subcategory state
+  const [isAddingInlineSub, setIsAddingInlineSub] = useState(false);
+  const [inlineSubName, setInlineSubName] = useState('');
+  const [isSubmittingInlineSub, setIsSubmittingInlineSub] = useState(false);
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Set initial active category
@@ -90,6 +97,7 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setIsAddingInline(false);
+        setIsAddingInlineSub(false);
       }
     };
     if (isOpen) {
@@ -189,12 +197,61 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
       setIsAddingInline(false);
       setIsOpen(false);
       setInlineCatName('');
-      setSearchQuery('');
     } catch (err: any) {
       console.error('Failed to add category:', err);
       alert(err.message || 'Failed to add category');
     } finally {
       setIsSubmittingInline(false);
+    }
+  };
+
+  const handleAddSubcategorySubmit = async (nameToAdd: string) => {
+    const trimmedName = nameToAdd.trim();
+    if (!trimmedName || !currentCategory || isSubmittingInlineSub) return;
+
+    setIsSubmittingInlineSub(true);
+
+    try {
+      let createdSub: SubcategoryItem;
+
+      try {
+        const response = await apiFetch('/api/transactions/subcategories', {
+          method: 'POST',
+          body: JSON.stringify({
+            categoryId: currentCategory.id,
+            name: trimmedName,
+            icon: '•',
+          }),
+        });
+        createdSub = response;
+      } catch (err) {
+        console.warn('API call to create subcategory failed, using local creation fallback:', err);
+        createdSub = {
+          id: Math.random().toString(36).substring(2, 11),
+          name: trimmedName,
+          icon: '•',
+          categoryId: currentCategory.id,
+        };
+      }
+
+      setLocalSubcategories((prev) => [...prev, createdSub]);
+
+      if (onSubcategoryAdded) {
+        onSubcategoryAdded(createdSub);
+      } else if (onCategoryAdded) {
+        onCategoryAdded(currentCategory, createdSub);
+      }
+
+      onSelect(currentCategory.id, createdSub.id);
+
+      setIsAddingInlineSub(false);
+      setIsOpen(false);
+      setInlineSubName('');
+    } catch (err: any) {
+      console.error('Failed to add subcategory:', err);
+      alert(err.message || 'Failed to add subcategory');
+    } finally {
+      setIsSubmittingInlineSub(false);
     }
   };
 
@@ -221,6 +278,7 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
             onClick={() => {
               setIsOpen(false);
               setIsAddingInline(false);
+              setIsAddingInlineSub(false);
             }}
           />
           <div className="category-picker-popover">
@@ -371,20 +429,75 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
               <div className="category-picker-col">
                 {currentCategory ? (
                   <>
-                    <div
-                      className="subcategory-panel-header"
-                      onClick={() => handleSelectParentCategory(currentCategory)}
-                      title="Click to select parent category"
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="subcategory-header-icon">
-                        {currentCategory.icon || '🏷️'}
+                    <div className="category-picker-col-header">
+                      <div
+                        className="subcategory-panel-header"
+                        onClick={() => handleSelectParentCategory(currentCategory)}
+                        title="Click to select parent category"
+                        style={{ cursor: 'pointer', flex: 1, marginBottom: 0 }}
+                      >
+                        <div className="subcategory-header-icon">
+                          {currentCategory.icon || '🏷️'}
+                        </div>
+                        <div className="subcategory-header-text">
+                          <span className="subcategory-header-label">Subcategory</span>
+                          <span className="subcategory-header-title">{currentCategory.name}</span>
+                        </div>
                       </div>
-                      <div className="subcategory-header-text">
-                        <span className="subcategory-header-label">Subcategory</span>
-                        <span className="subcategory-header-title">{currentCategory.name}</span>
-                      </div>
+                      {!isAddingInlineSub && (
+                        <button
+                          type="button"
+                          className="category-add-header-btn"
+                          onClick={() => {
+                            setInlineSubName('');
+                            setIsAddingInlineSub(true);
+                          }}
+                          title="Add subcategory"
+                        >
+                          <span className="category-add-plus-icon">+</span> Subcategory
+                        </button>
+                      )}
                     </div>
+
+                    {/* Inline Add Subcategory Input Box */}
+                    {isAddingInlineSub && (
+                      <div className="category-inline-add-box" style={{ marginTop: '8px', marginBottom: '8px' }}>
+                        <input
+                          type="text"
+                          className="category-inline-add-input"
+                          placeholder={`Subcategory name under ${currentCategory.name}...`}
+                          value={inlineSubName}
+                          onChange={(e) => setInlineSubName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddSubcategorySubmit(inlineSubName);
+                            } else if (e.key === 'Escape') {
+                              setIsAddingInlineSub(false);
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <div className="category-inline-add-actions">
+                          <button
+                            type="button"
+                            className="category-inline-cancel-btn"
+                            onClick={() => setIsAddingInlineSub(false)}
+                            disabled={isSubmittingInlineSub}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="category-inline-submit-btn"
+                            onClick={() => handleAddSubcategorySubmit(inlineSubName)}
+                            disabled={isSubmittingInlineSub || !inlineSubName.trim()}
+                          >
+                            {isSubmittingInlineSub ? 'Adding...' : 'Add'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="category-picker-list">
                       {currentSubcategories.length > 0 ? (
@@ -407,6 +520,16 @@ export const CategoryPicker: React.FC<CategoryPickerProps> = ({
                       ) : (
                         <div className="subcategory-empty-state">
                           <span>No subcategories available</span>
+                          <button
+                            type="button"
+                            className="category-add-fallback-btn"
+                            onClick={() => {
+                              setInlineSubName('');
+                              setIsAddingInlineSub(true);
+                            }}
+                          >
+                            + Add Subcategory
+                          </button>
                         </div>
                       )}
                     </div>

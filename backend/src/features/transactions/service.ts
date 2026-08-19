@@ -74,6 +74,25 @@ export class TransactionsService {
   }
 
   /**
+   * Create custom subcategory under a parent category
+   */
+  async createSubcategory(
+    userId: string,
+    data: { categoryId: string; name: string; icon?: string }
+  ) {
+    const { categoryId, name, icon = '•' } = data;
+
+    const subRes = await query(
+      `INSERT INTO subcategories (id, category_id, user_id, name, icon, is_default)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, false)
+       RETURNING id, name, icon, category_id as "categoryId"`,
+      [categoryId, userId || null, name, icon]
+    );
+
+    return subRes.rows[0];
+  }
+
+  /**
    * Fetch subcategories (optionally filtered by categoryId)
    */
   async getSubcategories(userId: string, categoryId?: string) {

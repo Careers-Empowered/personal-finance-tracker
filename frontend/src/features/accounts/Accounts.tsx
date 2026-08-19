@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Account } from './types';
 import mockData from './mockData.json';
 import AccountCard from './AccountCard';
 import AccountModal from './AccountModal';
 import BalanceCorrectionModal from './BalanceCorrectionModal';
 import PrimaryCurrencyModal from './PrimaryCurrencyModal';
+import { apiFetch } from '../../shared/utils/api';
 import './Accounts.css';
 
 const Accounts: React.FC = () => {
   const [accounts, setAccounts] = useState<Account[]>(mockData as Account[]);
   const [primaryCurrency, setPrimaryCurrency] = useState('USD');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Modals state
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
@@ -19,7 +21,30 @@ const Accounts: React.FC = () => {
   // Track which account is being edited/adjusted
   const [selectedAccount, setSelectedAccount] = useState<Account | undefined>(undefined);
 
-  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchAccounts() {
+      try {
+        setIsLoading(true);
+        const data = await apiFetch('/api/transactions/accounts');
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setAccounts(data);
+        }
+      } catch (err) {
+        console.warn('Failed to load accounts from backend:', err);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+    fetchAccounts();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const totalBalance = accounts.reduce((sum, account) => sum + Number(account.balance || 0), 0);
   const formattedTotal = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: primaryCurrency,
@@ -87,17 +112,23 @@ const Accounts: React.FC = () => {
         </div>
       </div>
 
-      <div className="accounts-grid">
-        {accounts.map(account => (
-          <AccountCard 
-            key={account.id} 
-            account={account} 
-            onEdit={handleOpenEditModal}
-            onAdjustBalance={handleOpenAdjustBalance}
-            onDelete={handleDeleteAccount}
-          />
-        ))}
-      </div>
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
+          Loading accounts...
+        </div>
+      ) : (
+        <div className="accounts-grid">
+          {accounts.map(account => (
+            <AccountCard 
+              key={account.id} 
+              account={account} 
+              onEdit={handleOpenEditModal}
+              onAdjustBalance={handleOpenAdjustBalance}
+              onDelete={handleDeleteAccount}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Modals */}
       <AccountModal 

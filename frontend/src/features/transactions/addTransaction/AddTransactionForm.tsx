@@ -176,6 +176,9 @@ export const AddTransactionForm: React.FC<AddTransactionFormProps> = ({
                 setSubcategoriesList((prev) => [...prev, newSub]);
               }
             }}
+            onSubcategoryAdded={(newSub) => {
+              setSubcategoriesList((prev) => [...prev, newSub]);
+            }}
             required
           />
         </div>
