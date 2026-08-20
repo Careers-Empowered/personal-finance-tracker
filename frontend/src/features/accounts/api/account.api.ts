@@ -20,7 +20,7 @@ export const accountApi = {
     return data.data;
   },
 
-  async createAccount(accountData: Omit<Account, "id" | "createdAt" | "updatedAt">): Promise<Account> {
+  async createAccount(accountData: Omit<Account, "id" | "createdAt" | "updatedAt" | "userId">): Promise<Account> {
     const response = await fetch(API_BASE_URL, {
       method: "POST",
       headers: getHeaders({ "Content-Type": "application/json" }),

@@ -28,7 +28,7 @@ app.get("/health", (_req, res) => {
 // Auth APIs
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
-app.use("/api/accounts", accountRoutes);
+// Account APIs moved to protected section below
 app.use("/api/transactions", transactionsRouter);
 
 // Category APIs
