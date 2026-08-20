@@ -74,7 +74,7 @@ const Accounts: React.FC = () => {
     setIsTransferModalOpen(true);
   };
 
-  const handleSaveAccount = async (accountData: Omit<Account, "id" | "createdAt" | "updatedAt"> | Account) => {
+  const handleSaveAccount = async (accountData: Omit<Account, "id" | "createdAt" | "updatedAt" | "userId"> | Account) => {
     try {
       if ("id" in accountData) {
         await accountApi.updateAccount(accountData.id, accountData);

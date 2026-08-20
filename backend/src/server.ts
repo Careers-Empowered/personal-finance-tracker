@@ -8,6 +8,7 @@ import authRoutes from "./api/auth.routes";
 import { authMiddleware } from "./security/auth.middleware";
 import transactionsRouter from "./api/transactions";
 import { prisma } from "./infrastructure/postgres/prisma";
+import dashboardRouter from "./api/dashboard.routes";
 
 const app = express();
 
@@ -26,9 +27,10 @@ app.get("/health", (_req, res) => {
 });
 
 // Auth APIs
+app.use("/api/dashboard", dashboardRouter);
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
-app.use("/api/accounts", accountRoutes);
+// Account APIs moved to protected section below
 app.use("/api/transactions", transactionsRouter);
 
 // Category APIs

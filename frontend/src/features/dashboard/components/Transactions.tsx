@@ -16,7 +16,7 @@ const formatDate = (date: string) =>
   new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
-  }).format(new Date(`${date}T00:00:00`));
+  }).format(new Date(date));
 
 const RecentTransactions = ({
   transactions = [],
@@ -50,7 +50,10 @@ const RecentTransactions = ({
         ) : (
           recentTransactions.map((transaction) => {
             const account = getAccount(transaction.accountId);
-            const currency = account?.currency ?? "USD";
+            const currency =
+              transaction.currency ??
+              account?.currency ??
+              "USD";
 
             return (
               <div
@@ -64,7 +67,7 @@ const RecentTransactions = ({
                 </div>
 
                 <div className="recent-transaction__details">
-                  <strong>{transaction.description}</strong>
+                  <strong>{transaction.title}</strong>
 
                   <span>
                     {transaction.category} ·{" "}
