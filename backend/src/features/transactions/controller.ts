@@ -130,16 +130,23 @@ export class TransactionsController {
    */
   async checkExisting(req: AuthenticatedRequest, res: Response) {
     try {
+      const userId = req.userId!;
       const { transactions } = req.body;
 
       if (!Array.isArray(transactions) || transactions.length === 0) {
         return res.status(400).json({ error: 'transactions array is required' });
       }
 
-      const results = await transactionsService.checkExisting(transactions);
+      const results = await transactionsService.checkExisting(userId, transactions);
 
       return res.json({ existingTransactions: results });
     } catch (error: any) {
+      if (error.message === 'FORBIDDEN') {
+        return res.status(403).json({
+          error: 'Forbidden',
+        });
+      }
+
       console.error('Check existing transactions error:', error);
       return res.status(500).json({ error: 'Internal Server Error' });
     }
@@ -209,8 +216,6 @@ export class TransactionsController {
       const userId = req.userId!;
       const { accountId, categoryId, subcategoryId, amount, type, date, title, importedWithOverride, overrideNote } = req.body;
 
-
-
       if (
         !accountId ||
         !categoryId ||
@@ -250,6 +255,12 @@ export class TransactionsController {
 
       return res.status(201).json(transaction);
     } catch (error: any) {
+      if (error.message === 'FORBIDDEN') {
+        return res.status(403).json({
+          error: 'Forbidden',
+        });
+      }
+
       if (error.message === 'ACCOUNT_NOT_FOUND') {
         return res.status(404).json({
           error: 'Account not found',
@@ -286,7 +297,6 @@ export class TransactionsController {
     try {
       const { id } = req.params;
 
-      // Express can type route params as string | string[].
       // Normalize it to the string expected by the service.
       const transactionId = Array.isArray(id) ? id[0] : id;
 

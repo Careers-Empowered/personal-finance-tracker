@@ -1,8 +1,7 @@
 import dotenv from "dotenv";
 import path from "node:path";
-
-import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 dotenv.config({
   path: path.resolve(__dirname, "../../../../database/.env"),
