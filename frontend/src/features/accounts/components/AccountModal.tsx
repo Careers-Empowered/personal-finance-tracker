@@ -5,7 +5,7 @@ import { convertCurrency, DEFAULT_RATES } from "../utils/currencyUtils";
 interface AccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (account: Omit<Account, "id"> | Account) => void;
+  onSave: (account: Omit<Account, "id" | "userId"> | Account) => void;
   accountToEdit?: Account;
   rates?: Record<string, number>;
 }
@@ -92,11 +92,10 @@ const AccountModal: React.FC<AccountModalProps> = ({
         name: name.trim(),
         currency,
         balance: finalBalance,
-        userId: "user-123",
         isPrimary: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      } as Omit<Account, "id">);
+      } as Omit<Account, "id" | "userId">);
     }
     onClose();
   };

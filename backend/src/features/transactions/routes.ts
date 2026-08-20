@@ -14,6 +14,9 @@ router.post('/categories', (req, res) => transactionsController.createCategory(r
 router.get('/subcategories', (req, res) => transactionsController.getSubcategories(req, res));
 router.post('/subcategories', (req, res) => transactionsController.createSubcategory(req, res));
 
+// Duplicate detection (must come before /:id param routes)
+router.post('/check-existing', (req, res) => transactionsController.checkExisting(req, res));
+
 // Summary & Aggregates
 router.get('/summary', (req, res) => transactionsController.getSummary(req, res));
 
