@@ -1,4 +1,6 @@
-/* Transaction list container */
+/* ============================================================
+   Transaction list container
+   ============================================================ */
 
 .transactions-list-container {
   margin-top: 2rem;
@@ -30,7 +32,10 @@
   font-weight: 500;
 }
 
-/* Transaction items */
+
+/* ============================================================
+   Transaction items
+   ============================================================ */
 
 .transaction-list {
   display: flex;
@@ -55,7 +60,10 @@
   background-color: #fafafa;
 }
 
-/* Left section */
+
+/* ============================================================
+   Left section
+   ============================================================ */
 
 .transaction-main {
   display: flex;
@@ -110,7 +118,10 @@
   color: #b5b5b5;
 }
 
-/* Right section */
+
+/* ============================================================
+   Right section
+   ============================================================ */
 
 .transaction-right {
   display: flex;
@@ -134,16 +145,43 @@
   color: #d93025;
 }
 
-/* Transaction type badge */
+
+/* ============================================================
+   Transaction actions
+   ============================================================ */
+
+.transaction-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+
+/* ============================================================
+   Transaction type badge
+   Fixed width keeps Income and Expense aligned
+   ============================================================ */
 
 .transaction-type-badge {
+  width: 82px;
+  min-width: 82px;
+  height: 30px;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem 0.6rem;
+
+  box-sizing: border-box;
+
+  padding: 0 0.6rem;
+
   border-radius: 999px;
+
   font-size: 0.7rem;
   font-weight: 600;
+
+  white-space: nowrap;
 }
 
 .transaction-income-badge {
@@ -156,53 +194,236 @@
   color: #d93025;
 }
 
-/* Empty state */
+
+/* ============================================================
+   Eye button - Add Anyway transactions only
+   ============================================================ */
+
+.transaction-note-button {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid var(--color-divider, #e5e5e5);
+  border-radius: 6px;
+
+  background: #ffffff;
+  color: var(--color-text-muted, #6b6b6b);
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.transaction-note-button:hover {
+  background: #f5f5f5;
+  color: var(--color-text-dark, #231f20);
+  border-color: #d5d5d5;
+}
+
+.transaction-note-button:focus-visible {
+  outline: 2px solid var(--color-primary, #d38333);
+  outline-offset: 2px;
+}
+
+.eye-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 14px;
+  line-height: 1;
+}
+
+
+/* ============================================================
+   Import Override Note Modal
+   ============================================================ */
+
+.transaction-note-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1rem;
+
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.transaction-note-modal {
+  width: min(480px, 100%);
+
+  background: #ffffff;
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.18);
+
+  overflow: hidden;
+}
+
+.transaction-note-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 1rem 1.25rem;
+
+  border-bottom: 1px solid var(--color-divider, #e5e5e5);
+}
+
+.transaction-note-modal-header h3 {
+  margin: 0;
+
+  font-size: 1rem;
+  font-weight: 600;
+
+  color: var(--color-text-dark, #231f20);
+}
+
+.transaction-note-close {
+  width: 32px;
+  height: 32px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 6px;
+
+  background: transparent;
+
+  font-size: 1.5rem;
+  line-height: 1;
+
+  color: var(--color-text-muted, #6b6b6b);
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.transaction-note-close:hover {
+  background: #f5f5f5;
+  color: var(--color-text-dark, #231f20);
+}
+
+.transaction-note-body {
+  padding: 1.25rem;
+
+  color: var(--color-text-dark, #231f20);
+
+  font-size: 0.9rem;
+  line-height: 1.6;
+
+  white-space: pre-wrap;
+}
+
+.transaction-note-modal-body {
+  padding: 1.25rem;
+
+  color: var(--color-text-dark, #231f20);
+
+  font-size: 0.9rem;
+  line-height: 1.6;
+
+  white-space: pre-wrap;
+}
+
+.transaction-note-modal-footer {
+  padding: 0.75rem 1.25rem;
+
+  border-top: 1px solid var(--color-divider, #e5e5e5);
+
+  color: var(--color-text-muted, #777777);
+
+  font-size: 0.8rem;
+}
+
+
+/* ============================================================
+   Empty state
+   ============================================================ */
 
 .transactions-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
   min-height: 280px;
+
   padding: 2rem;
+
   text-align: center;
 }
 
 .transactions-empty-icon {
   width: 58px;
   height: 58px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   margin-bottom: 1rem;
+
   border-radius: 16px;
+
   background-color: #f7f3ee;
 }
 
 .transactions-empty-icon span {
   color: var(--color-primary, #d38333);
+
   font-size: 1.5rem;
   font-weight: 700;
 }
 
 .transactions-empty-state h3 {
   margin: 0 0 0.4rem;
+
   color: var(--color-text-dark, #231f20);
+
   font-size: 1rem;
   font-weight: 700;
 }
 
 .transactions-empty-state p {
   max-width: 300px;
+
   margin: 0;
+
   color: var(--color-text-muted, #777777);
+
   font-size: 0.85rem;
   line-height: 1.5;
 }
 
-/* Responsive */
+
+/* ============================================================
+   Responsive
+   ============================================================ */
 
 @media (max-width: 650px) {
+
   .transactions-list-header {
     align-items: flex-start;
     flex-direction: column;
@@ -235,5 +456,20 @@
 
   .transaction-amount {
     font-size: 0.9rem;
+  }
+
+  .transaction-actions {
+    gap: 6px;
+  }
+
+  .transaction-type-badge {
+    width: 76px;
+    min-width: 76px;
+  }
+
+  .transaction-note-button {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
   }
 }
