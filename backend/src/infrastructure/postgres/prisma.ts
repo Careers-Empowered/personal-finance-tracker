@@ -1,7 +1,5 @@
 import dotenv from "dotenv";
 import path from "node:path";
-
-import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 dotenv.config({
@@ -16,10 +14,4 @@ if (!connectionString) {
   );
 }
 
-const adapter = new PrismaPg({
-  connectionString,
-});
-
-export const prisma = new PrismaClient({
-  adapter,
-});
+export const prisma = new PrismaClient();
