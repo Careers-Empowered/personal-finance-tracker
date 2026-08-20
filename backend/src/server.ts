@@ -4,9 +4,6 @@ import cors from "cors";
 import categoryRoutes from "./api/category.routes";
 import categoryMatcherRoutes from "./api/category-matcher.routes";
 import accountRoutes from "./api/account.routes";
-import authRoutes from "./api/auth.routes";
-import { authMiddleware } from "./security/auth.middleware";
-import transactionsRouter from "./api/transactions";
 import { prisma } from "./infrastructure/postgres/prisma";
 
 const app = express();
@@ -25,24 +22,17 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// Auth APIs
-app.use("/api/auth", authRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/accounts", accountRoutes);
-app.use("/api/transactions", transactionsRouter);
-
 // Category APIs
-app.use("/api/categories", authMiddleware, categoryRoutes);
+app.use("/api/categories", categoryRoutes);
 
 // Category alias/naming matcher
 app.use(
   "/api/category-matcher",
-  authMiddleware,
   categoryMatcherRoutes,
 );
 
 // Account APIs from dev
-app.use("/api/accounts", authMiddleware, accountRoutes);
+app.use("/api/accounts", accountRoutes);
 
 const PORT =
   Number(process.env.PORT) || 3000;

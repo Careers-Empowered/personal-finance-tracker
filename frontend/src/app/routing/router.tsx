@@ -9,23 +9,16 @@ import Import from "../../features/import/Import";
 import Categorization from "../../features/categorization/Categorization";
 import Auth from "../../features/auth/Auth";
 import SubcategoryTestPage from "../../features/categories/subcategories/SubcategoryTestPage";
-import ProtectedRoute from "./ProtectedRoute";
 
 import { CategoryProvider } from "../../features/categories/context/CategoryContext";
 
 export const router = createBrowserRouter([
   {
-    path: "/auth",
-    element: <Auth />,
-  },
-  {
     path: "/",
     element: (
-      <ProtectedRoute>
-        <CategoryProvider>
-          <DashboardLayout />
-        </CategoryProvider>
-      </ProtectedRoute>
+      <CategoryProvider>
+        <DashboardLayout />
+      </CategoryProvider>
     ),
     children: [
       {
@@ -59,6 +52,10 @@ export const router = createBrowserRouter([
       {
         path: "categorization",
         element: <Categorization />,
+      },
+      {
+        path: "auth",
+        element: <Auth />,
       },
       {
         path: "*",

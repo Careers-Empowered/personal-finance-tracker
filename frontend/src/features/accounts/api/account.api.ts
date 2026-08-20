@@ -2,19 +2,9 @@ import { Account } from "../types/types"; // Will be moved
 
 const API_BASE_URL = "http://localhost:3000/api/accounts";
 
-const getHeaders = (extraHeaders: Record<string, string> = {}) => {
-  const token = localStorage.getItem("token");
-  return {
-    ...extraHeaders,
-    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-  };
-};
-
 export const accountApi = {
   async getAccounts(): Promise<Account[]> {
-    const response = await fetch(API_BASE_URL, {
-      headers: getHeaders(),
-    });
+    const response = await fetch(API_BASE_URL);
     if (!response.ok) throw new Error("Failed to fetch accounts");
     const data = await response.json();
     return data.data;
@@ -23,7 +13,7 @@ export const accountApi = {
   async createAccount(accountData: Omit<Account, "id" | "createdAt" | "updatedAt">): Promise<Account> {
     const response = await fetch(API_BASE_URL, {
       method: "POST",
-      headers: getHeaders({ "Content-Type": "application/json" }),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(accountData),
     });
     if (!response.ok) throw new Error("Failed to create account");
@@ -34,7 +24,7 @@ export const accountApi = {
   async updateAccount(id: string, accountData: Partial<Account>): Promise<Account> {
     const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: "PUT",
-      headers: getHeaders({ "Content-Type": "application/json" }),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(accountData),
     });
     if (!response.ok) throw new Error("Failed to update account");
@@ -45,7 +35,7 @@ export const accountApi = {
   async updateBalance(id: string, balance: number): Promise<Account> {
     const response = await fetch(`${API_BASE_URL}/${id}/balance`, {
       method: "PATCH",
-      headers: getHeaders({ "Content-Type": "application/json" }),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ balance }),
     });
     if (!response.ok) throw new Error("Failed to update balance");
@@ -56,7 +46,6 @@ export const accountApi = {
   async deleteAccount(id: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: "DELETE",
-      headers: getHeaders(),
     });
     if (!response.ok) throw new Error("Failed to delete account");
   },
@@ -69,7 +58,7 @@ export const accountApi = {
   ): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/transfer`, {
       method: "POST",
-      headers: getHeaders({ "Content-Type": "application/json" }),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sourceId, destId, sourceAmount, convertedAmount }),
     });
     if (!response.ok) throw new Error("Failed to transfer balance");
