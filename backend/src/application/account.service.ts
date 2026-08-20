@@ -1,4 +1,5 @@
 import { accountRepository } from "../repositories/account.repository";
+import { balanceValidator } from "../domain/accounts/balanceValidator";
 
 export const accountService = {
   getAccounts(userId: string) {
@@ -46,12 +47,13 @@ export const accountService = {
     return accountRepository.delete(id);
   },
 
-  transferBalance(
+  async transferBalance(
     sourceId: string,
     destId: string,
     sourceAmount: number,
     convertedAmount: number,
   ) {
+    await balanceValidator.validateSufficientBalance(sourceId, sourceAmount);
     return accountRepository.transfer(
       sourceId,
       destId,

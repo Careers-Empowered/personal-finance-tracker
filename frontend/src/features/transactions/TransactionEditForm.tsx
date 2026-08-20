@@ -8,7 +8,7 @@ import { getCurrencySymbol } from '../../shared/utils/currencyUtils';
 interface TransactionEditFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (updatedTransaction: Transaction | CreateTransactionInput) => void;
+  onSave: (updatedTransaction: Transaction | CreateTransactionInput) => Promise<void> | void;
   transaction: Transaction | CreateTransactionInput;
   accounts?: Account[];
 }
@@ -28,6 +28,7 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
   const [date, setDate] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Find currently selected account & currency symbol
   const selectedAccount = accounts.find((acc) => acc.id === accountId);
@@ -66,6 +67,7 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
       setDate(transaction.date);
       setTitle(transaction.title || '');
       setErrorMessage('');
+      setIsSubmitting(false);
     }
   }, [isOpen, transaction]);
 
@@ -77,7 +79,7 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -118,6 +120,20 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
       return;
     }
 
+    // Client-side balance validation when updating an EXPENSE transaction
+    if (type === 'EXPENSE' && selectedAccount) {
+      let effectiveBalance = Number(selectedAccount.balance);
+      if (transaction.accountId === selectedAccount.id) {
+        effectiveBalance += transaction.type === 'EXPENSE' ? Number(transaction.amount) : -Number(transaction.amount);
+      }
+      if (numericAmount > effectiveBalance) {
+        setErrorMessage(
+          `Insufficient account balance. Available: ${currencySymbol}${Math.max(0, effectiveBalance).toFixed(2)}, Required: ${currencySymbol}${numericAmount.toFixed(2)}`
+        );
+        return;
+      }
+    }
+
     const updatedTransaction: Transaction | CreateTransactionInput = {
       ...transaction,
       type,
@@ -129,8 +145,16 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
       title: trimmedTitle,
     } as Transaction | CreateTransactionInput;
 
-    onSave(updatedTransaction);
-    onClose();
+    setIsSubmitting(true);
+    try {
+      await onSave(updatedTransaction);
+      onClose();
+    } catch (err: any) {
+      console.error('Error updating transaction in edit form:', err);
+      setErrorMessage(err.message || 'Failed to update transaction.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -283,8 +307,8 @@ const TransactionEditForm: React.FC<TransactionEditFormProps> = ({
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
-              Save Changes
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

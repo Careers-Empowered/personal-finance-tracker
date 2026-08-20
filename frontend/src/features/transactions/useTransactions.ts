@@ -81,7 +81,9 @@ export const useTransactions = () => {
       await loadData();
     } catch (err: any) {
       console.error('Error updating transaction:', err);
-      setError(err.message || 'Failed to update transaction.');
+      const msg = err.message || 'Failed to update transaction.';
+      setError(msg);
+      throw new Error(msg);
     }
   };
 

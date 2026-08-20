@@ -1,4 +1,5 @@
 import { query } from '../../infrastructure/postgres/db';
+import { balanceValidator } from '../../domain/accounts/balanceValidator';
 import {
   CreateTransactionDTO,
   UpdateTransactionDTO,
@@ -300,6 +301,11 @@ export class TransactionsService {
       throw new Error('FORBIDDEN');
     }
 
+    // Validate account balance if spending money (EXPENSE)
+    if (type === 'EXPENSE') {
+      await balanceValidator.validateSufficientBalance(accountId, amount);
+    }
+
     let subId = subcategoryId && typeof subcategoryId === 'string' && subcategoryId.trim() !== '' ? subcategoryId.trim() : null;
 
     if (!subId) {
@@ -399,6 +405,17 @@ export class TransactionsService {
     }
     const newDate = dto.date ? new Date(dto.date) : existing.date;
 
+    // Validate account balance if net effect is an expense
+    if (newType === 'EXPENSE') {
+      await balanceValidator.validateForTransactionUpdate(
+        newAccountId,
+        Number(existing.amount),
+        existing.type as 'INCOME' | 'EXPENSE',
+        newAmount,
+        newType as 'INCOME' | 'EXPENSE'
+      );
+    }
+
     const updateRes = await query(
       `UPDATE transactions
        SET account_id = $1, category_id = $2, subcategory_id = $3, amount = $4, type = $5, date = $6, "Title" = $7, updated_at = NOW()
@@ -408,6 +425,19 @@ export class TransactionsService {
     );
 
     const updatedTx = updateRes.rows[0];
+
+    // Recalculate and update account balance(s)
+    const oldAccountId = existing.account_id;
+    const oldAmount = Number(existing.amount);
+    const oldType = existing.type as 'INCOME' | 'EXPENSE';
+
+    // 1. Revert old transaction effect from old account
+    const oldRevertAdj = oldType === 'INCOME' ? -oldAmount : oldAmount;
+    await query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [oldRevertAdj, oldAccountId]);
+
+    // 2. Apply new transaction effect to new account
+    const newApplyAdj = newType === 'INCOME' ? newAmount : -newAmount;
+    await query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [newApplyAdj, newAccountId]);
 
     const detailsRes = await query(
       `SELECT
@@ -434,7 +464,7 @@ export class TransactionsService {
   }
 
   /**
-   * Delete transaction (Validated by userId)
+   * Delete transaction & revert account balance (Validated by userId)
    */
   async deleteTransaction(userId: string, id: string) {
     const existingRes = await query(
@@ -453,10 +483,19 @@ export class TransactionsService {
       throw new Error('FORBIDDEN');
     }
 
+    const oldAccountId = existing.account_id;
+    const oldAmount = Number(existing.amount);
+    const oldType = existing.type as 'INCOME' | 'EXPENSE';
+
     const res = await query('DELETE FROM transactions WHERE id = $1 RETURNING id', [id]);
     if (res.rows.length === 0) {
       throw new Error('TRANSACTION_NOT_FOUND');
     }
+
+    // Revert deleted transaction's effect on account balance
+    const deleteRevertAdj = oldType === 'INCOME' ? -oldAmount : oldAmount;
+    await query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [deleteRevertAdj, oldAccountId]);
+
     return { success: true, message: 'Transaction deleted successfully' };
   }
 

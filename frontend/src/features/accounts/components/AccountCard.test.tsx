@@ -7,10 +7,13 @@ import { Account } from '../types/types';
 describe('AccountCard', () => {
   const mockAccount: Account = {
     id: '1',
+    userId: 'user-1',
     name: 'Test Account',
     currency: 'USD',
     balance: 1234.56,
     isPrimary: false,
+    createdAt: '2026-08-01T00:00:00Z',
+    updatedAt: '2026-08-01T00:00:00Z',
   };
 
   const defaultProps = {

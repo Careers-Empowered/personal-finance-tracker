@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import { CategoryEditableDropdown } from "./CategoryEditableDropdown";
 
 import type {
   ImportedTransaction,
@@ -965,28 +966,21 @@ function ImportValidation({
                             "center",
                         }}
                       >
-                        <input
-                          type="text"
+                        <CategoryEditableDropdown
                           value={
                             manualCategoryValues[
                               row.row
                             ] || ""
                           }
-                          onChange={(event) =>
+                          onChange={(newVal) =>
                             setManualCategoryValues(
                               (current) => ({
                                 ...current,
-                                [row.row]:
-                                  event.target
-                                    .value,
+                                [row.row]: newVal,
                               })
                             )
                           }
-                          placeholder="Enter category"
-                          style={{
-                            ...inputStyle,
-                            flex: 1,
-                          }}
+                          placeholder="Select category or type custom..."
                         />
 
                         <button
