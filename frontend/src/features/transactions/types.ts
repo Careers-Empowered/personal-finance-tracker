@@ -11,6 +11,9 @@ export interface Transaction {
   title: string;
   createdAt?: string;
   updatedAt?: string;
+    // Import override information
+  importedWithOverride?: boolean;
+  overrideNote?: string | null;
 
   // Relation objects
   account?: {
