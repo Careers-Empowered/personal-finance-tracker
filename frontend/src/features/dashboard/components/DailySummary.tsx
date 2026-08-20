@@ -19,6 +19,16 @@ const formatCurrency = (amount: number, currency: string) =>
     maximumFractionDigits: 2,
   }).format(amount);
 
+const formatCompactCurrency = (
+  amount: number,
+  currency: string,
+) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+    notation: "compact",
+  }).format(amount);
 
 const formatMonth = (date: Date) =>
   new Intl.DateTimeFormat("en-US", {
@@ -52,7 +62,7 @@ const DailySummary = ({
   data = [],
   transactions = [],
   accounts = [],
-  currency = "INR",
+  currency = "USD",
 }: DailySummaryProps) => {
   const initialMonth = useMemo(() => {
     if (data.length === 0) {
@@ -107,22 +117,23 @@ const DailySummary = ({
   /*
    * Transactions for the selected date.
    */
-const selectedDateTransactions = useMemo(() => {
-  if (!selectedDate) {
-    return [];
-  }
+  const selectedDateTransactions = useMemo(() => {
+    if (!selectedDate) {
+      return [];
+    }
 
-  return transactions
-    .filter(
-      (transaction) =>
-        transaction.date.slice(0, 10) === selectedDate,
-    )
-    .sort((first, second) => {
-      return first.title.localeCompare(
-        second.title,
-      );
-    });
-}, [transactions, selectedDate]);
+    return transactions
+      .filter(
+        (transaction) =>
+          transaction.date === selectedDate,
+      )
+      .sort((first, second) => {
+        return first.description.localeCompare(
+          second.description,
+        );
+      });
+  }, [transactions, selectedDate]);
+
   const totalIncome = [...monthData.values()].reduce(
     (sum, point) => sum + point.income,
     0,
@@ -231,7 +242,7 @@ const selectedDateTransactions = useMemo(() => {
           <span>
             In{" "}
             <strong>
-              {formatCurrency(
+              {formatCompactCurrency(
                 totalIncome,
                 currency,
               )}
@@ -241,7 +252,7 @@ const selectedDateTransactions = useMemo(() => {
           <span>
             Out{" "}
             <strong>
-              {formatCurrency(
+              {formatCompactCurrency(
                 totalExpenses,
                 currency,
               )}
@@ -258,7 +269,7 @@ const selectedDateTransactions = useMemo(() => {
               }
             >
               {netBalance >= 0 ? "+" : ""}
-              {formatCurrency(
+              {formatCompactCurrency(
                 netBalance,
                 currency,
               )}
@@ -387,7 +398,7 @@ const selectedDateTransactions = useMemo(() => {
                     }`}
                   >
                     {point.balance >= 0 ? "+" : ""}
-                    {formatCurrency(
+                    {formatCompactCurrency(
                       point.balance,
                       currency,
                     )}
@@ -397,7 +408,7 @@ const selectedDateTransactions = useMemo(() => {
                     {point.income > 0 && (
                       <span className="daily-calendar-pill daily-calendar-pill--income">
                         <span>↑</span>
-                        {formatCurrency(
+                        {formatCompactCurrency(
                           point.income,
                           currency,
                         )}
@@ -407,7 +418,7 @@ const selectedDateTransactions = useMemo(() => {
                     {point.expenses > 0 && (
                       <span className="daily-calendar-pill daily-calendar-pill--expense">
                         <span>↓</span>
-                        {formatCurrency(
+                        {formatCompactCurrency(
                           point.expenses,
                           currency,
                         )}
@@ -487,9 +498,7 @@ const selectedDateTransactions = useMemo(() => {
                 );
 
                 const transactionCurrency =
-  transaction.currency ??
-  account?.currency ??
-  currency;
+                  account?.currency ?? currency;
 
                 return (
                   <div
@@ -506,7 +515,7 @@ const selectedDateTransactions = useMemo(() => {
 
                     <div className="daily-calendar-transaction__details">
                       <strong>
-                        {transaction.title}
+                        {transaction.description}
                       </strong>
 
                       <span>

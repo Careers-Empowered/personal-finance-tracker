@@ -8,7 +8,6 @@ interface FinancialInsightsProps {
   account?: Account;
   summary: SummaryData;
   spendingByCategory: CategorySpending[];
-  currency: string;
 }
 
 const formatCurrency = (amount: number, currency: string) =>
@@ -22,8 +21,8 @@ const FinancialInsights = ({
   account,
   summary,
   spendingByCategory,
-  currency,
 }: FinancialInsightsProps) => {
+  const currency = account?.currency ?? "USD";
 
   const netCashFlow = summary.income - summary.expenses;
 

@@ -6,12 +6,15 @@ import MonthlyTrend from "./components/MonthlyTrend";
 import Transactions from "./components/Transactions";
 import SpendingByCategory from "./components/SpendingByCategory";
 import { useDashboard } from "../../hooks/useDashboard";
-
+import dashboardMockData from "./mockData.json";
+import type { DashboardData } from "../../types/dashboard";
 import "./dashboard.css";
+
+const dashboardData = dashboardMockData as DashboardData;
 
 const Dashboard = () => {
   const {
-    data,
+    view,
     selectedAccountId,
     setSelectedAccountId,
     isDatePickerOpen,
@@ -19,38 +22,12 @@ const Dashboard = () => {
     draftRange,
     setDraftRange,
     appliedRange,
+    isPeriodView,
     applyDateRange,
     clearDateRange,
-    loading,
-    error,
-  } = useDashboard(
-    "9a1b181c-d789-4d6b-873f-c12140a32456",
-  );
+  } = useDashboard(dashboardData);
 
-  if (loading) {
-    return (
-      <main className="dashboard-page">
-        <p>Loading dashboard...</p>
-      </main>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <main className="dashboard-page">
-        <p>{error ?? "Failed to load dashboard"}</p>
-      </main>
-    );
-  }
-
-  const selectedAccount = data.selectedAccount;
-
-  const currency =
-    selectedAccount?.currency ??
-    data.baseCurrency;
-
-  const isPeriodView =
-    appliedRange !== null;
+  const currency = view.selectedAccount?.currency ?? "USD";
 
   const periodDescription =
     isPeriodView && appliedRange
@@ -69,14 +46,14 @@ const Dashboard = () => {
           <h1>Dashboard</h1>
 
           <p>
-            {selectedAccount
-              ? `${selectedAccount.name} financial activity`
+            {view.selectedAccount
+              ? `${view.selectedAccount.name} financial activity`
               : "Overview of your financial activity"}
           </p>
         </div>
 
         <DashboardFilters
-          accounts={data.accounts}
+          accounts={dashboardData.accounts}
           selectedAccountId={selectedAccountId}
           onAccountChange={setSelectedAccountId}
           isDatePickerOpen={isDatePickerOpen}
@@ -89,56 +66,51 @@ const Dashboard = () => {
         />
       </div>
 
-<FinancialInsights
-  account={selectedAccount ?? undefined}
-  summary={data.summary}
-  spendingByCategory={data.spendingByCategory}
-  currency={currency}
-/>
-
+      <FinancialInsights
+          account={view.selectedAccount}
+          summary={view.summary}
+          spendingByCategory={view.spendingByCategory}
+        />
+        
       <div className="dashboard-top-grid">
         <MonthlySummary
-          data={data.summary}
+          data={view.summary}
           currency={currency}
-          title={
-            isPeriodView
-              ? "Period summary"
-              : "Monthly Summary"
-          }
+          title={isPeriodView ? "Period summary" : "Monthly Summary"}
           description={periodDescription}
         />
 
         <MonthlyTrend
-          data={data.monthlyTrend}
+          data={view.monthlyTrend}
           currency={currency}
-          title={
-            isPeriodView
-              ? "Period trend"
-              : "Monthly trend"
-          }
+          title={isPeriodView ? "Period trend" : "Monthly trend"}
           description={trendDescription}
           granularity="month"
         />
       </div>
 
+      
+
       <DailySummary
         key={selectedAccountId}
-        data={data.dailyTrend}
-        transactions={data.transactions}
-        accounts={data.accounts}
-        currency={selectedAccount?.currency}
+        data={view.dailyTrend}
+        transactions={view.transactions}
+        accounts={dashboardData.accounts}
+        currency={view.selectedAccount?.currency}
       />
 
       <div className="dashboard-detail-grid dashboard-detail-grid--wide">
         <SpendingByCategory
-          data={data.spendingByCategory}
+          data={view.spendingByCategory}
           currency={currency}
         />
+
+        
       </div>
 
       <Transactions
-        transactions={data.transactions}
-        accounts={data.accounts}
+        transactions={view.transactions}
+        accounts={dashboardData.accounts}
       />
     </main>
   );

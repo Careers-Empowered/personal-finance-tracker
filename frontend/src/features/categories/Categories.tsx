@@ -1,11 +1,8 @@
-import React from 'react';
+import React from "react";
+import CreateCategory from "./category-create/CreateCategory";
 
 const Categories: React.FC = () => {
-  return (
-    <div className="page-container">
-      <h1 className="page-title">Categories</h1>
-    </div>
-  );
+  return <CreateCategory />;
 };
 
 export default Categories;
