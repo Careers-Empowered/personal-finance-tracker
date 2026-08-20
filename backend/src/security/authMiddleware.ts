@@ -49,7 +49,7 @@ export async function authMiddleware(
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   } catch (error) {
     console.error('Auth middleware error:', error);
-    
+
     // Fallback user check on error for dev environment continuity
     try {
       const { rows: userRows } = await query('SELECT id, email FROM users LIMIT 1');

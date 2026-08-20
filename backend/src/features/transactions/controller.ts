@@ -41,7 +41,9 @@ export class TransactionsController {
       const { name, type, icon, color } = req.body;
 
       if (!name || typeof name !== 'string' || !name.trim()) {
-        return res.status(400).json({ error: 'Category name is required' });
+        return res.status(400).json({
+          error: 'Category name is required',
+        });
       }
 
       const catType = type === 'INCOME' ? 'INCOME' : 'EXPENSE';
@@ -60,7 +62,6 @@ export class TransactionsController {
     }
   }
 
-
   /**
    * GET /api/transactions/subcategories
    */
@@ -68,17 +69,24 @@ export class TransactionsController {
     try {
       const userId = req.userId!;
       const { categoryId } = req.query;
+
       const subcategories = await transactionsService.getSubcategories(
         userId,
         categoryId ? String(categoryId) : undefined
       );
+
       return res.json(subcategories);
     } catch (error: any) {
       if (error.message === 'CATEGORY_NOT_FOUND') {
-        return res.status(404).json({ error: 'Category not found' });
+        return res.status(404).json({
+          error: 'Category not found',
+        });
       }
+
       console.error('Fetch subcategories error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).json({
+        error: 'Internal Server Error',
+      });
     }
   }
 
@@ -91,11 +99,15 @@ export class TransactionsController {
       const { categoryId, name, icon } = req.body;
 
       if (!categoryId || typeof categoryId !== 'string') {
-        return res.status(400).json({ error: 'categoryId is required' });
+        return res.status(400).json({
+          error: 'categoryId is required',
+        });
       }
 
       if (!name || typeof name !== 'string' || !name.trim()) {
-        return res.status(400).json({ error: 'Subcategory name is required' });
+        return res.status(400).json({
+          error: 'Subcategory name is required',
+        });
       }
 
       const result = await transactionsService.createSubcategory(userId, {
@@ -107,7 +119,9 @@ export class TransactionsController {
       return res.status(201).json(result);
     } catch (error: any) {
       console.error('Create subcategory error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).json({
+        error: 'Internal Server Error',
+      });
     }
   }
 
@@ -137,11 +151,15 @@ export class TransactionsController {
   async getSummary(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!;
-      const summary = await transactionsService.getTransactionSummary(userId);
+      const summary =
+        await transactionsService.getTransactionSummary(userId);
+
       return res.json(summary);
     } catch (error: any) {
       console.error('Fetch summary error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).json({
+        error: 'Internal Server Error',
+      });
     }
   }
 
@@ -151,6 +169,7 @@ export class TransactionsController {
   async getTransactions(req: AuthenticatedRequest, res: Response) {
     try {
       const userId = req.userId!;
+
       const {
         type,
         categoryId,
@@ -176,7 +195,9 @@ export class TransactionsController {
       return res.json(result.data);
     } catch (error: any) {
       console.error('Fetch transactions error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).json({
+        error: 'Internal Server Error',
+      });
     }
   }
 
@@ -188,18 +209,39 @@ export class TransactionsController {
       const userId = req.userId!;
       const { accountId, categoryId, subcategoryId, amount, type, date, title, importedWithOverride, overrideNote } = req.body;
 
-      if (!accountId || !categoryId || amount === undefined || !type || !title) {
+      const {
+        accountId,
+        categoryId,
+        subcategoryId,
+        amount,
+        type,
+        date,
+        title,
+      } = req.body;
+
+      if (
+        !accountId ||
+        !categoryId ||
+        amount === undefined ||
+        !type ||
+        !title
+      ) {
         return res.status(400).json({
-          error: 'Missing required fields: accountId, categoryId, amount, type, title',
+          error:
+            'Missing required fields: accountId, categoryId, amount, type, title',
         });
       }
 
       if (type !== 'INCOME' && type !== 'EXPENSE') {
-        return res.status(400).json({ error: 'Invalid transaction type' });
+        return res.status(400).json({
+          error: 'Invalid transaction type',
+        });
       }
 
       if (typeof amount !== 'number' || amount <= 0) {
-        return res.status(400).json({ error: 'Amount must be a positive number' });
+        return res.status(400).json({
+          error: 'Amount must be a positive number',
+        });
       }
 
       const transaction = await transactionsService.createTransaction(userId, {
@@ -217,37 +259,48 @@ export class TransactionsController {
       return res.status(201).json(transaction);
     } catch (error: any) {
       if (error.message === 'ACCOUNT_NOT_FOUND') {
-        return res.status(404).json({ error: 'Account not found' });
+        return res.status(404).json({
+          error: 'Account not found',
+        });
       }
+
       if (error.message === 'CATEGORY_NOT_FOUND') {
-        return res.status(404).json({ error: 'Category not found' });
+        return res.status(404).json({
+          error: 'Category not found',
+        });
       }
+
       if (error.message === 'SUBCATEGORY_REQUIRED') {
-        return res.status(400).json({ error: 'Subcategory required' });
+        return res.status(400).json({
+          error: 'Subcategory required',
+        });
       }
+
       console.error('Create transaction error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+
+      return res.status(500).json({
+        error: 'Internal Server Error',
+      });
     }
   }
 
   /**
    * PUT /api/transactions/:id
    */
-  async updateTransaction(req: AuthenticatedRequest, res: Response) {
+  async updateTransaction(
+    req: AuthenticatedRequest,
+    res: Response
+  ) {
     try {
       const { id } = req.params;
+
+      // Express can type route params as string | string[].
+      // Normalize it to the string expected by the service.
+      const transactionId = Array.isArray(id) ? id[0] : id;
+
       const userId = req.userId!;
-      const { accountId, categoryId, subcategoryId, amount, type, date, title } = req.body;
 
-      if (amount !== undefined && (typeof amount !== 'number' || amount <= 0)) {
-        return res.status(400).json({ error: 'Amount must be a positive number' });
-      }
-
-      if (type && type !== 'INCOME' && type !== 'EXPENSE') {
-        return res.status(400).json({ error: 'Invalid transaction type' });
-      }
-
-      const updatedTransaction = await transactionsService.updateTransaction(userId, id, {
+      const {
         accountId,
         categoryId,
         subcategoryId,
@@ -255,43 +308,106 @@ export class TransactionsController {
         type,
         date,
         title,
-      });
+      } = req.body;
+
+      if (
+        amount !== undefined &&
+        (typeof amount !== 'number' || amount <= 0)
+      ) {
+        return res.status(400).json({
+          error: 'Amount must be a positive number',
+        });
+      }
+
+      if (type && type !== 'INCOME' && type !== 'EXPENSE') {
+        return res.status(400).json({
+          error: 'Invalid transaction type',
+        });
+      }
+
+      const updatedTransaction =
+        await transactionsService.updateTransaction(
+          userId,
+          transactionId,
+          {
+            accountId,
+            categoryId,
+            subcategoryId,
+            amount,
+            type,
+            date,
+            title,
+          }
+        );
 
       return res.json(updatedTransaction);
     } catch (error: any) {
       if (error.message === 'TRANSACTION_NOT_FOUND') {
-        return res.status(404).json({ error: 'Transaction not found' });
+        return res.status(404).json({
+          error: 'Transaction not found',
+        });
       }
+
       if (error.message === 'FORBIDDEN') {
-        return res.status(403).json({ error: 'Forbidden' });
+        return res.status(403).json({
+          error: 'Forbidden',
+        });
       }
+
       if (error.message === 'ACCOUNT_NOT_FOUND') {
-        return res.status(404).json({ error: 'Account not found' });
+        return res.status(404).json({
+          error: 'Account not found',
+        });
       }
+
       console.error('Update transaction error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+
+      return res.status(500).json({
+        error: 'Internal Server Error',
+      });
     }
   }
 
   /**
    * DELETE /api/transactions/:id
    */
-  async deleteTransaction(req: AuthenticatedRequest, res: Response) {
+  async deleteTransaction(
+    req: AuthenticatedRequest,
+    res: Response
+  ) {
     try {
       const { id } = req.params;
+
+      // Normalize the route parameter to a string.
+      const transactionId = Array.isArray(id) ? id[0] : id;
+
       const userId = req.userId!;
 
-      const result = await transactionsService.deleteTransaction(userId, id);
+      const result =
+        await transactionsService.deleteTransaction(
+          userId,
+          transactionId
+        );
+
       return res.status(200).json(result);
     } catch (error: any) {
       if (error.message === 'TRANSACTION_NOT_FOUND') {
-        return res.status(404).json({ error: 'Transaction not found' });
+        return res.status(404).json({
+          error: 'Transaction not found',
+        });
       }
+
       if (error.message === 'FORBIDDEN') {
-        return res.status(403).json({ error: 'Forbidden' });
+        return res.status(403).json({
+          error: 'Forbidden',
+        });
       }
+
       console.error('Delete transaction error:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+
+      return res.status(500).json({
+        error: 'Internal Server Error',
+      });
     }
   }
 }

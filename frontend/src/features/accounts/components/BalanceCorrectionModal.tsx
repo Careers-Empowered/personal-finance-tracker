@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Account } from './types';
+import { Account } from '../types/types';
 
 interface BalanceCorrectionModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ const BalanceCorrectionModal: React.FC<BalanceCorrectionModalProps> = ({ isOpen,
 
   useEffect(() => {
     if (account) {
-      setBalance(account.balance);
+      setBalance(Math.max(0, Math.round(account.balance * 100) / 100));
     }
   }, [account, isOpen]);
 
@@ -21,7 +21,8 @@ const BalanceCorrectionModal: React.FC<BalanceCorrectionModalProps> = ({ isOpen,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(account.id, balance);
+    const cleanBalance = Math.max(0, Math.round(balance * 100) / 100);
+    onSave(account.id, cleanBalance);
     onClose();
   };
 
@@ -38,12 +39,13 @@ const BalanceCorrectionModal: React.FC<BalanceCorrectionModalProps> = ({ isOpen,
           </div>
           <div className="form-group">
             <label htmlFor="newBalance">Corrected Balance ({account.currency})</label>
-            <input 
-              type="number" 
-              id="newBalance" 
-              className="form-control" 
-              value={balance} 
-              onChange={(e) => setBalance(parseFloat(e.target.value) || 0)} 
+            <input
+              type="number"
+              id="newBalance"
+              className="form-control"
+              value={balance}
+              onChange={(e) => setBalance(Math.max(0, parseFloat(e.target.value) || 0))}
+              min="0"
               step="0.01"
               required
             />

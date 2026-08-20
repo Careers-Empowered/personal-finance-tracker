@@ -316,7 +316,7 @@ export class TransactionsService {
     await query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [balanceAdj, accountId]);
 
     const detailsRes = await query(
-      `SELECT 
+      `SELECT
          json_build_object('id', a.id, 'name', a.name) as account,
          json_build_object('id', c.id, 'name', c.name, 'type', c.type, 'icon', c.icon, 'color', c.color) as category,
          CASE WHEN s.id IS NOT NULL THEN json_build_object('id', s.id, 'name', s.name) ELSE NULL END as subcategory
@@ -374,7 +374,7 @@ export class TransactionsService {
     const updatedTx = updateRes.rows[0];
 
     const detailsRes = await query(
-      `SELECT 
+      `SELECT
          json_build_object('id', a.id, 'name', a.name) as account,
          json_build_object('id', c.id, 'name', c.name, 'type', c.type, 'icon', c.icon, 'color', c.color) as category,
          CASE WHEN s.id IS NOT NULL THEN json_build_object('id', s.id, 'name', s.name) ELSE NULL END as subcategory
@@ -413,11 +413,11 @@ export class TransactionsService {
    */
   async getTransactionSummary(userId: string): Promise<TransactionSummaryResponse> {
     const { rows } = await query(`
-      SELECT 
-        type, 
-        SUM(amount) as total, 
-        COUNT(id) as count 
-      FROM transactions 
+      SELECT
+        type,
+        SUM(amount) as total,
+        COUNT(id) as count
+      FROM transactions
       GROUP BY type
     `);
 
