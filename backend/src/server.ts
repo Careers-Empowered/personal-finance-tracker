@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 
-import dashboardRoutes from "./api/dashboard.routes";
 import categoryRoutes from "./api/category.routes";
 import categoryMatcherRoutes from "./api/category-matcher.routes";
 import accountRoutes from "./api/account.routes";
@@ -27,7 +26,6 @@ app.get("/health", (_req, res) => {
 });
 
 // Auth APIs
-app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/accounts", accountRoutes);

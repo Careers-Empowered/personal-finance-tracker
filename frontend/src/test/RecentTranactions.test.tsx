@@ -1,8 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-
 import RecentTransactions from "../features/dashboard/components/Transactions";
-
 import type {
   Account,
   Transaction,
@@ -14,9 +12,27 @@ const createAccount = (
   id: "account-1",
   name: "Checking Account",
   balance: 1500,
-  convertedBalance: 1500,
   currency: "USD",
-  isPrimary: true,
+  income: 3000,
+  expenses: 1500,
+  transactionCount: 10,
+  dashboard: {
+    daily: {
+      income: 100,
+      expenses: 50,
+      balance: 50,
+      transactionCount: 2,
+    },
+    monthly: {
+      income: 3000,
+      expenses: 1500,
+      balance: 1500,
+      transactionCount: 10,
+    },
+    spendingByCategory: [],
+    monthlyTrend: [],
+    dailyTrend: [],
+  },
   ...overrides,
 });
 
@@ -25,38 +41,32 @@ const transactions: Transaction[] = [
     id: "1",
     accountId: "account-1",
     date: "2026-08-14",
-    title: "Salary",
+    description: "Salary",
     category: "Income",
-    subcategory: "Salary",
     amount: 5000,
     type: "income",
-    currency: "USD",
   },
   {
     id: "2",
     accountId: "account-1",
     date: "2026-08-13",
-    title: "Grocery Shopping",
+    description: "Grocery Shopping",
     category: "Food",
-    subcategory: "Groceries",
     amount: 250,
     type: "expense",
-    currency: "USD",
   },
 ];
 
-describe("Transactions", () => {
+describe("RecentTransactions", () => {
   it("renders the heading and description", () => {
     render(<RecentTransactions />);
 
     expect(
-      screen.getByRole("heading", {
-        name: "Transactions",
-      }),
+      screen.getByRole("heading", { name: "Recent transactions" }),
     ).toBeInTheDocument();
 
     expect(
-      screen.getByText("Your financial activity"),
+      screen.getByText("Your latest financial activity"),
     ).toBeInTheDocument();
   });
 
@@ -64,21 +74,15 @@ describe("Transactions", () => {
     render(<RecentTransactions />);
 
     expect(
-      screen.getByText(
-        "No recent transactions available",
-      ),
+      screen.getByText("No recent transactions available"),
     ).toBeInTheDocument();
   });
 
   it("shows empty state when transactions array is empty", () => {
-    render(
-      <RecentTransactions transactions={[]} />,
-    );
+    render(<RecentTransactions transactions={[]} />);
 
     expect(
-      screen.getByText(
-        "No recent transactions available",
-      ),
+      screen.getByText("No recent transactions available"),
     ).toBeInTheDocument();
   });
 
@@ -90,19 +94,11 @@ describe("Transactions", () => {
       />,
     );
 
-    expect(
-      screen.getByText("Salary"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Salary")).toBeInTheDocument();
+    expect(screen.getByText(/Income · Checking Account · Aug 14/))
+      .toBeInTheDocument();
 
-    expect(
-      screen.getByText(
-        /Income · Checking Account · Aug 14/,
-      ),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText("+$5,000.00"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("+$5,000.00")).toBeInTheDocument();
 
     const icon = document.querySelector(
       ".recent-transaction__icon--income",
@@ -120,19 +116,13 @@ describe("Transactions", () => {
       />,
     );
 
-    expect(
-      screen.getByText("Grocery Shopping"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Grocery Shopping")).toBeInTheDocument();
 
     expect(
-      screen.getByText(
-        /Food · Checking Account · Aug 13/,
-      ),
+      screen.getByText(/Food · Checking Account · Aug 13/),
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByText("−$250.00"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("−$250.00")).toBeInTheDocument();
 
     const icon = document.querySelector(
       ".recent-transaction__icon--expense",
@@ -161,9 +151,7 @@ describe("Transactions", () => {
     );
 
     expect(
-      screen.getByText(
-        /Income · Savings Account · Aug 14/,
-      ),
+      screen.getByText(/Income · Savings Account · Aug 14/),
     ).toBeInTheDocument();
   });
 
@@ -181,94 +169,79 @@ describe("Transactions", () => {
     );
 
     expect(
-      screen.getByText(
-        /Income · Account · Aug 14/,
-      ),
+      screen.getByText(/Income · Account · Aug 14/),
     ).toBeInTheDocument();
   });
+it("sorts transactions by date with the newest first", () => {
+  const unsortedTransactions: Transaction[] = [
+    {
+      id: "old",
+      accountId: "account-1",
+      date: "2026-08-10",
+      description: "Old Transaction",
+      category: "Other",
+      amount: 100,
+      type: "expense",
+    },
+    {
+      id: "new",
+      accountId: "account-1",
+      date: "2026-08-14",
+      description: "New Transaction",
+      category: "Income",
+      amount: 1000,
+      type: "income",
+    },
+    {
+      id: "middle",
+      accountId: "account-1",
+      date: "2026-08-12",
+      description: "Middle Transaction",
+      category: "Food",
+      amount: 200,
+      type: "expense",
+    },
+  ];
 
-  it("sorts transactions by date with newest first", () => {
-    const unsortedTransactions: Transaction[] = [
-      {
-        id: "old",
-        accountId: "account-1",
-        date: "2026-08-10",
-        title: "Old Transaction",
-        category: "Other",
-        subcategory: "Miscellaneous",
-        amount: 100,
-        type: "expense",
-        currency: "USD",
-      },
-      {
-        id: "new",
-        accountId: "account-1",
-        date: "2026-08-14",
-        title: "New Transaction",
-        category: "Income",
-        subcategory: "Salary",
-        amount: 1000,
-        type: "income",
-        currency: "USD",
-      },
-      {
-        id: "middle",
-        accountId: "account-1",
-        date: "2026-08-12",
-        title: "Middle Transaction",
-        category: "Food",
-        subcategory: "Groceries",
-        amount: 200,
-        type: "expense",
-        currency: "USD",
-      },
-    ];
+  render(
+    <RecentTransactions
+      transactions={unsortedTransactions}
+      accounts={[createAccount()]}
+    />,
+  );
 
-    render(
-      <RecentTransactions
-        transactions={unsortedTransactions}
-        accounts={[createAccount()]}
-      />,
-    );
+  const transactionElements = document.querySelectorAll(
+    ".recent-transaction",
+  );
 
-    const transactionElements =
-      document.querySelectorAll(
-        ".recent-transaction",
-      );
+  expect(transactionElements).toHaveLength(3);
 
-    expect(transactionElements).toHaveLength(3);
+  expect(transactionElements[0]).toHaveTextContent(
+    "New Transaction",
+  );
 
-    expect(
-      transactionElements[0],
-    ).toHaveTextContent("New Transaction");
+  expect(transactionElements[1]).toHaveTextContent(
+    "Middle Transaction",
+  );
 
-    expect(
-      transactionElements[1],
-    ).toHaveTextContent("Middle Transaction");
-
-    expect(
-      transactionElements[2],
-    ).toHaveTextContent("Old Transaction");
-  });
+  expect(transactionElements[2]).toHaveTextContent(
+    "Old Transaction",
+  );
+});
 
   it("displays at most five recent transactions", () => {
-    const manyTransactions: Transaction[] =
-      Array.from(
-        { length: 7 },
-        (_, index) => ({
-          id: `transaction-${index}`,
-          accountId: "account-1",
-          date: `2026-08-${String(
-            14 - index,
-          ).padStart(2, "0")}`,
-          title: `Transaction ${index + 1}`,
-          category: "Other",
-          subcategory: "Miscellaneous",
-          amount: 100 + index,
-          type: "expense" as const,
-          currency: "USD",
-        }),
-      );
+    const manyTransactions: Transaction[] = Array.from(
+      { length: 7 },
+      (_, index) => ({
+        id: `transaction-${index}`,
+        accountId: "account-1",
+        date: `2026-08-${String(14 - index).padStart(2, "0")}`,
+        description: `Transaction ${index + 1}`,
+        category: "Other",
+        amount: 100 + index,
+        type: "expense" as const,
+      }),
+    );
 
     render(
       <RecentTransactions
@@ -277,21 +250,11 @@ describe("Transactions", () => {
       />,
     );
 
-    expect(
-      screen.getByText("Transaction 1"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Transaction 1")).toBeInTheDocument();
+    expect(screen.getByText("Transaction 5")).toBeInTheDocument();
 
-    expect(
-      screen.getByText("Transaction 5"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.queryByText("Transaction 6"),
-    ).not.toBeInTheDocument();
-
-    expect(
-      screen.queryByText("Transaction 7"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Transaction 6")).not.toBeInTheDocument();
+    expect(screen.queryByText("Transaction 7")).not.toBeInTheDocument();
   });
 
   it("renders multiple transactions", () => {
@@ -302,21 +265,10 @@ describe("Transactions", () => {
       />,
     );
 
-    expect(
-      screen.getByText("Salary"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText("Grocery Shopping"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText("+$5,000.00"),
-    ).toBeInTheDocument();
-
-    expect(
-      screen.getByText("−$250.00"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Salary")).toBeInTheDocument();
+    expect(screen.getByText("Grocery Shopping")).toBeInTheDocument();
+    expect(screen.getByText("+$5,000.00")).toBeInTheDocument();
+    expect(screen.getByText("−$250.00")).toBeInTheDocument();
   });
 
   it("formats transaction dates correctly", () => {
@@ -333,25 +285,6 @@ describe("Transactions", () => {
 
     expect(
       screen.getByText(/Aug 13/),
-    ).toBeInTheDocument();
-  });
-
-  it("uses transaction currency when provided", () => {
-    const transaction: Transaction = {
-      ...transactions[0],
-      amount: 1000,
-      currency: "INR",
-    };
-
-    render(
-      <RecentTransactions
-        transactions={[transaction]}
-        accounts={[createAccount()]}
-      />,
-    );
-
-    expect(
-      screen.getByText("+₹1,000.00"),
     ).toBeInTheDocument();
   });
 });

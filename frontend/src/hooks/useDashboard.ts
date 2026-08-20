@@ -1,75 +1,27 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import type { DashboardData } from "../types/dashboard";
 import {
-  getDashboard,
-  type DashboardQuery,
-} from "../services/dashboard.service";
+  createDashboardView,
+  isValidDateRange,
+  type DateRange,
+} from "../utils/dashboardSelectors";
 
-const EMPTY_DATE_RANGE = {
-  startDate: "",
-  endDate: "",
-};
+const EMPTY_DATE_RANGE: DateRange = { startDate: "", endDate: "" };
 
-export const useDashboard = (userId: string) => {
-  const [data, setData] = useState<DashboardData | null>(null);
+export const useDashboard = (data: DashboardData) => {
+  const [selectedAccountId, setSelectedAccountId] = useState("all");
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [draftRange, setDraftRange] = useState<DateRange>(EMPTY_DATE_RANGE);
+  const [appliedRange, setAppliedRange] = useState<DateRange | null>(null);
 
-  const [selectedAccountId, setSelectedAccountId] =
-    useState("all");
-
-  const [isDatePickerOpen, setIsDatePickerOpen] =
-    useState(false);
-
-  const [draftRange, setDraftRange] =
-    useState(EMPTY_DATE_RANGE);
-
-  const [appliedRange, setAppliedRange] =
-    useState<typeof EMPTY_DATE_RANGE | null>(null);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadDashboard = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const query: DashboardQuery = {
-          userId,
-        };
-
-        if (selectedAccountId !== "all") {
-          query.accountId = selectedAccountId;
-        }
-
-        if (appliedRange) {
-          query.startDate = appliedRange.startDate;
-          query.endDate = appliedRange.endDate;
-        }
-
-        const result = await getDashboard(query);
-
-        setData(result);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load dashboard");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDashboard();
-  }, [userId, selectedAccountId, appliedRange]);
+  const view = useMemo(
+    () => createDashboardView(data, selectedAccountId, appliedRange),
+    [data, selectedAccountId, appliedRange],
+  );
+  const isPeriodView = appliedRange !== null;
 
   const applyDateRange = () => {
-    if (
-      !draftRange.startDate ||
-      !draftRange.endDate ||
-      draftRange.startDate > draftRange.endDate
-    ) {
-      return;
-    }
-
+    if (!isValidDateRange(draftRange)) return;
     setAppliedRange(draftRange);
     setIsDatePickerOpen(false);
   };
@@ -81,18 +33,16 @@ export const useDashboard = (userId: string) => {
   };
 
   return {
-    data,
+    view,
     selectedAccountId,
     setSelectedAccountId,
     isDatePickerOpen,
-    toggleDatePicker: () =>
-      setIsDatePickerOpen((value) => !value),
+    toggleDatePicker: () => setIsDatePickerOpen((isOpen) => !isOpen),
     draftRange,
     setDraftRange,
     appliedRange,
+    isPeriodView,
     applyDateRange,
     clearDateRange,
-    loading,
-    error,
   };
 };

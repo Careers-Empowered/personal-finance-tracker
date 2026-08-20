@@ -14,9 +14,11 @@ export interface Account {
   id: string;
   name: string;
   balance: number;
-  convertedBalance: number;
   currency: string;
-  isPrimary: boolean;
+  income: number;
+  expenses: number;
+  transactionCount: number;
+  dashboard: AccountDashboardData;
 }
 
 export interface TrendDataPoint {
@@ -31,21 +33,26 @@ export interface Transaction {
   id: string;
   accountId: string;
   date: string;
-  title: string;
+  description: string;
   category: string;
-  subcategory: string;
   amount: number;
   type: "income" | "expense";
-  currency: string;
+}
+
+export interface AccountDashboardData {
+  daily: SummaryData;
+  monthly: SummaryData;
+  spendingByCategory: CategorySpending[];
+  monthlyTrend: TrendDataPoint[];
+  dailyTrend: TrendDataPoint[];
 }
 
 export interface DashboardData {
-  baseCurrency: string;
-  accounts: Account[];
-  selectedAccount: Account | null;
-  summary: SummaryData;
-  dailyTrend: TrendDataPoint[];
-  monthlyTrend: TrendDataPoint[];
+  daily: SummaryData;
+  monthly: SummaryData;
   spendingByCategory: CategorySpending[];
+  accounts: Account[];
+  monthlyTrend: TrendDataPoint[];
+  dailyTrend: TrendDataPoint[];
   transactions: Transaction[];
 }
