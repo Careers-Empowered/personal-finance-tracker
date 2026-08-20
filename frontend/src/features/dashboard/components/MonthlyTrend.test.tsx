@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import MonthlyTrend from "../features/dashboard/components/MonthlyTrend";
-import type { TrendDataPoint } from "../types/dashboard";
+import MonthlyTrend from "./MonthlyTrend";
+import type { TrendDataPoint } from "../../../types/dashboard";
 
 describe("MonthlyTrend", () => {
   const monthlyData: TrendDataPoint[] = [

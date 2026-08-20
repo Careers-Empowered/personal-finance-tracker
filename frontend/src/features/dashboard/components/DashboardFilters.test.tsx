@@ -1,61 +1,25 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import DashboardFilters from "../features/dashboard/components/DashboardFilters";
-import type { Account } from "../types/dashboard";
-import type { DateRange } from "../utils/dashboardSelectors";
+import DashboardFilters from "./DashboardFilters";
+import type { Account } from "../../../types/dashboard";
+import type { DateRange } from "../../../utils/dashboardSelectors";
 
 const accounts: Account[] = [
   {
     id: "1",
     name: "Checking Account",
     balance: 1500,
+    convertedBalance: 1500,
     currency: "USD",
-    income: 3000,
-    expenses: 1500,
-    transactionCount: 10,
-    dashboard: {
-      daily: {
-        income: 100,
-        expenses: 50,
-        balance: 50,
-        transactionCount: 2,
-      },
-      monthly: {
-        income: 3000,
-        expenses: 1500,
-        balance: 1500,
-        transactionCount: 10,
-      },
-      spendingByCategory: [],
-      monthlyTrend: [],
-      dailyTrend: [],
-    },
+    isPrimary: true,
   },
   {
     id: "2",
     name: "Savings Account",
     balance: 5000,
+    convertedBalance: 5000,
     currency: "USD",
-    income: 4000,
-    expenses: 500,
-    transactionCount: 8,
-    dashboard: {
-      daily: {
-        income: 200,
-        expenses: 50,
-        balance: 150,
-        transactionCount: 2,
-      },
-      monthly: {
-        income: 4000,
-        expenses: 500,
-        balance: 3500,
-        transactionCount: 8,
-      },
-      spendingByCategory: [],
-      monthlyTrend: [],
-      dailyTrend: [],
-    },
+    isPrimary: false,
   },
 ];
 

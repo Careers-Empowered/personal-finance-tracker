@@ -209,15 +209,7 @@ export class TransactionsController {
       const userId = req.userId!;
       const { accountId, categoryId, subcategoryId, amount, type, date, title, importedWithOverride, overrideNote } = req.body;
 
-      const {
-        accountId,
-        categoryId,
-        subcategoryId,
-        amount,
-        type,
-        date,
-        title,
-      } = req.body;
+
 
       if (
         !accountId ||
