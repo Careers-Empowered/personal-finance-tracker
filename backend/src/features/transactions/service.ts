@@ -9,13 +9,13 @@ import {
 
 export class TransactionsService {
   /**
-   * Fetch accounts belonging to the user (or all accounts if fallback)
+   * Fetch accounts belonging to the user
    */
   async getAccounts(userId: string) {
     const { rows } = await query(
       `SELECT id, name, currency, balance, is_primary as "isPrimary"
        FROM accounts
-       WHERE user_id = $1 OR $1 IS NOT NULL
+       WHERE user_id = $1
        ORDER BY name ASC`,
       [userId]
     );
@@ -118,7 +118,7 @@ export class TransactionsService {
   }
 
   /**
-   * Fetch paginated & filtered transactions
+   * Fetch paginated & filtered transactions (Scoped to current user)
    */
   async getTransactions(userId: string, filters: TransactionFilterQuery) {
     const {
@@ -160,13 +160,13 @@ export class TransactionsService {
       ELSE NULL
     END as subcategory
   FROM transactions t
-  LEFT JOIN accounts a ON t.account_id = a.id
+  INNER JOIN accounts a ON t.account_id = a.id
   LEFT JOIN categories c ON t.category_id = c.id
   LEFT JOIN subcategories s ON t.subcategory_id = s.id
-  WHERE 1=1
+  WHERE a.user_id = $1
 `;
 
-    const queryParams: any[] = [];
+    const queryParams: any[] = [userId];
 
     if (type && type !== 'ALL') {
       queryParams.push(type);
@@ -203,26 +203,26 @@ export class TransactionsService {
     const { rows } = await query(queryText, queryParams);
 
     const formattedTransactions = rows.map((tx: any) => ({
-  id: tx.id,
-  accountId: tx.accountId,
-  categoryId: tx.categoryId,
-  subcategoryId: tx.subcategoryId,
-  amount: Number(tx.amount),
-  type: tx.type,
-  date: tx.date ? new Date(tx.date).toISOString().split('T')[0] : '',
-  title: tx.title,
-  createdAt: tx.createdAt,
-  updatedAt: tx.updatedAt,
+      id: tx.id,
+      accountId: tx.accountId,
+      categoryId: tx.categoryId,
+      subcategoryId: tx.subcategoryId,
+      amount: Number(tx.amount),
+      type: tx.type,
+      date: tx.date ? new Date(tx.date).toISOString().split('T')[0] : '',
+      title: tx.title,
+      createdAt: tx.createdAt,
+      updatedAt: tx.updatedAt,
 
-  // Import override information
-  importedWithOverride: tx.importedWithOverride ?? false,
-  overrideNote: tx.overrideNote ?? null,
+      // Import override information
+      importedWithOverride: tx.importedWithOverride ?? false,
+      overrideNote: tx.overrideNote ?? null,
 
-  // Relations
-  account: tx.account,
-  category: tx.category,
-  subcategory: tx.subcategory,
-}));
+      // Relations
+      account: tx.account,
+      category: tx.category,
+      subcategory: tx.subcategory,
+    }));
 
     return {
       data: formattedTransactions,
@@ -236,17 +236,23 @@ export class TransactionsService {
   }
 
   /**
-   * Create new transaction & adjust account balance
+   * Check if transactions already exist in the database (Scoped to current user)
    */
-  /**
-   * Check if transactions already exist in the database (for duplicate detection)
-   */
-  async checkExisting(inputs: CheckExistingTransactionInput[]) {
+  async checkExisting(userId: string, inputs: CheckExistingTransactionInput[]) {
     const results: Array<{
       row: number;
       exists: boolean;
       existingTransaction?: any;
     }> = [];
+
+    // Pre-verify that all accountIds in inputs belong to the current user
+    const accountIds = Array.from(new Set(inputs.map(item => item.accountId)));
+    for (const accId of accountIds) {
+      const accRes = await query('SELECT user_id FROM accounts WHERE id = $1', [accId]);
+      if (accRes.rows.length === 0 || accRes.rows[0].user_id !== userId) {
+        throw new Error('FORBIDDEN');
+      }
+    }
 
     for (const item of inputs) {
       const { row, accountId, date, title, amount, type } = item;
@@ -280,10 +286,19 @@ export class TransactionsService {
   }
 
   /**
-   * Create new transaction & adjust account balance
+   * Create new transaction & adjust account balance (Validated by userId)
    */
   async createTransaction(userId: string, dto: CreateTransactionDTO) {
     const { accountId, categoryId, subcategoryId, amount, type, date, title, importedWithOverride, overrideNote } = dto;
+
+    // Verify account belongs to the user
+    const accountRes = await query('SELECT user_id FROM accounts WHERE id = $1', [accountId]);
+    if (accountRes.rows.length === 0) {
+      throw new Error('ACCOUNT_NOT_FOUND');
+    }
+    if (accountRes.rows[0].user_id !== userId) {
+      throw new Error('FORBIDDEN');
+    }
 
     let subId = subcategoryId && typeof subcategoryId === 'string' && subcategoryId.trim() !== '' ? subcategoryId.trim() : null;
 
@@ -340,15 +355,36 @@ export class TransactionsService {
   }
 
   /**
-   * Update existing transaction
+   * Update existing transaction (Validated by userId)
    */
   async updateTransaction(userId: string, id: string, dto: UpdateTransactionDTO) {
-    const existingRes = await query('SELECT * FROM transactions WHERE id = $1', [id]);
+    const existingRes = await query(
+      `SELECT t.*, a.user_id as "userId"
+       FROM transactions t
+       LEFT JOIN accounts a ON t.account_id = a.id
+       WHERE t.id = $1`,
+      [id]
+    );
     if (existingRes.rows.length === 0) {
       throw new Error('TRANSACTION_NOT_FOUND');
     }
 
     const existing = existingRes.rows[0];
+    if (existing.userId !== userId) {
+      throw new Error('FORBIDDEN');
+    }
+
+    // Verify ownership of the target account if it is changing
+    if (dto.accountId && dto.accountId !== existing.account_id) {
+      const accountRes = await query('SELECT user_id FROM accounts WHERE id = $1', [dto.accountId]);
+      if (accountRes.rows.length === 0) {
+        throw new Error('ACCOUNT_NOT_FOUND');
+      }
+      if (accountRes.rows[0].user_id !== userId) {
+        throw new Error('FORBIDDEN');
+      }
+    }
+
     const newAmount = dto.amount !== undefined ? dto.amount : Number(existing.amount);
     const newType = dto.type || existing.type;
     const newTitle = dto.title !== undefined ? dto.title : existing.Title;
@@ -398,9 +434,25 @@ export class TransactionsService {
   }
 
   /**
-   * Delete transaction
+   * Delete transaction (Validated by userId)
    */
   async deleteTransaction(userId: string, id: string) {
+    const existingRes = await query(
+      `SELECT t.*, a.user_id as "userId"
+       FROM transactions t
+       LEFT JOIN accounts a ON t.account_id = a.id
+       WHERE t.id = $1`,
+      [id]
+    );
+    if (existingRes.rows.length === 0) {
+      throw new Error('TRANSACTION_NOT_FOUND');
+    }
+
+    const existing = existingRes.rows[0];
+    if (existing.userId !== userId) {
+      throw new Error('FORBIDDEN');
+    }
+
     const res = await query('DELETE FROM transactions WHERE id = $1 RETURNING id', [id]);
     if (res.rows.length === 0) {
       throw new Error('TRANSACTION_NOT_FOUND');
@@ -409,17 +461,19 @@ export class TransactionsService {
   }
 
   /**
-   * Summary of totals
+   * Summary of totals (Scoped to current user)
    */
   async getTransactionSummary(userId: string): Promise<TransactionSummaryResponse> {
     const { rows } = await query(`
       SELECT
-        type,
-        SUM(amount) as total,
-        COUNT(id) as count
-      FROM transactions
-      GROUP BY type
-    `);
+        t.type,
+        SUM(t.amount) as total,
+        COUNT(t.id) as count
+      FROM transactions t
+      INNER JOIN accounts a ON t.account_id = a.id
+      WHERE a.user_id = $1
+      GROUP BY t.type
+    `, [userId]);
 
     let totalIncome = 0;
     let totalExpense = 0;
