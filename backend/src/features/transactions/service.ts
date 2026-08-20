@@ -4,6 +4,7 @@ import {
   UpdateTransactionDTO,
   TransactionFilterQuery,
   TransactionSummaryResponse,
+  CheckExistingTransactionInput,
 } from './types';
 
 export class TransactionsService {
@@ -132,18 +133,38 @@ export class TransactionsService {
     } = filters;
 
     let queryText = `
-      SELECT
-        t.id, t.account_id as "accountId", t.category_id as "categoryId", t.subcategory_id as "subcategoryId",
-        t.amount, t.type, t.date, t."Title" as title, t.created_at as "createdAt", t.updated_at as "updatedAt",
-        json_build_object('id', a.id, 'name', a.name) as account,
-        json_build_object('id', c.id, 'name', c.name, 'type', c.type, 'icon', c.icon, 'color', c.color) as category,
-        json_build_object('id', s.id, 'name', s.name) as subcategory
-      FROM transactions t
-      LEFT JOIN accounts a ON t.account_id = a.id
-      LEFT JOIN categories c ON t.category_id = c.id
-      LEFT JOIN subcategories s ON t.subcategory_id = s.id
-      WHERE 1=1
-    `;
+  SELECT 
+    t.id,
+    t.account_id as "accountId",
+    t.category_id as "categoryId",
+    t.subcategory_id as "subcategoryId",
+    t.amount,
+    t.type,
+    t.date,
+    t."Title" as title,
+    t.created_at as "createdAt",
+    t.updated_at as "updatedAt",
+    t.imported_with_override as "importedWithOverride",
+    t.override_note as "overrideNote",
+    json_build_object('id', a.id, 'name', a.name) as account,
+    json_build_object(
+      'id', c.id,
+      'name', c.name,
+      'type', c.type,
+      'icon', c.icon,
+      'color', c.color
+    ) as category,
+    CASE
+      WHEN s.id IS NOT NULL
+      THEN json_build_object('id', s.id, 'name', s.name)
+      ELSE NULL
+    END as subcategory
+  FROM transactions t
+  LEFT JOIN accounts a ON t.account_id = a.id
+  LEFT JOIN categories c ON t.category_id = c.id
+  LEFT JOIN subcategories s ON t.subcategory_id = s.id
+  WHERE 1=1
+`;
 
     const queryParams: any[] = [];
 
@@ -182,20 +203,26 @@ export class TransactionsService {
     const { rows } = await query(queryText, queryParams);
 
     const formattedTransactions = rows.map((tx: any) => ({
-      id: tx.id,
-      accountId: tx.accountId,
-      categoryId: tx.categoryId,
-      subcategoryId: tx.subcategoryId,
-      amount: Number(tx.amount),
-      type: tx.type,
-      date: tx.date ? new Date(tx.date).toISOString().split('T')[0] : '',
-      title: tx.title,
-      createdAt: tx.createdAt,
-      updatedAt: tx.updatedAt,
-      account: tx.account,
-      category: tx.category,
-      subcategory: tx.subcategory,
-    }));
+  id: tx.id,
+  accountId: tx.accountId,
+  categoryId: tx.categoryId,
+  subcategoryId: tx.subcategoryId,
+  amount: Number(tx.amount),
+  type: tx.type,
+  date: tx.date ? new Date(tx.date).toISOString().split('T')[0] : '',
+  title: tx.title,
+  createdAt: tx.createdAt,
+  updatedAt: tx.updatedAt,
+
+  // Import override information
+  importedWithOverride: tx.importedWithOverride ?? false,
+  overrideNote: tx.overrideNote ?? null,
+
+  // Relations
+  account: tx.account,
+  category: tx.category,
+  subcategory: tx.subcategory,
+}));
 
     return {
       data: formattedTransactions,
@@ -211,8 +238,52 @@ export class TransactionsService {
   /**
    * Create new transaction & adjust account balance
    */
+  /**
+   * Check if transactions already exist in the database (for duplicate detection)
+   */
+  async checkExisting(inputs: CheckExistingTransactionInput[]) {
+    const results: Array<{
+      row: number;
+      exists: boolean;
+      existingTransaction?: any;
+    }> = [];
+
+    for (const item of inputs) {
+      const { row, accountId, date, title, amount, type } = item;
+
+      const txDate = new Date(date);
+      const nextDay = new Date(txDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      const { rows } = await query(
+        `SELECT t.id, t.account_id as "accountId", t."Title" as title, t.amount, t.type, t.date,
+                json_build_object('id', a.id, 'name', a.name) as account
+         FROM transactions t
+         LEFT JOIN accounts a ON a.id = t.account_id
+         WHERE t.account_id = $1
+           AND t.date >= $2 AND t.date < $3
+           AND LOWER(t."Title") = LOWER($4)
+           AND t.amount = $5
+           AND t.type = $6
+         LIMIT 1`,
+        [accountId, txDate, nextDay, title, amount, type]
+      );
+
+      if (rows.length > 0) {
+        results.push({ row, exists: true, existingTransaction: rows[0] });
+      } else {
+        results.push({ row, exists: false });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Create new transaction & adjust account balance
+   */
   async createTransaction(userId: string, dto: CreateTransactionDTO) {
-    const { accountId, categoryId, subcategoryId, amount, type, date, title } = dto;
+    const { accountId, categoryId, subcategoryId, amount, type, date, title, importedWithOverride, overrideNote } = dto;
 
     let subId = subcategoryId && typeof subcategoryId === 'string' && subcategoryId.trim() !== '' ? subcategoryId.trim() : null;
 
@@ -233,10 +304,10 @@ export class TransactionsService {
     const txDate = date ? new Date(date) : new Date();
 
     const insertRes = await query(
-      `INSERT INTO transactions (id, account_id, category_id, subcategory_id, amount, type, date, "Title", created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-       RETURNING id, account_id as "accountId", category_id as "categoryId", subcategory_id as "subcategoryId", amount, type, date, "Title" as title, created_at as "createdAt", updated_at as "updatedAt"`,
-      [accountId, categoryId, subId, amount, type, txDate, title]
+      `INSERT INTO transactions (id, account_id, category_id, subcategory_id, amount, type, date, "Title", imported_with_override, override_note, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+       RETURNING id, account_id as "accountId", category_id as "categoryId", subcategory_id as "subcategoryId", amount, type, date, "Title" as title, imported_with_override as "importedWithOverride", override_note as "overrideNote", created_at as "createdAt", updated_at as "updatedAt"`,
+      [accountId, categoryId, subId, amount, type, txDate, title, importedWithOverride ?? false, overrideNote ?? null]
     );
 
     const newTx = insertRes.rows[0];

@@ -81,6 +81,61 @@ function FilePreview({
   const [rows, setRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
+  const [editingRowIndex, setEditingRowIndex] = useState<number | null>(null);
+  const [editRowValues, setEditRowValues] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(50);
+
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+
+  const handleToggleSelectAll = () => {
+    if (selectedRows.size === rows.length && rows.length > 0) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(rows.map((_, i) => i)));
+    }
+  };
+
+  const handleToggleSelectRow = (index: number) => {
+    const next = new Set(selectedRows);
+    if (next.has(index)) next.delete(index);
+    else next.add(index);
+    setSelectedRows(next);
+  };
+
+  const handleDeleteSelected = () => {
+    setRows(prev => prev.filter((_, i) => !selectedRows.has(i)));
+    setSelectedRows(new Set());
+    setEditingRowIndex(null);
+    // Reset to page 1 if current page becomes empty
+    setCurrentPage(1);
+  };
+
+  const handleDeleteRow = (index: number) => {
+    setRows(prev => prev.filter((_, i) => i !== index));
+    if (selectedRows.has(index)) {
+      const next = new Set(selectedRows);
+      next.delete(index);
+      setSelectedRows(next);
+    }
+    if (editingRowIndex === index) {
+      setEditingRowIndex(null);
+    }
+  };
+
+  const handleStartEdit = (rowIndex: number, row: string[]) => {
+    setEditingRowIndex(rowIndex);
+    setEditRowValues([...row]);
+  };
+
+  const handleSaveEdit = (rowIndex: number) => {
+    setRows(prev => {
+      const newRows = [...prev];
+      newRows[rowIndex] = [...editRowValues];
+      return newRows;
+    });
+    setEditingRowIndex(null);
+  };
 
   useEffect(() => {
     const reader = new FileReader();
@@ -111,13 +166,21 @@ function FilePreview({
       setHeaders(parsedHeaders);
       setRows(parsedRows);
 
+      const SMART_ALIASES: Record<string, string[]> = {
+        "date": ["date", "txn date", "transaction date", "time", "timestamp", "value date"],
+        "description": ["description", "desc", "memo", "title", "name", "payee", "merchant", "narration", "particulars", "remarks", "details"],
+        "amount": ["amount", "value", "total", "price"],
+        "debit/credit": ["debit/credit", "type", "transaction type", "dr/cr"],
+        "account": ["account", "account number", "acct", "card"],
+        "category": ["category", "cat", "group", "classification"],
+      };
+
       const initialMapping: Record<string, string> = {};
 
       REQUIRED_FIELDS.forEach((field) => {
+        const aliases = SMART_ALIASES[field] || [field];
         const match = parsedHeaders.find(
-          (header) =>
-            header.trim().toLowerCase() ===
-            field.trim().toLowerCase()
+          (header) => aliases.includes(header.trim().toLowerCase())
         );
 
         if (match) {
@@ -222,6 +285,18 @@ function FilePreview({
     setError("");
 
     const transactions = convertToTransactions();
+
+    for (let i = 0; i < transactions.length; i++) {
+      const t = transactions[i];
+      if (Number.isNaN(t.amount)) {
+        setError(`Row ${i + 1} has an invalid amount. The column mapped to 'Amount' must contain numbers.`);
+        return;
+      }
+      if (!t.date || !/\d/.test(t.date)) {
+        setError(`Row ${i + 1} has an invalid date. The column mapped to 'Date' must contain valid dates.`);
+        return;
+      }
+    }
 
     onConfirmMapping(transactions);
   };
@@ -330,17 +405,35 @@ function FilePreview({
                 Select column...
               </option>
 
-              {headers.map((header, index) => (
-                <option
-                  key={`${header}-${index}`}
-                  value={header}
-                >
-                  {header}
-                </option>
-              ))}
+              {headers.map((header, index) => {
+                const isMappedElsewhere = Object.values(mapping).includes(header) && mapping[field] !== header;
+                return (
+                  <option
+                    key={`${header}-${index}`}
+                    value={header}
+                    disabled={isMappedElsewhere}
+                  >
+                    {header} {isMappedElsewhere ? "(Already mapped)" : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
         ))}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.9rem", color: "var(--color-text-muted)", margin: 0 }}>
+          {rows.length} rows loaded.
+        </p>
+        {selectedRows.size > 0 && (
+          <button
+            onClick={handleDeleteSelected}
+            style={{ ...secondaryButtonStyle, padding: "0.4rem 0.8rem", color: "#d93025", border: "1px solid #d93025", backgroundColor: "#fff5f4" }}
+          >
+            Delete {selectedRows.size} Selected
+          </button>
+        )}
       </div>
 
       <div
@@ -359,6 +452,13 @@ function FilePreview({
         >
           <thead>
             <tr>
+              <th style={{ padding: "0.75rem", borderBottom: "1px solid var(--color-divider)", backgroundColor: "var(--color-background)", width: "40px" }}>
+                <input 
+                  type="checkbox" 
+                  checked={rows.length > 0 && selectedRows.size === rows.length} 
+                  onChange={handleToggleSelectAll} 
+                />
+              </th>
               {headers.map((header, index) => (
                 <th
                   key={index}
@@ -377,30 +477,141 @@ function FilePreview({
                   {header}
                 </th>
               ))}
+              <th
+                style={{
+                  padding: "0.75rem",
+                  textAlign: "left",
+                  backgroundColor: "var(--color-background)",
+                  borderBottom: "1px solid var(--color-divider)",
+                  color: "var(--color-text-dark)",
+                  fontWeight: 600,
+                }}
+              >
+                Actions
+              </th>
             </tr>
           </thead>
 
           <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {headers.map((_, columnIndex) => (
-                  <td
-                    key={columnIndex}
-                    style={{
-                      padding: "0.75rem",
-                      borderBottom:
-                        "1px solid var(--color-divider)",
-                      color:
-                        "var(--color-text-muted)",
-                    }}
-                  >
-                    {row[columnIndex] ?? ""}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {(() => {
+              const actualPageSize = pageSize === -1 ? Math.max(1, rows.length) : pageSize;
+              const paginatedRows = rows.slice((currentPage - 1) * actualPageSize, currentPage * actualPageSize);
+
+              return paginatedRows.map((row, localIndex) => {
+                const globalIndex = (currentPage - 1) * actualPageSize + localIndex;
+                const isEditing = editingRowIndex === globalIndex;
+                const isSelected = selectedRows.has(globalIndex);
+                
+                return (
+                  <tr key={globalIndex} style={{ backgroundColor: isSelected ? "#f8f9fa" : "transparent" }}>
+                    <td style={{ padding: "0.75rem", borderBottom: "1px solid var(--color-divider)" }}>
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected}
+                        onChange={() => handleToggleSelectRow(globalIndex)}
+                      />
+                    </td>
+                    {headers.map((_, columnIndex) => (
+                      <td
+                        key={columnIndex}
+                        style={{
+                          padding: "0.75rem",
+                          borderBottom:
+                            "1px solid var(--color-divider)",
+                          color:
+                            "var(--color-text-muted)",
+                        }}
+                      >
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editRowValues[columnIndex] ?? ""}
+                            onChange={(e) => {
+                              const newVals = [...editRowValues];
+                              newVals[columnIndex] = e.target.value;
+                              setEditRowValues(newVals);
+                            }}
+                            style={{ width: "100%", padding: "4px" }}
+                          />
+                        ) : (
+                          row[columnIndex] ?? ""
+                        )}
+                      </td>
+                    ))}
+                    <td
+                      style={{
+                        padding: "0.75rem",
+                        borderBottom: "1px solid var(--color-divider)",
+                      }}
+                    >
+                      {isEditing ? (
+                        <button
+                          onClick={() => handleSaveEdit(globalIndex)}
+                          style={{ cursor: "pointer", background: "none", border: "1px solid var(--color-primary)", color: "var(--color-primary)", padding: "4px 8px", borderRadius: "4px", fontSize: "0.8rem", fontWeight: 600 }}
+                        >
+                          Save
+                        </button>
+                      ) : (
+                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                          <button
+                            onClick={() => handleStartEdit(globalIndex, row)}
+                            style={{ cursor: "pointer", background: "none", border: "1px solid var(--color-divider)", padding: "4px 8px", borderRadius: "4px", fontSize: "0.8rem" }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRow(globalIndex)}
+                            style={{ cursor: "pointer", background: "none", border: "1px solid #d93025", color: "#d93025", padding: "4px 8px", borderRadius: "4px", fontSize: "0.8rem" }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              });
+            })()}
           </tbody>
         </table>
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem", padding: "0 1rem" }}>
+        <button 
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          style={{ ...secondaryButtonStyle, padding: "0.5rem 1rem", opacity: currentPage === 1 ? 0.5 : 1 }}
+        >
+          Previous
+        </button>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <select 
+            value={pageSize} 
+            onChange={e => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            style={{ padding: "0.25rem 0.5rem", borderRadius: "4px", border: "1px solid var(--color-divider)", fontFamily: "var(--font-body)" }}
+          >
+            <option value={10}>10 rows</option>
+            <option value={20}>20 rows</option>
+            <option value={50}>50 rows</option>
+            <option value={100}>100 rows</option>
+            <option value={-1}>All</option>
+          </select>
+          <span style={{ fontFamily: "var(--font-body)", fontSize: "0.9rem", color: "var(--color-text-muted)" }}>
+            Page {currentPage} of {Math.max(1, Math.ceil(rows.length / (pageSize === -1 ? Math.max(1, rows.length) : pageSize)))}
+          </span>
+        </div>
+
+        <button 
+          onClick={() => setCurrentPage(p => Math.min(Math.ceil(rows.length / (pageSize === -1 ? Math.max(1, rows.length) : pageSize)), p + 1))}
+          disabled={currentPage >= Math.ceil(rows.length / (pageSize === -1 ? Math.max(1, rows.length) : pageSize))}
+          style={{ ...secondaryButtonStyle, padding: "0.5rem 1rem", opacity: currentPage >= Math.ceil(rows.length / (pageSize === -1 ? Math.max(1, rows.length) : pageSize)) ? 0.5 : 1 }}
+        >
+          Next
+        </button>
       </div>
 
       <div
