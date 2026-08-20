@@ -125,13 +125,13 @@ export const categoryRepository = {
   }) {
     return prisma.subcategory.create({
       data: {
-        categoryId: data.categoryId,
+        category_id: data.categoryId,
         name: data.name,
         icon: data.icon ?? null,
         aliases: data.aliases ?? [],
-        userId: null,
+        user_id: null,
         color: null,
-        isDefault: false,
+        is_default: false,
       },
     });
   },

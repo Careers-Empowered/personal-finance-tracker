@@ -15,9 +15,9 @@ export async function importTransactions(
       data: {
         accountId: transaction.accountId,
 
-        categoryId: transaction.categoryId ?? null,
+        categoryId: transaction.categoryId || "",
 
-        subcategory_id: transaction.subcategoryId ?? null,
+        subcategory_id: transaction.subcategoryId || "",
 
         amount: transaction.amount,
 
@@ -36,6 +36,17 @@ export async function importTransactions(
     });
 
     createdTransactions.push(created);
+
+    // Adjust account balance
+    const balanceAdj = transaction.type === "INCOME" ? transaction.amount : -transaction.amount;
+    await prisma.account.update({
+      where: { id: transaction.accountId },
+      data: {
+        balance: {
+          increment: balanceAdj,
+        },
+      },
+    });
   }
 
   return createdTransactions;

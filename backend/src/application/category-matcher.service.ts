@@ -111,7 +111,7 @@ export const categoryMatcherService = {
         typedCategories.find(
           (category) =>
             category.id ===
-            bestSubcategory!.categoryId,
+            bestSubcategory!.category_id,
         );
 
       return {
