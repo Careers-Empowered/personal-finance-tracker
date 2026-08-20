@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import SpendingByCategory from "../features/dashboard/components/SpendingByCategory";
+import SpendingByCategory from "./SpendingByCategory";
 
 describe("SpendingByCategory", () => {
   it("renders the section heading and description", () => {

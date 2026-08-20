@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import MonthlySummary from "../features/dashboard/components/MonthlySummary";
-import type { SummaryData } from "../types/dashboard";
+import MonthlySummary from "./MonthlySummary";
+import type { SummaryData } from "../../../types/dashboard";
 
 describe("MonthlySummary", () => {
   const summaryData: SummaryData = {

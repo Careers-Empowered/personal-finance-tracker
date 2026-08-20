@@ -8,8 +8,6 @@ import {
 } from "./dashboardSelectors";
 
 import type {
-  Account,
-  DashboardData,
   Transaction,
 } from "../types/dashboard";
 
