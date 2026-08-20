@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import path from "node:path";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 dotenv.config({
   path: path.resolve(__dirname, "../../../../database/.env"),
@@ -14,4 +15,10 @@ if (!connectionString) {
   );
 }
 
-export const prisma = new PrismaClient();
+const adapter = new PrismaPg({
+  connectionString,
+});
+
+export const prisma = new PrismaClient({
+  adapter,
+});
