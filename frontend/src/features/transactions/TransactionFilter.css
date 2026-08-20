@@ -1,121 +1,232 @@
+/* Filter Container */
 .transaction-filter {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem;
-  background-color: #f5f5f5;
-  border-radius: 10px;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #ffffff;
+  border: 1px solid var(--color-divider, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.5rem;
 }
 
-/* All / Income / Expense */
-
-.transaction-filter-btn {
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted, #6b6b6b);
-  height: 40px;
-  padding: 0 0.9rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
+/* Button & Select General Styling */
+.transaction-filter-btn,
+.transaction-date-filter,
+.transaction-category-filter,
+.transaction-account-filter {
+  height: 38px;
+  font-family: inherit;
+  font-size: 0.85rem;
   font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+/* Filter Type Buttons (All, Income, Expense) */
+.transaction-filter-btn {
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #475569;
+  padding: 0 1.1rem;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
 }
 
 .transaction-filter-btn:hover {
-  color: var(--color-text-dark, #231f20);
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
 }
 
+/* Active State for 'All' Type Button */
 .transaction-filter-btn.active {
-  background-color: #ffffff;
-  color: var(--color-text-dark, #231f20);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  background-color: var(--color-primary, #d38333);
+  border-color: var(--color-primary, #d38333);
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(211, 131, 51, 0.2);
 }
 
+/* Active State for 'Income' Type Button */
 .transaction-filter-btn.active.income-filter {
-  color: #1e8e3e;
+  background-color: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.2);
 }
 
+/* Active State for 'Expense' Type Button */
 .transaction-filter-btn.active.expense-filter {
-  color: #d93025;
+  background-color: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.2);
 }
 
-/* Date */
+/* Injecting Emojis via CSS ::before to Type Buttons */
+.transaction-filter-btn:nth-child(1)::before {
+  content: "📊";
+  font-size: 0.95rem;
+}
 
+.transaction-filter-btn:nth-child(2)::before {
+  content: "📈";
+  font-size: 0.95rem;
+}
+
+.transaction-filter-btn:nth-child(3)::before {
+  content: "📉";
+  font-size: 0.95rem;
+}
+
+/* Date Filter with Calendar SVG Icon */
 .transaction-date-filter {
-  height: 40px;
-  padding: 0 0.75rem;
-  border: none;
-  border-radius: 8px;
-  background-color: transparent;
-  color: var(--color-text-dark, #231f20);
-  font-size: 0.82rem;
-  font-family: inherit;
+  width: 160px;
+  padding: 0 0.85rem 0 2.2rem;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #0f172a;
   cursor: pointer;
   outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 0.8rem center;
+  background-size: 14px;
 }
 
-.transaction-date-filter:focus,
 .transaction-date-filter:hover {
-  background-color: #ffffff;
+  border-color: #94a3b8;
 }
 
-/* Category */
+.transaction-date-filter:focus {
+  border-color: var(--color-primary, #d38333);
+  box-shadow: 0 0 0 3px rgba(211, 131, 51, 0.15);
+}
 
+.transaction-date-filter::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.transaction-date-filter::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Category Dropdown with Tag SVG and Down Arrow */
 .transaction-category-filter {
-  height: 40px;
-  min-width: 150px;
-  padding: 0 0.75rem;
-  border: none;
-  border-radius: 8px;
-  background-color: transparent;
-  color: var(--color-text-dark, #231f20);
-  font-size: 0.82rem;
-  font-family: inherit;
+  min-width: 175px;
+  padding: 0 2.2rem 0 2.2rem;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #0f172a;
   cursor: pointer;
   outline: none;
+  appearance: none;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z'/%3E%3Cline x1='7' y1='7' x2='7.01' y2='7'/%3E%3C/svg%3E"), /* Left tag icon */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); /* Right arrow */
+  background-repeat: no-repeat, no-repeat;
+  background-position: left 0.8rem center, right 0.8rem center;
+  background-size: 14px, 12px;
 }
 
-.transaction-category-filter:focus,
 .transaction-category-filter:hover {
-  background-color: #ffffff;
+  border-color: #94a3b8;
 }
 
-/* Clear */
+.transaction-category-filter:focus {
+  border-color: var(--color-primary, #d38333);
+  box-shadow: 0 0 0 3px rgba(211, 131, 51, 0.15);
+}
 
+/* Account Dropdown with Credit Card SVG and Down Arrow */
+.transaction-account-filter {
+  min-width: 175px;
+  padding: 0 2.2rem 0 2.2rem;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='20' height='14' rx='2' ry='2'/%3E%3Cpath d='M2 10h20M6 14h2M10 14h4'/%3E%3C/svg%3E"), /* Left card/wallet icon */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); /* Right arrow */
+  background-repeat: no-repeat, no-repeat;
+  background-position: left 0.8rem center, right 0.8rem center;
+  background-size: 14px, 12px;
+}
+
+.transaction-account-filter:hover {
+  border-color: #94a3b8;
+}
+
+.transaction-account-filter:focus {
+  border-color: var(--color-primary, #d38333);
+  box-shadow: 0 0 0 3px rgba(211, 131, 51, 0.15);
+}
+
+/* Clear Button */
 .transaction-filter-clear {
-  height: 40px;
-  padding: 0 0.75rem;
+  height: 38px;
+  padding: 0 0.85rem;
   border: none;
   border-radius: 8px;
   background-color: transparent;
-  color: var(--color-text-muted, #6b6b6b);
-  font-size: 0.8rem;
+  color: #64748b;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .transaction-filter-clear:hover {
-  background-color: #ffffff;
-  color: var(--color-text-dark, #231f20);
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
-/* Responsive */
+/* Responsive Scaling */
+@media (max-width: 900px) {
+  .transaction-filter {
+    gap: 0.5rem;
+    padding: 0.65rem;
+  }
+}
 
 @media (max-width: 650px) {
   .transaction-filter {
     width: 100%;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
   }
 
   .transaction-filter-btn {
     flex: 1;
+    width: 100%;
   }
 
   .transaction-date-filter,
-  .transaction-category-filter {
-    flex: 1;
-    min-width: 140px;
+  .transaction-category-filter,
+  .transaction-account-filter {
+    width: 100%;
+    min-width: 100%;
+  }
+  
+  .transaction-filter-clear {
+    width: 100%;
+    background-color: #f1f5f9;
   }
 }
