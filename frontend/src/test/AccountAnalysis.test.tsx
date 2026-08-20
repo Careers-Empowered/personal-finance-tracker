@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import FinancialInsights from "../features/dashboard/components/FinancialInsights";
+import AccountAnalysis from "../features/dashboard/components/FinancialInsights";
 
 import type {
   Account,
@@ -15,9 +15,33 @@ const createAccount = (
   id: "1",
   name: "Checking Account",
   balance: 2500.5,
-  convertedBalance: 2500.5,
   currency: "USD",
-  isPrimary: true,
+  income: 4200,
+  expenses: 1699.5,
+  transactionCount: 18,
+
+  dashboard: {
+    daily: {
+      income: 450,
+      expenses: 120,
+      balance: 330,
+      transactionCount: 4,
+    },
+
+    monthly: {
+      income: 4200,
+      expenses: 1699.5,
+      balance: 2500.5,
+      transactionCount: 18,
+    },
+
+    spendingByCategory: [],
+
+    monthlyTrend: [],
+
+    dailyTrend: [],
+  },
+
   ...overrides,
 });
 
@@ -51,19 +75,16 @@ const renderInsights = ({
   account = createAccount(),
   summary = defaultSummary,
   spendingByCategory = defaultSpendingByCategory,
-  currency = account?.currency ?? "USD",
 }: {
   account?: Account;
   summary?: SummaryData;
   spendingByCategory?: CategorySpending[];
-  currency?: string;
 } = {}) =>
   render(
-    <FinancialInsights
+    <AccountAnalysis
       account={account}
       summary={summary}
       spendingByCategory={spendingByCategory}
-      currency={currency}
     />,
   );
 
@@ -73,7 +94,7 @@ describe("FinancialInsights", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Financial Insights",
+        name: "Financial insights",
       }),
     ).toBeInTheDocument();
 
@@ -81,6 +102,16 @@ describe("FinancialInsights", () => {
       screen.getByText(
         "A quick interpretation of your financial activity",
       ),
+    ).toBeInTheDocument();
+  });
+
+  it("shows empty state when no account is provided", () => {
+    renderInsights({
+      account: undefined,
+    });
+
+    expect(
+      screen.getByText("No financial insights available"),
     ).toBeInTheDocument();
   });
 
@@ -92,7 +123,7 @@ describe("FinancialInsights", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the income and expense values", () => {
+  it("shows the income and expense values in the cash flow insight", () => {
     renderInsights();
 
     expect(
@@ -108,6 +139,10 @@ describe("FinancialInsights", () => {
     expect(
       screen.getByText("Strong savings rate"),
     ).toBeInTheDocument();
+  });
+
+  it("shows the correct savings rate", () => {
+    renderInsights();
 
     expect(
       screen.getByText(
@@ -122,6 +157,10 @@ describe("FinancialInsights", () => {
     expect(
       screen.getByText("Spending is under control"),
     ).toBeInTheDocument();
+  });
+
+  it("shows the correct spending percentage", () => {
+    renderInsights();
 
     expect(
       screen.getByText(
@@ -182,15 +221,26 @@ describe("FinancialInsights", () => {
     expect(
       screen.getByText("Negative cash flow"),
     ).toBeInTheDocument();
+  });
+
+  it("handles negative cash flow values correctly", () => {
+    renderInsights({
+      summary: {
+        income: 2000,
+        expenses: 3000,
+        balance: -1000,
+        transactionCount: 10,
+      },
+    });
 
     expect(
       screen.getByText(
-        "Your expenses exceeded your income by $1,000.00.",
+        "You spent $3,000.00 while earning $2,000.00 this period.",
       ),
     ).toBeInTheDocument();
   });
 
-  it("handles zero income without NaN or Infinity", () => {
+  it("handles zero income without producing NaN or Infinity", () => {
     renderInsights({
       summary: {
         income: 0,
@@ -235,7 +285,7 @@ describe("FinancialInsights", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("formats INR using the selected currency", () => {
+  it("formats INR currency using the selected account currency", () => {
     const account = createAccount({
       name: "Indian Account",
       currency: "INR",
@@ -259,7 +309,6 @@ describe("FinancialInsights", () => {
           amount: 5000,
         },
       ],
-      currency: "INR",
     });
 
     expect(
@@ -275,8 +324,10 @@ describe("FinancialInsights", () => {
     ).toBeInTheDocument();
   });
 
-  it("uses the provided summary instead of account balance", () => {
+  it("uses the provided summary instead of account financial totals", () => {
     const account = createAccount({
+      income: 1000,
+      expenses: 500,
       balance: 500,
     });
 
@@ -297,7 +348,7 @@ describe("FinancialInsights", () => {
     ).toBeInTheDocument();
   });
 
-  it("uses the largest category amount", () => {
+  it("uses the largest category amount when determining the top category", () => {
     renderInsights({
       spendingByCategory: [
         {
