@@ -325,22 +325,7 @@
   text-align: center;
 }
 
-.transactions-empty-icon {
-  width: 58px;
-  height: 58px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1rem;
-  border-radius: 16px;
-  background-color: #f7f3ee;
-}
 
-.transactions-empty-icon span {
-  color: var(--color-primary, #d38333);
-  font-size: 1.5rem;
-  font-weight: 700;
-}
 
 .transactions-empty-state h3 {
   margin: 0 0 0.4rem;

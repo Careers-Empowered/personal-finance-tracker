@@ -390,12 +390,7 @@
   background-color: #f7f3ee;
 }
 
-.transactions-empty-icon span {
-  color: var(--color-primary, #d38333);
 
-  font-size: 1.5rem;
-  font-weight: 700;
-}
 
 .transactions-empty-state h3 {
   margin: 0 0 0.4rem;

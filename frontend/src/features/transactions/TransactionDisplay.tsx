@@ -72,9 +72,7 @@ const TransactionDisplay: React.FC<TransactionDisplayProps> = ({
   if (safeTransactions.length === 0) {
     return (
       <div className="transactions-empty-state">
-        <div className="transactions-empty-icon">
-          <span>₹</span>
-        </div>
+       
 
         <h3>No transactions found</h3>
 
