@@ -1,6 +1,21 @@
 import type { Request, Response } from "express";
 import { categoryService } from "../application/category.service";
 
+function getUserId(
+  req: Request,
+): string | null {
+  const userId = (req as any).userId;
+
+  if (
+    typeof userId !== "string" ||
+    !userId.trim()
+  ) {
+    return null;
+  }
+
+  return userId;
+}
+
 function getAliases(
   value: unknown,
 ): string[] | undefined {
@@ -27,7 +42,7 @@ export async function getCategories(
   res: Response,
 ) {
   try {
-    const userId = (req as any).userId;
+    const userId = getUserId(req);
 
     if (!userId) {
       res.status(401).json({
@@ -37,7 +52,9 @@ export async function getCategories(
     }
 
     const categories =
-      await categoryService.getCategories(userId);
+      await categoryService.getCategories(
+        userId,
+      );
 
     res.status(200).json({
       data: categories,
@@ -73,7 +90,9 @@ export async function getCategoryById(
     }
 
     const category =
-      await categoryService.getCategoryById(id);
+      await categoryService.getCategoryById(
+        id,
+      );
 
     if (!category) {
       res.status(404).json({
@@ -106,15 +125,7 @@ export async function createCategory(
   res: Response,
 ) {
   try {
-    const {
-      name,
-      type,
-      icon,
-      color,
-      aliases,
-    } = req.body;
-
-    const userId = (req as any).userId;
+    const userId = getUserId(req);
 
     if (!userId) {
       res.status(401).json({
@@ -122,6 +133,14 @@ export async function createCategory(
       });
       return;
     }
+
+    const {
+      name,
+      type,
+      icon,
+      color,
+      aliases,
+    } = req.body;
 
     if (
       typeof name !== "string" ||
@@ -200,6 +219,15 @@ export async function updateCategory(
   res: Response,
 ) {
   try {
+    const userId = getUserId(req);
+
+    if (!userId) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+      return;
+    }
+
     const { id } = req.params;
 
     const {
@@ -209,15 +237,6 @@ export async function updateCategory(
       color,
       aliases,
     } = req.body;
-
-    const userId = (req as any).userId;
-
-    if (!userId) {
-      res.status(401).json({
-        error: "Unauthorized",
-      });
-      return;
-    }
 
     if (typeof id !== "string") {
       res.status(400).json({
@@ -258,7 +277,9 @@ export async function updateCategory(
     }
 
     const existingCategory =
-      await categoryService.getCategoryById(id);
+      await categoryService.getCategoryById(
+        id,
+      );
 
     if (!existingCategory) {
       res.status(404).json({
@@ -316,6 +337,15 @@ export async function deleteCategory(
   res: Response,
 ) {
   try {
+    const userId = getUserId(req);
+
+    if (!userId) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+      return;
+    }
+
     const { id } = req.params;
 
     if (typeof id !== "string") {
@@ -326,7 +356,9 @@ export async function deleteCategory(
     }
 
     const existingCategory =
-      await categoryService.getCategoryById(id);
+      await categoryService.getCategoryById(
+        id,
+      );
 
     if (!existingCategory) {
       res.status(404).json({
@@ -347,8 +379,8 @@ export async function deleteCategory(
       error,
     );
 
-    res.status(500).json({
-      error: "Failed to delete category",
+    res.status(404).json({
+      error: "Category not found",
     });
   }
 }
@@ -362,6 +394,15 @@ export async function createSubcategory(
   res: Response,
 ) {
   try {
+    const userId = getUserId(req);
+
+    if (!userId) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+      return;
+    }
+
     const {
       id: categoryId,
     } = req.params;
@@ -414,6 +455,7 @@ export async function createSubcategory(
 
     const subcategory =
       await categoryService.createSubcategory({
+        userId,
         categoryId,
         name: name.trim(),
         icon,
@@ -424,6 +466,17 @@ export async function createSubcategory(
       data: subcategory,
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message ===
+        "CATEGORY_NOT_FOUND"
+    ) {
+      res.status(404).json({
+        error: "Category not found",
+      });
+      return;
+    }
+
     if (
       error instanceof Error &&
       error.message ===
@@ -456,6 +509,15 @@ export async function updateSubcategory(
   res: Response,
 ) {
   try {
+    const userId = getUserId(req);
+
+    if (!userId) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+      return;
+    }
+
     const {
       id: subcategoryId,
     } = req.params;
@@ -530,6 +592,15 @@ export async function deleteSubcategory(
   res: Response,
 ) {
   try {
+    const userId = getUserId(req);
+
+    if (!userId) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+      return;
+    }
+
     const {
       id: subcategoryId,
     } = req.params;

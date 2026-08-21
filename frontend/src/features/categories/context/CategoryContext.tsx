@@ -30,18 +30,26 @@ interface CategoryContextValue {
   updateCategory: (category: Category) => void;
   deleteCategory: (categoryId: string) => void;
 
-  addSubcategory: (subcategory: Subcategory) => void;
-  updateSubcategory: (subcategory: Subcategory) => void;
-  deleteSubcategory: (subcategoryId: string) => void;
+  addSubcategory: (
+    subcategory: Subcategory,
+  ) => void;
+
+  updateSubcategory: (
+    subcategory: Subcategory,
+  ) => void;
+
+  deleteSubcategory: (
+    subcategoryId: string,
+  ) => void;
 
   loading: boolean;
   error: string | null;
 }
 
 const CategoryContext =
-  createContext<CategoryContextValue | undefined>(
-    undefined,
-  );
+  createContext<
+    CategoryContextValue | undefined
+  >(undefined);
 
 interface CategoryProviderProps {
   children: React.ReactNode;
@@ -49,21 +57,33 @@ interface CategoryProviderProps {
 
 interface ApiSubcategory {
   id: string;
-  categoryId: string;
+
+  /*
+   * IMPORTANT:
+   * The backend/Prisma response uses snake_case
+   * for these database fields.
+   */
+  category_id: string;
+  user_id: string | null;
+
   name: string;
   icon: string | null;
   color: string | null;
   is_default: boolean;
+  aliases?: string[];
 }
 
 interface ApiCategory {
   id: string;
   userId: string | null;
+
   name: string;
   type: "INCOME" | "EXPENSE";
+
   icon: string | null;
   color: string | null;
   is_default: boolean;
+
   subcategories: ApiSubcategory[];
 }
 
@@ -83,8 +103,13 @@ export const CategoryProvider: React.FC<
     useState<string | null>(null);
 
   /*
-   * Load categories and subcategories
-   * from the backend when the application starts.
+   * =========================================
+   * LOAD CATEGORIES
+   * =========================================
+   *
+   * Load categories and their subcategories
+   * from the backend whenever the provider
+   * is mounted.
    */
   useEffect(() => {
     let cancelled = false;
@@ -106,30 +131,60 @@ export const CategoryProvider: React.FC<
         }
 
         /*
-         * Convert backend category format:
+         * =========================================
+         * MAP CATEGORIES
+         * =========================================
          *
-         * INCOME  -> income
-         * EXPENSE -> expense
+         * Backend:
+         *   INCOME
+         *   EXPENSE
+         *
+         * Frontend:
+         *   income
+         *   expense
          */
         const mappedCategories: Category[] =
           apiCategories.map((category) => ({
             id: category.id,
+
             name: category.name,
+
             type:
               category.type === "INCOME"
                 ? "income"
                 : "expense",
+
             icon: category.icon ?? "",
+
             color: category.color ?? "",
-            isCustom: !category.is_default,
+
+            isCustom:
+              !category.is_default,
           }));
 
         /*
-         * The backend currently does not expose
-         * createdAt / updatedAt for subcategories.
+         * =========================================
+         * MAP SUBCATEGORIES
+         * =========================================
          *
-         * The frontend type requires them, so we
-         * provide timestamps when mapping API data.
+         * IMPORTANT:
+         *
+         * Prisma/backend returns:
+         *
+         *   category_id
+         *
+         * The frontend type expects:
+         *
+         *   categoryId
+         *
+         * Previously we were incorrectly reading:
+         *
+         *   subcategory.categoryId
+         *
+         * which does not exist in the API response.
+         *
+         * This caused categoryId to become undefined
+         * after a page refresh.
          */
         const now =
           new Date().toISOString();
@@ -137,22 +192,57 @@ export const CategoryProvider: React.FC<
         const mappedSubcategories: Subcategory[] =
           apiCategories.flatMap(
             (category) =>
-              category.subcategories.map(
-                (subcategory) => ({
-                  id: subcategory.id,
-                  name: subcategory.name,
-                  categoryId:
-                    subcategory.categoryId,
-                  icon:
-                    subcategory.icon ?? "",
-                  createdAt: now,
-                  updatedAt: now,
-                }),
-              ),
+              (
+                category.subcategories ?? []
+              ).map((subcategory) => ({
+                id: subcategory.id,
+
+                name: subcategory.name,
+
+                /*
+                 * FIX:
+                 * backend -> frontend
+                 *
+                 * category_id -> categoryId
+                 */
+                categoryId:
+                  subcategory.category_id,
+
+                icon:
+                  subcategory.icon ?? "",
+
+                createdAt: now,
+
+                updatedAt: now,
+              })),
           );
 
-        setCategories(mappedCategories);
+        /*
+         * =========================================
+         * UPDATE STATE
+         * =========================================
+         */
+        setCategories(
+          mappedCategories,
+        );
+
         setSubcategories(
+          mappedSubcategories,
+        );
+
+        /*
+         * Optional debug information.
+         *
+         * This lets us verify that the frontend
+         * now receives the correct categoryId.
+         */
+        console.log(
+          "CATEGORY CONTEXT - categories:",
+          mappedCategories,
+        );
+
+        console.log(
+          "CATEGORY CONTEXT - subcategories:",
           mappedSubcategories,
         );
       } catch (requestError) {
@@ -169,8 +259,13 @@ export const CategoryProvider: React.FC<
          * Keep the application usable if the
          * backend is temporarily unavailable.
          */
-        setCategories(DEFAULT_CATEGORIES);
-        setSubcategories(mockSubcategories);
+        setCategories(
+          DEFAULT_CATEGORIES,
+        );
+
+        setSubcategories(
+          mockSubcategories,
+        );
 
         setError(
           "Unable to load categories from the server.",
@@ -190,7 +285,9 @@ export const CategoryProvider: React.FC<
   }, []);
 
   /*
+   * =========================================
    * CATEGORY OPERATIONS
+   * =========================================
    */
 
   const addCategory = (
@@ -217,6 +314,9 @@ export const CategoryProvider: React.FC<
   const deleteCategory = (
     categoryId: string,
   ) => {
+    /*
+     * Remove category.
+     */
     setCategories((current) =>
       current.filter(
         (category) =>
@@ -226,7 +326,7 @@ export const CategoryProvider: React.FC<
 
     /*
      * Remove all subcategories belonging
-     * to the deleted category from local state.
+     * to the deleted category.
      */
     setSubcategories((current) =>
       current.filter(
@@ -238,7 +338,9 @@ export const CategoryProvider: React.FC<
   };
 
   /*
+   * =========================================
    * SUBCATEGORY OPERATIONS
+   * =========================================
    */
 
   const addSubcategory = (
@@ -273,6 +375,12 @@ export const CategoryProvider: React.FC<
       ),
     );
   };
+
+  /*
+   * =========================================
+   * CONTEXT VALUE
+   * =========================================
+   */
 
   const value = useMemo(
     () => ({
