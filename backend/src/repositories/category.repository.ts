@@ -27,6 +27,16 @@ export const categoryRepository = {
       ],
       include: {
         subcategories: {
+          where: {
+            OR: [
+              {
+                is_default: true,
+              },
+              {
+                user_id: userId,
+              },
+            ],
+          },
           orderBy: {
             name: "asc",
           },
@@ -130,6 +140,7 @@ export const categoryRepository = {
   // =========================================
 
   createSubcategory(data: {
+    userId: string;
     categoryId: string;
     name: string;
     icon?: string;
@@ -142,6 +153,13 @@ export const categoryRepository = {
             id: data.categoryId,
           },
         },
+
+        users: {
+          connect: {
+            id: data.userId,
+          },
+        },
+
         name: data.name,
         icon: data.icon ?? null,
         aliases: data.aliases ?? [],

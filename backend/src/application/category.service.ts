@@ -1,6 +1,8 @@
 import { categoryRepository } from "../repositories/category.repository";
 
-function normalizeAliases(aliases?: string[]): string[] {
+function normalizeAliases(
+  aliases?: string[],
+): string[] {
   if (!Array.isArray(aliases)) {
     return [];
   }
@@ -53,12 +55,16 @@ export const categoryService = {
       data.name.trim().toLowerCase();
 
     const categories =
-      await categoryRepository.findAll(data.userId);
+      await categoryRepository.findAll(
+        data.userId,
+      );
 
     const duplicate = categories.some(
       (category) =>
         category.type === data.type &&
-        category.name.trim().toLowerCase() ===
+        category.name
+          .trim()
+          .toLowerCase() ===
           normalizedName,
     );
 
@@ -107,7 +113,9 @@ export const categoryService = {
       (category) =>
         category.id !== id &&
         category.type === data.type &&
-        category.name.trim().toLowerCase() ===
+        category.name
+          .trim()
+          .toLowerCase() ===
           normalizedName,
     );
 
@@ -146,6 +154,7 @@ export const categoryService = {
   // =========================================
 
   async createSubcategory(data: {
+    userId: string;
     categoryId: string;
     name: string;
     icon?: string;
@@ -181,6 +190,7 @@ export const categoryService = {
     }
 
     return categoryRepository.createSubcategory({
+      userId: data.userId,
       categoryId: data.categoryId,
       name: data.name.trim(),
       icon: data.icon,
