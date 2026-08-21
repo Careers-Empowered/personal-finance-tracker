@@ -53,7 +53,7 @@ interface ApiSubcategory {
   name: string;
   icon: string | null;
   color: string | null;
-  isDefault: boolean;
+  is_default: boolean;
 }
 
 interface ApiCategory {
@@ -63,7 +63,7 @@ interface ApiCategory {
   type: "INCOME" | "EXPENSE";
   icon: string | null;
   color: string | null;
-  isDefault: boolean;
+  is_default: boolean;
   subcategories: ApiSubcategory[];
 }
 
@@ -121,7 +121,7 @@ export const CategoryProvider: React.FC<
                 : "expense",
             icon: category.icon ?? "",
             color: category.color ?? "",
-            isCustom: !category.isDefault,
+            isCustom: !category.is_default,
           }));
 
         /*
