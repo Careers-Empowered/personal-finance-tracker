@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Account } from "../types/types";
-import { convertCurrency, DEFAULT_RATES } from "../utils/currencyUtils";
+import { convertCurrency, DEFAULT_RATES, getCurrencyDecimals, roundCurrency } from "../utils/currencyUtils";
 
 interface TransferModalProps {
   isOpen: boolean;
@@ -24,39 +24,48 @@ const TransferModal: React.FC<TransferModalProps> = ({
   accounts,
   rates = DEFAULT_RATES,
 }) => {
-  if (!isOpen || !sourceAccount) return null;
+  const [destinationId, setDestinationId] = useState<string>("");
+  const [transferEntireBalance, setTransferEntireBalance] = useState(true);
+  const [amountInput, setAmountInput] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
 
   // Filter out the source account so it cannot transfer to itself
   const availableDestinations = accounts.filter(
-    (acc) => acc.id !== sourceAccount.id
+    (acc) => acc.id !== sourceAccount?.id
   );
 
-  const [destinationId, setDestinationId] = useState<string>(
-    availableDestinations.length > 0 ? availableDestinations[0].id : ""
-  );
-  const [transferEntireBalance, setTransferEntireBalance] = useState(true);
-  const [amount, setAmount] = useState<number>(
-    sourceAccount.balance > 0 ? sourceAccount.balance : 0
-  );
-  const [error, setError] = useState<string | null>(null);
-
-  // Sync state whenever sourceAccount or modal opening state changes
+  // 1. Keep destination ID valid when accounts change
   useEffect(() => {
-    if (availableDestinations.length > 0) {
-      // Default to first available destination account
-      setDestinationId(availableDestinations[0].id);
-    }
-    if (sourceAccount) {
-      setAmount(sourceAccount.balance > 0 ? sourceAccount.balance : 0);
+    if (!isOpen || !sourceAccount) return;
+    setDestinationId((prevId) => {
+      if (!availableDestinations.find((a) => a.id === prevId) && availableDestinations.length > 0) {
+        return availableDestinations[0].id;
+      }
+      return prevId;
+    });
+  }, [isOpen, sourceAccount?.id, accounts]);
+
+  // 2. Reset form ONLY when modal opens or sourceAccount changes
+  useEffect(() => {
+    if (isOpen && sourceAccount) {
+      const balance = Number(sourceAccount.balance);
+      setAmountInput(balance > 0 ? balance.toString() : "0");
       setTransferEntireBalance(true);
       setError(null);
     }
-  }, [sourceAccount?.id, isOpen]);
+  }, [isOpen, sourceAccount?.id]);
+
+  if (!isOpen || !sourceAccount) return null;
 
   const targetAccount = accounts.find((acc) => acc.id === destinationId);
-
+  const parsedAmount = parseFloat(amountInput);
+  
   // Calculate transfer amount and converted amount
-  const transferAmount = transferEntireBalance ? sourceAccount.balance : amount;
+  const sourceBalance = Number(sourceAccount.balance);
+  const transferAmount = transferEntireBalance 
+    ? (sourceBalance > 0 ? sourceBalance : 0) 
+    : (isNaN(parsedAmount) ? 0 : parsedAmount);
+
   const isDifferentCurrency =
     targetAccount && targetAccount.currency !== sourceAccount.currency;
 
@@ -75,6 +84,9 @@ const TransferModal: React.FC<TransferModalProps> = ({
     ? convertCurrency(1, sourceAccount.currency, targetAccount.currency, rates)
     : 1;
 
+  const sourceDecimals = getCurrencyDecimals(sourceAccount.currency);
+  const stepValue = sourceDecimals === 0 ? "1" : "0.01";
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -84,12 +96,12 @@ const TransferModal: React.FC<TransferModalProps> = ({
       return;
     }
 
-    if (transferAmount <= 0) {
+    if (isNaN(transferAmount) || transferAmount <= 0) {
       setError("Transfer amount must be greater than zero.");
       return;
     }
 
-    if (transferAmount > sourceAccount.balance) {
+    if (transferAmount > sourceBalance) {
       setError("Transfer amount exceeds available account balance.");
       return;
     }
@@ -97,8 +109,8 @@ const TransferModal: React.FC<TransferModalProps> = ({
     onTransfer(
       sourceAccount.id,
       targetAccount.id,
-      Math.round(transferAmount * 100) / 100,
-      Math.round(convertedAmount * 100) / 100
+      roundCurrency(transferAmount, sourceAccount.currency),
+      roundCurrency(convertedAmount, targetAccount.currency)
     );
     onClose();
   };
@@ -167,7 +179,9 @@ const TransferModal: React.FC<TransferModalProps> = ({
                     onChange={(e) => {
                       setTransferEntireBalance(e.target.checked);
                       if (e.target.checked) {
-                        setAmount(sourceAccount.balance > 0 ? sourceAccount.balance : 0);
+                        const balance = Number(sourceAccount.balance);
+                        setAmountInput(balance > 0 ? balance.toString() : "0");
+                        setError(null);
                       }
                     }}
                   />
@@ -179,21 +193,21 @@ const TransferModal: React.FC<TransferModalProps> = ({
                 type="number"
                 id="transferAmount"
                 className="form-control"
-                value={transferEntireBalance ? (sourceAccount.balance > 0 ? sourceAccount.balance : 0) : amount}
+                value={transferEntireBalance ? (sourceBalance > 0 ? sourceBalance : 0) : amountInput}
                 onChange={(e) => {
                   setTransferEntireBalance(false);
-                  setAmount(parseFloat(e.target.value) || 0);
+                  setAmountInput(e.target.value);
                 }}
                 disabled={transferEntireBalance}
-                step="0.01"
-                min="0.01"
-                max={sourceAccount.balance > 0 ? sourceAccount.balance : 0}
+                step={stepValue}
+                min={stepValue}
+                max={sourceBalance > 0 ? sourceBalance : 0}
                 required
               />
             </div>
 
             {/* Live Conversion & Balances Preview Card */}
-            {targetAccount && transferAmount > 0 && (
+            {targetAccount && transferAmount > 0 && !isNaN(transferAmount) && (
               <div className="transfer-preview-card">
                 {isDifferentCurrency && (
                   <div className="preview-row">
@@ -222,7 +236,7 @@ const TransferModal: React.FC<TransferModalProps> = ({
                       {new Intl.NumberFormat("en-US", {
                         style: "currency",
                         currency: sourceAccount.currency,
-                      }).format(Math.max(0, sourceAccount.balance - transferAmount))}
+                      }).format(Math.max(0, sourceBalance - transferAmount))}
                     </strong>
                   </div>
                   <div className="balance-projection">
@@ -231,7 +245,7 @@ const TransferModal: React.FC<TransferModalProps> = ({
                       {new Intl.NumberFormat("en-US", {
                         style: "currency",
                         currency: targetAccount.currency,
-                      }).format(targetAccount.balance + convertedAmount)}
+                      }).format(Number(targetAccount.balance) + convertedAmount)}
                     </strong>
                   </div>
                 </div>
@@ -251,7 +265,7 @@ const TransferModal: React.FC<TransferModalProps> = ({
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={sourceAccount.balance <= 0}
+                disabled={sourceBalance <= 0}
               >
                 Confirm Transfer
               </button>

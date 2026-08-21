@@ -26,6 +26,24 @@ export async function fetchExchangeRates(): Promise<Record<string, number>> {
 }
 
 /**
+ * Returns the number of decimal places for a given currency
+ */
+export function getCurrencyDecimals(currency: string): number {
+  return currency === "JPY" ? 0 : 2;
+}
+
+/**
+ * Rounds an amount based on its currency
+ */
+export function roundCurrency(amount: number, currency: string): number {
+  if (!amount || isNaN(amount)) return 0;
+  const decimals = getCurrencyDecimals(currency);
+  const factor = Math.pow(10, decimals);
+  const rounded = Math.round(amount * factor) / factor;
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
+
+/**
  * Converts an amount from fromCurrency to toCurrency using current rates
  */
 export function convertCurrency(
@@ -37,7 +55,7 @@ export function convertCurrency(
   if (!amount || isNaN(amount)) return 0;
   if (fromCurrency === toCurrency) {
     const val = Object.is(amount, -0) ? 0 : amount;
-    return Math.round(val * 100) / 100;
+    return roundCurrency(val, toCurrency);
   }
 
   const fromRate = rates[fromCurrency] || 1.0;
@@ -46,7 +64,6 @@ export function convertCurrency(
   // Convert to USD base first, then to target currency
   const amountInUSD = amount / fromRate;
   const converted = amountInUSD * toRate;
-  const rounded = Math.round(converted * 100) / 100;
-
-  return Object.is(rounded, -0) ? 0 : rounded;
+  
+  return roundCurrency(converted, toCurrency);
 }
