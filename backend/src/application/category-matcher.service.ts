@@ -8,7 +8,10 @@ function normalize(value: string): string {
     .replace(/\s+/g, " ");
 }
 
-function scoreMatch(text: string, value: string): number {
+function scoreMatch(
+  text: string,
+  value: string,
+): number {
   const normalizedText = normalize(text);
   const normalizedValue = normalize(value);
 
@@ -45,9 +48,10 @@ export const categoryMatcherService = {
   async matchCategory(
     description: string,
     type: "INCOME" | "EXPENSE",
+    userId: string,
   ) {
     const categories =
-      await categoryRepository.findAll();
+      await categoryRepository.findAll(userId);
 
     const typedCategories = categories.filter(
       (category) => category.type === type,

@@ -23,12 +23,21 @@ function getAliases(
 // =========================================
 
 export async function getCategories(
-  _req: Request,
+  req: Request,
   res: Response,
 ) {
   try {
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+      return;
+    }
+
     const categories =
-      await categoryService.getCategories();
+      await categoryService.getCategories(userId);
 
     res.status(200).json({
       data: categories,
@@ -105,6 +114,15 @@ export async function createCategory(
       aliases,
     } = req.body;
 
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+      return;
+    }
+
     if (
       typeof name !== "string" ||
       !name.trim()
@@ -138,6 +156,7 @@ export async function createCategory(
 
     const category =
       await categoryService.createCategory({
+        userId,
         name: name.trim(),
         type,
         icon,
@@ -191,6 +210,15 @@ export async function updateCategory(
       aliases,
     } = req.body;
 
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+      return;
+    }
+
     if (typeof id !== "string") {
       res.status(400).json({
         error: "Invalid category ID",
@@ -243,6 +271,7 @@ export async function updateCategory(
       await categoryService.updateCategory(
         id,
         {
+          userId,
           name: name.trim(),
           type,
           icon,

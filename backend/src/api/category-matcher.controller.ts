@@ -11,6 +11,15 @@ export async function matchCategory(
       type,
     } = req.body;
 
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      res.status(401).json({
+        error: "Unauthorized",
+      });
+      return;
+    }
+
     if (
       typeof description !== "string" ||
       !description.trim()
@@ -36,6 +45,7 @@ export async function matchCategory(
       await categoryMatcherService.matchCategory(
         description,
         type,
+        userId,
       );
 
     res.status(200).json({
