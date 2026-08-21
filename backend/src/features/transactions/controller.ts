@@ -261,6 +261,12 @@ export class TransactionsController {
         });
       }
 
+      if (error.message === 'DUPLICATE_TRANSACTION') {
+        return res.status(409).json({
+          error: 'A duplicate transaction with the exact same details already exists.',
+        });
+      }
+
       if (error.message === 'FORBIDDEN') {
         return res.status(403).json({
           error: 'Forbidden',
