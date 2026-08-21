@@ -17,6 +17,7 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
   const [selectedType, setSelectedType] = useState<TransactionType | 'ALL'>('ALL');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('ALL');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('ALL');
 
   const safeTransactions = useMemo(
@@ -44,6 +45,24 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
     return Array.from(new Set(categoryNames)).sort();
   }, [safeTransactions]);
 
+  // Extract unique subcategories belonging to the selected category
+  const subcategories = useMemo(() => {
+    if (selectedCategory === 'ALL') return [];
+
+    const subcategoryNames = safeTransactions
+      .filter((transaction) => {
+        const categoryName =
+          transaction.category?.name?.trim() ||
+          transaction.categoryId?.trim() ||
+          '';
+        return categoryName.toLowerCase() === selectedCategory.toLowerCase();
+      })
+      .map((transaction) => transaction.subcategory?.name?.trim())
+      .filter((sub): sub is string => Boolean(sub));
+
+    return Array.from(new Set(subcategoryNames)).sort();
+  }, [safeTransactions, selectedCategory]);
+
   // Extract unique account IDs that are present in transactions
   const activeAccounts = useMemo(() => {
     const transactionAccountIds = new Set(
@@ -59,6 +78,18 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
     }
   }, [categories, selectedCategory]);
 
+  // Reset subcategory filter back to 'ALL' when parent category changes
+  useEffect(() => {
+    setSelectedSubcategory('ALL');
+  }, [selectedCategory]);
+
+  // Reset subcategory if the selected one is no longer in the list
+  useEffect(() => {
+    if (selectedSubcategory !== 'ALL' && !subcategories.includes(selectedSubcategory)) {
+      setSelectedSubcategory('ALL');
+    }
+  }, [subcategories, selectedSubcategory]);
+
   // Reset account filter if the selected account is no longer present in activeAccounts
   useEffect(() => {
     if (selectedAccountId !== 'ALL' && !activeAccounts.some(acc => acc.id === selectedAccountId)) {
@@ -73,10 +104,8 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
         selectedType === 'ALL' ||
         transaction.type === selectedType;
 
-      // Better date parsing using ISO format
-      const transactionDate = new Date(transaction.date)
-        .toISOString()
-        .split('T')[0];
+      // Better date parsing using ISO format or spaces
+      const transactionDate = transaction.date?.split(/[T ]/)[0];
 
       const matchesDate =
         selectedDate === '' ||
@@ -92,6 +121,14 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
         selectedCategory === 'ALL' ||
         categoryName.toLowerCase() === selectedCategory.toLowerCase();
 
+      const transactionSubcategoryName =
+        transaction.subcategory?.name?.trim() || '';
+
+      // Subcategory matching
+      const matchesSubcategory =
+        selectedSubcategory === 'ALL' ||
+        transactionSubcategoryName.toLowerCase() === selectedSubcategory.toLowerCase();
+
       const transactionAccountId =
         transaction.account?.id ||
         transaction.accountId;
@@ -104,10 +141,11 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
         matchesType &&
         matchesDate &&
         matchesCategory &&
+        matchesSubcategory &&
         matchesAccount
       );
     });
-  }, [safeTransactions, selectedType, selectedDate, selectedCategory, selectedAccountId]);
+  }, [safeTransactions, selectedType, selectedDate, selectedCategory, selectedSubcategory, selectedAccountId]);
 
   // Call onFilterChange callback when filtered list updates
   useEffect(() => {
@@ -186,6 +224,29 @@ const TransactionFilter: React.FC<TransactionFilterProps> = ({
           </option>
         ))}
       </select>
+
+      {/* Conditional Subcategory Filter */}
+      {selectedCategory !== 'ALL' && subcategories.length > 0 && (
+        <select
+          className="transaction-subcategory-filter"
+          value={selectedSubcategory}
+          onChange={(e) => setSelectedSubcategory(e.target.value)}
+          aria-label="Filter transactions by subcategory"
+        >
+          <option value="ALL">
+            All Subcategories
+          </option>
+
+          {subcategories.map((sub) => (
+            <option
+              key={sub}
+              value={sub}
+            >
+              {sub}
+            </option>
+          ))}
+        </select>
+      )}
 
       <select
         className="transaction-account-filter"
