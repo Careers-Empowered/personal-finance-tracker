@@ -57,7 +57,6 @@ export const useTransactions = () => {
     } catch (err: any) {
       console.error('Error saving transaction:', err);
       const msg = err.message || 'Failed to save transaction.';
-      setError(msg);
       throw new Error(msg);
     }
   };

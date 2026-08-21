@@ -324,6 +324,24 @@ export class TransactionsService {
 
     const txDate = date ? new Date(date) : new Date();
 
+    // Check for duplicate transaction matching all key fields
+    const duplicateCheckRes = await query(
+      `SELECT id FROM transactions
+       WHERE account_id = $1
+         AND category_id = $2
+         AND subcategory_id IS NOT DISTINCT FROM $3::uuid
+         AND amount = $4
+         AND type = $5
+         AND LOWER(TRIM("Title")) = LOWER(TRIM($6))
+         AND date::date = $7::date
+       LIMIT 1`,
+      [accountId, categoryId, subId, amount, type, title, txDate]
+    );
+
+    if (duplicateCheckRes.rows.length > 0) {
+      throw new Error('DUPLICATE_TRANSACTION');
+    }
+
     const insertRes = await query(
       `INSERT INTO transactions (id, account_id, category_id, subcategory_id, amount, type, date, "Title", imported_with_override, override_note, created_at, updated_at)
        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
