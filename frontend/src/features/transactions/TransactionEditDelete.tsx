@@ -9,7 +9,7 @@ interface TransactionEditDeleteProps {
   transaction: Transaction | CreateTransactionInput;
   index?: number;
   accounts?: Account[];
-  onSave: (updatedTransaction: Transaction | CreateTransactionInput) => void;
+  onSave: (updatedTransaction: Transaction | CreateTransactionInput) => Promise<void> | void;
   onDelete: (identifier: string | number) => void;
 }
 
@@ -23,8 +23,8 @@ const TransactionEditDelete: React.FC<TransactionEditDeleteProps> = ({
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  const handleSave = (updated: Transaction | CreateTransactionInput) => {
-    onSave(updated);
+  const handleSave = async (updated: Transaction | CreateTransactionInput) => {
+    await onSave(updated);
     setIsEditOpen(false);
   };
 

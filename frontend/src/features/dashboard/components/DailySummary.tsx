@@ -54,28 +54,6 @@ const DailySummary = ({
   accounts = [],
   currency = "INR",
 }: DailySummaryProps) => {
-  const initialMonth = useMemo(() => {
-    if (data.length === 0) {
-      const today = new Date();
-
-      return new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        1,
-      );
-    }
-
-    const firstDate = new Date(
-      `${data[0].date}T00:00:00`,
-    );
-
-    return new Date(
-      firstDate.getFullYear(),
-      firstDate.getMonth(),
-      1,
-    );
-  }, [data]);
-
 const today = new Date();
 
 const [currentMonth, setCurrentMonth] = useState(

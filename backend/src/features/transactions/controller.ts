@@ -255,6 +255,12 @@ export class TransactionsController {
 
       return res.status(201).json(transaction);
     } catch (error: any) {
+      if (error.name === 'InsufficientFundsError' || error.message?.includes('Insufficient account balance')) {
+        return res.status(400).json({
+          error: error.message || 'Insufficient account balance for this transaction',
+        });
+      }
+
       if (error.message === 'FORBIDDEN') {
         return res.status(403).json({
           error: 'Forbidden',
@@ -344,6 +350,12 @@ export class TransactionsController {
 
       return res.json(updatedTransaction);
     } catch (error: any) {
+      if (error.name === 'InsufficientFundsError' || error.message?.includes('Insufficient account balance')) {
+        return res.status(400).json({
+          error: error.message || 'Insufficient account balance for this transaction',
+        });
+      }
+
       if (error.message === 'TRANSACTION_NOT_FOUND') {
         return res.status(404).json({
           error: 'Transaction not found',

@@ -153,7 +153,12 @@ export async function transferBalance(req: Request, res: Response) {
     );
 
     res.status(200).json({ data: result });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.name === 'InsufficientFundsError' || error?.message?.includes('Insufficient account balance')) {
+      res.status(400).json({ error: error.message || 'Insufficient account balance for transfer' });
+      return;
+    }
+
     console.error("Failed to transfer balance:", error);
     res.status(500).json({ error: "Failed to transfer balance" });
   }
