@@ -1808,43 +1808,7 @@ function Import() {
                 }}
               >
                 {/* Continue and keep database duplicates */}
-                <button
-                  type="button"
-                  disabled={
-                    !selectedAccountId ||
-                    isImporting
-                  }
-                  onClick={() =>
-                    handleImportTransactions(
-                      transactionsForImport,
-                      duplicateDecisions,
-                      selectedAccountId
-                    )
-                  }
-                  style={{
-                    padding: "0.8rem 1.3rem",
-                    border: "none",
-                    borderRadius: "10px",
-                    backgroundColor: "#d8892f",
-                    color: "#ffffff",
-                    fontSize: "1rem",
-                    fontWeight: 700,
-                    cursor:
-                      selectedAccountId &&
-                      !isImporting
-                        ? "pointer"
-                        : "not-allowed",
-                    opacity:
-                      selectedAccountId &&
-                      !isImporting
-                        ? 1
-                        : 0.55,
-                  }}
-                >
-                  {isImporting
-                    ? "Importing..."
-                    : "Continue to Import"}
-                </button>
+                
 
                 {/* Remove database duplicates from the
                     current import batch and continue.
@@ -1962,7 +1926,7 @@ function Import() {
                 >
                   {isImporting
                     ? "Importing..."
-                    : `Delete ${
+                    : `Exclude ${
                         databaseDuplicateMatches.length
                       } Duplicate${
                         databaseDuplicateMatches.length ===
