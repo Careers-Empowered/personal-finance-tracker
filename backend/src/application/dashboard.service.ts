@@ -98,7 +98,18 @@ export const dashboardService = {
          * -----------------------------------------
          */
 
-        const income = convertedTransactions.reduce(
+        const now = new Date();
+
+        const currentMonth = getMonthKey(now);
+
+        const summaryTransactions =
+            startDate && endDate
+                ? convertedTransactions
+                : convertedTransactions.filter((item) =>
+                    getMonthKey(item.transaction.date) === currentMonth,
+                );
+
+        const income = summaryTransactions.reduce(
             (total, item) =>
                 total +
                 (item.transaction.type === "INCOME"
@@ -107,7 +118,7 @@ export const dashboardService = {
             0,
         );
 
-        const expenses = convertedTransactions.reduce(
+        const expenses = summaryTransactions.reduce(
             (total, item) =>
                 total +
                 (item.transaction.type === "EXPENSE"
@@ -122,7 +133,7 @@ export const dashboardService = {
             income,
             expenses,
             balance,
-            transactionCount: transactions.length,
+            transactionCount: summaryTransactions.length,
         };
 
         /*
