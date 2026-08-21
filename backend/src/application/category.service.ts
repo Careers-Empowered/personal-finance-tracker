@@ -25,8 +25,8 @@ export const categoryService = {
   // GET ALL CATEGORIES
   // =========================================
 
-  async getCategories() {
-    return categoryRepository.findAll();
+  async getCategories(userId: string) {
+    return categoryRepository.findAll(userId);
   },
 
   // =========================================
@@ -42,6 +42,7 @@ export const categoryService = {
   // =========================================
 
   async createCategory(data: {
+    userId: string;
     name: string;
     type: "INCOME" | "EXPENSE";
     icon?: string;
@@ -52,7 +53,7 @@ export const categoryService = {
       data.name.trim().toLowerCase();
 
     const categories =
-      await categoryRepository.findAll();
+      await categoryRepository.findAll(data.userId);
 
     const duplicate = categories.some(
       (category) =>
@@ -68,6 +69,7 @@ export const categoryService = {
     }
 
     return categoryRepository.create({
+      userId: data.userId,
       name: data.name.trim(),
       type: data.type,
       icon: data.icon,
@@ -85,6 +87,7 @@ export const categoryService = {
   async updateCategory(
     id: string,
     data: {
+      userId: string;
       name: string;
       type: "INCOME" | "EXPENSE";
       icon?: string;
@@ -96,7 +99,9 @@ export const categoryService = {
       data.name.trim().toLowerCase();
 
     const categories =
-      await categoryRepository.findAll();
+      await categoryRepository.findAll(
+        data.userId,
+      );
 
     const duplicate = categories.some(
       (category) =>

@@ -11,7 +11,11 @@ import {
   deleteSubcategory,
 } from "./category.controller";
 
+import { authMiddleware } from "../security/auth.middleware";
+
 const router = Router();
+
+router.use(authMiddleware);
 
 router.get("/", getCategories);
 

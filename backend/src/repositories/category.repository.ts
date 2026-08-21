@@ -5,8 +5,18 @@ export const categoryRepository = {
   // GET ALL CATEGORIES
   // =========================================
 
-  findAll() {
+  findAll(userId: string) {
     return prisma.category.findMany({
+      where: {
+        OR: [
+          {
+            is_default: true,
+          },
+          {
+            userId: userId,
+          },
+        ],
+      },
       orderBy: [
         {
           type: "asc",
@@ -49,6 +59,7 @@ export const categoryRepository = {
   // =========================================
 
   create(data: {
+    userId: string;
     name: string;
     type: "INCOME" | "EXPENSE";
     icon?: string;
@@ -57,6 +68,7 @@ export const categoryRepository = {
   }) {
     return prisma.category.create({
       data: {
+        userId: data.userId,
         name: data.name,
         type: data.type,
         icon: data.icon ?? null,
@@ -125,11 +137,14 @@ export const categoryRepository = {
   }) {
     return prisma.subcategory.create({
       data: {
-        category_id: data.categoryId,
+        categories: {
+          connect: {
+            id: data.categoryId,
+          },
+        },
         name: data.name,
         icon: data.icon ?? null,
         aliases: data.aliases ?? [],
-        user_id: null,
         color: null,
         is_default: false,
       },
