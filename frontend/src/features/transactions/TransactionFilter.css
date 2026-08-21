@@ -9,13 +9,14 @@
   border: 1px solid var(--color-divider, #e2e8f0);
   border-radius: 12px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 /* Button & Select General Styling */
 .transaction-filter-btn,
 .transaction-date-filter,
 .transaction-category-filter,
+.transaction-subcategory-filter,
 .transaction-account-filter {
   height: 38px;
   font-family: inherit;
@@ -130,7 +131,7 @@
   cursor: pointer;
   outline: none;
   appearance: none;
-  background-image:
+  background-image: 
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z'/%3E%3Cline x1='7' y1='7' x2='7.01' y2='7'/%3E%3C/svg%3E"), /* Left tag icon */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); /* Right arrow */
   background-repeat: no-repeat, no-repeat;
@@ -147,6 +148,38 @@
   box-shadow: 0 0 0 3px rgba(211, 131, 51, 0.15);
 }
 
+/* Subcategory Dropdown with Branch Hierarchy tree SVG and Down Arrow */
+.transaction-subcategory-filter {
+  min-width: 175px;
+  padding: 0 2.2rem 0 2.2rem;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4v16h16'/%3E%3Cpolyline points='4 12 12 12 12 20'/%3E%3C/svg%3E"), /* Left subcategory hierarchy tree icon */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); /* Right arrow */
+  background-repeat: no-repeat, no-repeat;
+  background-position: left 0.8rem center, right 0.8rem center;
+  background-size: 14px, 12px;
+}
+
+.transaction-subcategory-filter:hover {
+  border-color: #94a3b8;
+}
+
+.transaction-subcategory-filter:focus {
+  border-color: var(--color-primary, #d38333);
+  box-shadow: 0 0 0 3px rgba(211, 131, 51, 0.15);
+}
+
+.transaction-subcategory-filter option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
 /* Account Dropdown with Credit Card SVG and Down Arrow */
 .transaction-account-filter {
   min-width: 175px;
@@ -157,7 +190,7 @@
   cursor: pointer;
   outline: none;
   appearance: none;
-  background-image:
+  background-image: 
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='5' width='20' height='14' rx='2' ry='2'/%3E%3Cpath d='M2 10h20M6 14h2M10 14h4'/%3E%3C/svg%3E"), /* Left card/wallet icon */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); /* Right arrow */
   background-repeat: no-repeat, no-repeat;
@@ -220,11 +253,12 @@
 
   .transaction-date-filter,
   .transaction-category-filter,
+  .transaction-subcategory-filter,
   .transaction-account-filter {
     width: 100%;
     min-width: 100%;
   }
-
+  
   .transaction-filter-clear {
     width: 100%;
     background-color: #f1f5f9;
