@@ -62,7 +62,7 @@ export const categoryRepository = {
         icon: data.icon ?? null,
         color: data.color ?? null,
         aliases: data.aliases ?? [],
-        isDefault: false,
+        is_default: false,
       },
       include: {
         subcategories: true,
