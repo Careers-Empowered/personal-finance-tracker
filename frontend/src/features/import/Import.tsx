@@ -4,6 +4,8 @@ import FileUpload from "./components/FileUpload";
 import FilePreview from "./components/FilePreview";
 import ImportValidation from "./components/ImportValidation";
 import DuplicateDetection from "./components/DuplicateDetection";
+import CsvDatabaseDuplicateCheck from "./components/CsvDatabaseDuplicateCheck";
+import BankStatementDatabaseDuplicateCheck from "./components/BankStatementDatabaseDuplicateCheck";
 
 import { markDuplicateTransactions } from "./utils/duplicateDetection";
 
@@ -1479,466 +1481,240 @@ function Import() {
           ====================================================== */}
 
       {step === "database-duplicate-check" && (
-        <section
-          style={{
-            width: "100%",
-            maxWidth: "1100px",
-            margin: "0 auto",
-            boxSizing: "border-box",
-          }}
-        >
-          {/* Main card - follows the same visual language as the
-              existing Duplicate Detection section. */}
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              border: "1px solid #dedede",
-              borderRadius: "16px",
-              padding: "2rem",
-              boxSizing: "border-box",
-            }}
-          >
-            {/* Header */}
-            <div
-              style={{
-                marginBottom: "1.5rem",
-              }}
-            >
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "1.75rem",
-                  lineHeight: 1.25,
-                  fontWeight: 700,
-                  color: "#111827",
-                }}
-              >
-                Database Duplicate Check
-              </h2>
-
-              <p
-                style={{
-                  margin: "0.6rem 0 0",
-                  color: "#667085",
-                  fontSize: "1rem",
-                  lineHeight: 1.5,
-                }}
-              >
-                Review transactions that already exist in the
-                selected account before importing them.
-              </p>
-            </div>
-
-            {/* Duplicate summary - red warning style matching
-                the duplicate detection page. */}
-            <div
-              style={{
-                marginBottom: "1.5rem",
-                padding: "1rem 1.25rem",
-                borderRadius: "12px",
-                border: "1px solid #f3b5b5",
-                backgroundColor: "#fff6f6",
-                color: "#c5221f",
-                boxSizing: "border-box",
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 700,
-                  fontSize: "1rem",
-                }}
-              >
-                ⚠ Database Duplicate Warning
-              </div>
-
-              <div
-                style={{
-                  marginTop: "0.4rem",
-                  color: "#7f1d1d",
-                  lineHeight: 1.5,
-                }}
-              >
-                {databaseDuplicateMatches.length} transaction
-                {databaseDuplicateMatches.length === 1 ? "" : "s"}{" "}
-                from this import already{" "}
-                {databaseDuplicateMatches.length === 1
-                  ? "exists"
-                  : "exist"}{" "}
-                in the selected account.
-              </div>
-
-              <div
-                style={{
-                  marginTop: "0.35rem",
-                  color: "#667085",
-                  lineHeight: 1.5,
-                }}
-              >
-                You can continue and import them again, or remove
-                these duplicate rows from the current import batch.
-              </div>
-            </div>
-
-            {/* Matching transactions */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "1rem",
-              }}
-            >
-              {databaseDuplicateMatches.map((match) => {
-                const importedTransaction =
-                  transactionsForImport.find(
-                    (transaction) =>
-                      transaction.row === match.row
-                  );
-
-                const imported =
-                  importedTransaction?.data;
-
-                const existing =
-                  match.existingTransaction;
-
-                const importedDate = imported?.date
-                  ? String(imported.date).split("T")[0]
-                  : "-";
-
-                const existingDate = existing?.date
-                  ? String(existing.date).split("T")[0]
-                  : "-";
-
-                return (
-                  <div
-                    key={`${match.row}-${existing?.id ?? "existing"}`}
-                    style={{
-                      border: "1px solid #f1b8b8",
-                      borderRadius: "14px",
-                      padding: "1.25rem",
-                      backgroundColor: "#fff9f9",
-                      boxSizing: "border-box",
-                    }}
-                  >
-                    {/* Row header */}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: "1rem",
-                        marginBottom: "1rem",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <strong
-                        style={{
-                          fontSize: "1.05rem",
-                          color: "#111827",
-                        }}
-                      >
-                        Row {match.row}
-                      </strong>
-
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          color: "#c5221f",
-                          fontSize: "1rem",
-                        }}
-                      >
-                        Already exists
-                      </span>
-                    </div>
-
-                    {/* Imported vs database records */}
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(2, minmax(0, 1fr))",
-                        gap: "1rem",
-                      }}
-                    >
-                      {/* Imported file */}
-                      <div
-                        style={{
-                          padding: "1.15rem",
-                          borderRadius: "10px",
-                          backgroundColor: "#f7f8fa",
-                          border: "1px solid #eceef0",
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontWeight: 700,
-                            fontSize: "1rem",
-                            marginBottom: "0.9rem",
-                            color: "#111827",
-                          }}
-                        >
-                          Imported File
-                        </div>
-
-                        <div
-                          style={{
-                            lineHeight: 1.65,
-                            color: "#111827",
-                          }}
-                        >
-                          <div>
-                            <strong>Date:</strong>{" "}
-                            {importedDate}
-                          </div>
-
-                          <div>
-                            <strong>Title:</strong>{" "}
-                            {imported?.title || "-"}
-                          </div>
-
-                          <div>
-                            <strong>Amount:</strong>{" "}
-                            {imported?.amount ?? "-"}
-                          </div>
-
-                          <div>
-                            <strong>Type:</strong>{" "}
-                            {imported?.type || "-"}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Existing database record */}
-                      <div
-                        style={{
-                          padding: "1.15rem",
-                          borderRadius: "10px",
-                          backgroundColor: "#fff3e7",
-                          border: "1px solid #f2d2b3",
-                          boxSizing: "border-box",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontWeight: 700,
-                            fontSize: "1rem",
-                            marginBottom: "0.9rem",
-                            color: "#111827",
-                          }}
-                        >
-                          Existing Database Record
-                        </div>
-
-                        <div
-                          style={{
-                            lineHeight: 1.65,
-                            color: "#111827",
-                          }}
-                        >
-                          <div>
-                            <strong>Date:</strong>{" "}
-                            {existingDate}
-                          </div>
-
-                          <div>
-                            <strong>Title:</strong>{" "}
-                            {existing?.title || "-"}
-                          </div>
-
-                          <div>
-                            <strong>Amount:</strong>{" "}
-                            {existing?.amount ?? "-"}
-                          </div>
-
-                          <div>
-                            <strong>Type:</strong>{" "}
-                            {existing?.type || "-"}
-                          </div>
-
-                          <div>
-                            <strong>Account:</strong>{" "}
-                            {existing?.account?.name || "-"}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+        importMode === "csv" ? (
+          <CsvDatabaseDuplicateCheck
+            databaseDuplicateMatches={databaseDuplicateMatches}
+            transactionsForImport={transactionsForImport}
+            selectedAccountId={selectedAccountId}
+            isImporting={isImporting}
+            onBack={() => setStep("upload")}
+            onExcludeDuplicates={async () => {
+              const databaseDuplicateRows =
+                new Set(
+                  databaseDuplicateMatches.map(
+                    (match) => match.row
+                  )
                 );
-              })}
-            </div>
 
-            {/* Bottom actions */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: "1rem",
-                marginTop: "1.75rem",
-                flexWrap: "wrap",
-              }}
-            >
-              {/* Back */}
-              <button
-                type="button"
-                onClick={() =>
-                  setStep("upload")
-                }
-                style={{
-                  padding: "0.8rem 1.3rem",
-                  border: "none",
-                  borderRadius: "10px",
-                  backgroundColor: "#f1f3f4",
-                  color: "#111827",
-                  fontSize: "1rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Back
-              </button>
+              const transactionsWithoutDatabaseDuplicates =
+                transactionsForImport.filter(
+                  (transaction) =>
+                    !databaseDuplicateRows.has(
+                      transaction.row
+                    )
+                );
 
-              {/* Import actions */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: "0.75rem",
-                  flexWrap: "wrap",
-                  justifyContent: "flex-end",
-                }}
-              >
-                {/* Continue and keep database duplicates */}
-                
+              const remainingDuplicateDecisions =
+                duplicateDecisions.filter(
+                  (decision) =>
+                    !databaseDuplicateRows.has(
+                      decision.row
+                    )
+                );
 
-                {/* Remove database duplicates from the
-                    current import batch and continue.
+              if (
+                transactionsWithoutDatabaseDuplicates.length ===
+                0
+              ) {
+                alert(
+                  "All remaining transactions already exist in the selected account. Nothing new needs to be imported."
+                );
+                return;
+              }
 
-                    IMPORTANT:
-                    This does NOT delete records from the
-                    database. It only removes matching rows
-                    from the current imported file. */}
-                <button
-                  type="button"
-                  disabled={
-                    !selectedAccountId ||
-                    isImporting
-                  }
-                  onClick={async () => {
-                    const databaseDuplicateRows =
-                      new Set(
-                        databaseDuplicateMatches.map(
-                          (match) => match.row
-                        )
+              const removedCount =
+                transactionsForImport.length -
+                transactionsWithoutDatabaseDuplicates.length;
+
+              console.log(
+                "Database duplicate rows removed from current import:",
+                [...databaseDuplicateRows]
+              );
+
+              console.log(
+                "Transactions remaining after database duplicate removal:",
+                transactionsWithoutDatabaseDuplicates
+              );
+
+              setTransactionsForImport(
+                transactionsWithoutDatabaseDuplicates
+              );
+
+              setDuplicateDecisions(
+                remainingDuplicateDecisions
+              );
+
+              setDatabaseDuplicateMatches([]);
+
+              alert(
+                `${removedCount} database duplicate${
+                  removedCount === 1 ? "" : "s"
+                } removed from the import. ${
+                  transactionsWithoutDatabaseDuplicates.length
+                } transaction${
+                  transactionsWithoutDatabaseDuplicates.length === 1
+                    ? ""
+                    : "s"
+                } will now be imported.`
+              );
+
+              await handleImportTransactions(
+                transactionsWithoutDatabaseDuplicates,
+                remainingDuplicateDecisions,
+                selectedAccountId
+              );
+            }}
+            onContinueWithSelectedDuplicates={async (
+              selectedDuplicateRows
+            ) => {
+              const selectedRows = new Set(
+                selectedDuplicateRows
+              );
+
+              /*
+              * Keep:
+              *
+              * 1. Every transaction that is NOT a database duplicate.
+              * 2. Only the database duplicates explicitly selected
+              *    by the user.
+              */
+              const transactionsToImport =
+                transactionsForImport.filter(
+                  (transaction) => {
+                    const isDatabaseDuplicate =
+                      databaseDuplicateMatches.some(
+                        (match) =>
+                          match.row ===
+                          transaction.row
                       );
 
-                    const transactionsWithoutDatabaseDuplicates =
-                      transactionsForImport.filter(
-                        (transaction) =>
-                          !databaseDuplicateRows.has(
-                            transaction.row
-                          )
-                      );
-
-                    const remainingDuplicateDecisions =
-                      duplicateDecisions.filter(
-                        (decision) =>
-                          !databaseDuplicateRows.has(
-                            decision.row
-                          )
-                      );
-
-                    if (
-                      transactionsWithoutDatabaseDuplicates.length ===
-                      0
-                    ) {
-                      alert(
-                        "All remaining transactions already exist in the selected account. Nothing new needs to be imported."
-                      );
-                      return;
+                    if (!isDatabaseDuplicate) {
+                      return true;
                     }
 
-                    const removedCount =
-                      transactionsForImport.length -
-                      transactionsWithoutDatabaseDuplicates.length;
-
-                    console.log(
-                      "Database duplicate rows removed from current import:",
-                      [...databaseDuplicateRows]
+                    return selectedRows.has(
+                      transaction.row
                     );
+                  }
+                );
 
-                    console.log(
-                      "Transactions remaining after database duplicate removal:",
-                      transactionsWithoutDatabaseDuplicates
-                    );
+              /*
+              * Keep duplicate decisions only for
+              * transactions that are actually being imported.
+              */
+              const decisionsToImport =
+                duplicateDecisions.filter(
+                  (decision) =>
+                    transactionsToImport.some(
+                      (transaction) =>
+                        transaction.row ===
+                        decision.row
+                    )
+                );
 
-                    setTransactionsForImport(
-                      transactionsWithoutDatabaseDuplicates
-                    );
+              console.log(
+                "Selected database duplicate rows:",
+                selectedDuplicateRows
+              );
 
-                    setDuplicateDecisions(
-                      remainingDuplicateDecisions
-                    );
+              console.log(
+                "Transactions being imported:",
+                transactionsToImport
+              );
 
-                    setDatabaseDuplicateMatches(
-                      []
-                    );
+              await handleImportTransactions(
+                transactionsToImport,
+                decisionsToImport,
+                selectedAccountId
+              );
+            }}
+          />
+          
+        ) : (
+          <BankStatementDatabaseDuplicateCheck
+            databaseDuplicateMatches={databaseDuplicateMatches}
+            transactionsForImport={transactionsForImport}
+            selectedAccountId={selectedAccountId}
+            isImporting={isImporting}
+            onBack={() => setStep("upload")}
+            onExcludeDuplicates={async () => {
+              const databaseDuplicateRows =
+                new Set(
+                  databaseDuplicateMatches.map(
+                    (match) => match.row
+                  )
+                );
 
-                    alert(
-                      `${removedCount} database duplicate${
-                        removedCount === 1
-                          ? ""
-                          : "s"
-                      } removed from the import. ${
-                        transactionsWithoutDatabaseDuplicates.length
-                      } transaction${
-                        transactionsWithoutDatabaseDuplicates.length ===
-                        1
-                          ? ""
-                          : "s"
-                      } will now be imported.`
-                    );
+              const transactionsWithoutDatabaseDuplicates =
+                transactionsForImport.filter(
+                  (transaction) =>
+                    !databaseDuplicateRows.has(
+                      transaction.row
+                    )
+                );
 
-                    await handleImportTransactions(
-                      transactionsWithoutDatabaseDuplicates,
-                      remainingDuplicateDecisions,
-                      selectedAccountId
-                    );
-                  }}
-                  style={{
-                    padding: "0.8rem 1.3rem",
-                    border: "none",
-                    borderRadius: "10px",
-                    backgroundColor: "#188038",
-                    color: "#ffffff",
-                    fontSize: "1rem",
-                    fontWeight: 700,
-                    cursor:
-                      selectedAccountId &&
-                      !isImporting
-                        ? "pointer"
-                        : "not-allowed",
-                    opacity:
-                      selectedAccountId &&
-                      !isImporting
-                        ? 1
-                        : 0.55,
-                  }}
-                >
-                  {isImporting
-                    ? "Importing..."
-                    : `Exclude ${
-                        databaseDuplicateMatches.length
-                      } Duplicate${
-                        databaseDuplicateMatches.length ===
-                        1
-                          ? ""
-                          : "s"
-                      } & Continue`}
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+              const remainingDuplicateDecisions =
+                duplicateDecisions.filter(
+                  (decision) =>
+                    !databaseDuplicateRows.has(
+                      decision.row
+                    )
+                );
+
+              if (
+                transactionsWithoutDatabaseDuplicates.length ===
+                0
+              ) {
+                alert(
+                  "All remaining transactions already exist in the selected account. Nothing new needs to be imported."
+                );
+                return;
+              }
+
+              const removedCount =
+                transactionsForImport.length -
+                transactionsWithoutDatabaseDuplicates.length;
+
+              console.log(
+                "Database duplicate rows removed from current import:",
+                [...databaseDuplicateRows]
+              );
+
+              console.log(
+                "Transactions remaining after database duplicate removal:",
+                transactionsWithoutDatabaseDuplicates
+              );
+
+              setTransactionsForImport(
+                transactionsWithoutDatabaseDuplicates
+              );
+
+              setDuplicateDecisions(
+                remainingDuplicateDecisions
+              );
+
+              setDatabaseDuplicateMatches([]);
+
+              alert(
+                `${removedCount} database duplicate${
+                  removedCount === 1 ? "" : "s"
+                } removed from the import. ${
+                  transactionsWithoutDatabaseDuplicates.length
+                } transaction${
+                  transactionsWithoutDatabaseDuplicates.length === 1
+                    ? ""
+                    : "s"
+                } will now be imported.`
+              );
+
+              await handleImportTransactions(
+                transactionsWithoutDatabaseDuplicates,
+                remainingDuplicateDecisions,
+                selectedAccountId
+              );
+            }}
+          />
+        )
       )}
 
       {/* ======================================================
