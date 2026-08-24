@@ -1,6 +1,6 @@
 # Careers Empowered — Personal Finance Tracker
 
-A full-stack, enterprise-grade personal finance and wealth management platform built with **React**, **Node.js/Express**, **Prisma ORM**, **PostgreSQL**, and **in-browser AI (Small Language Models)**. Designed with clean, modern aesthetics and a feature-first architecture, it provides multi-currency account tracking, transaction management, intelligent statement parsing (CSV/PDF) with duplicate detection, client-side ML categorization, and rich financial analytics.
+A full-stack, enterprise-grade personal finance and wealth management platform built with **React**, **Node.js/Express**, **Prisma ORM**, **PostgreSQL**, and **in-browser AI (Small Language Models)**. Designed with clean, modern aesthetics and a feature-first architecture, it provides multi-currency account tracking, transaction management, intelligent statement parsing (CSV) with duplicate detection, client-side ML categorization, and rich financial analytics.
 
 ---
 
@@ -38,13 +38,12 @@ A full-stack, enterprise-grade personal finance and wealth management platform b
 
 ### 3. Transaction Management
 - **Comprehensive CRUD**: Record, edit, filter, and delete transactions with real-time balance updates.
-- **Advanced Filtering**: Filter by date range, account, transaction type, category, or keyword search.
-- **Balance Invariant Validation**: Strict backend checks preventing invalid balances and illegal state transitions.
+- **Advanced Filtering**: Filter by date range, account, transaction type or category.
 - **Summary & KPI Aggregates**: Real-time computation of net balance, total income, total expense, and transaction counts.
 
 ### 4. Intelligent Statement Import & Deduplication
-- **Multi-Format Ingestion**: Drag-and-drop ingestion of **CSV** and **PDF** bank statements.
-- **Client-Side Parsing**: Secure in-browser document parsing using PDF.js and CSV parser without uploading raw files to third-party services.
+- **Multi-Format Ingestion**: Drag-and-drop ingestion of **CSV** bank statements.
+- **Client-Side Parsing**: Secure in-browser document parsing using custom CSV parsers without uploading raw files to third-party services.
 - **Interactive Mapping**: Live column mapping, account selector, and data validation before committing to database.
 - **Two-Phase Duplicate Detection**:
   1. *In-batch duplicate detection* across parsed rows.
@@ -52,8 +51,7 @@ A full-stack, enterprise-grade personal finance and wealth management platform b
 
 ### 5. Hybrid Categorization (Rule + Fuzzy + Client-Side SLM)
 - **Tier 1 (Rule-Based)**: Instant regular expression and keyword matcher against user rules.
-- **Tier 2 (Fuzzy Backend Matcher)**: Levenshtein/token-based alias matcher for high-confidence matches.
-- **Tier 3 (In-Browser SLM)**: On-device Small Language Model (powered by Hugging Face `@huggingface/transformers` running a quantized Qwen model) for zero-latency, privacy-preserving offline inference.
+- **Tier 2 (In-Browser SLM)**: On-device Small Language Model (powered by Hugging Face `@huggingface/transformers` running a quantized Qwen model) for zero-latency, privacy-preserving offline inference.
 
 ### 6. Analytics & Dashboard
 - **Executive Summary Cards**: Net Worth, Total Liquid Balance, Monthly Inflows, Monthly Outflows, and Savings Rate.
@@ -72,7 +70,7 @@ graph TD
         Router[React Router 7]
         State[Feature Contexts / Hooks]
         SLM[Hugging Face Transformers / Qwen SLM]
-        Parser[PDF.js & CSV Parser]
+        Parser[Native CSV Parser]
     end
 
     subgraph Backend ["Backend (Express 5 + TypeScript)"]
@@ -111,8 +109,7 @@ graph TD
 | **Frontend** | React 18, TypeScript, Vite 8 | Single Page Application with fast HMR |
 | **Routing** | React Router v7 | Nested layouts, protected routes, declarative navigation |
 | **Styling** | Vanilla CSS + Design Tokens | Custom CSS design system, CSS variables, typography |
-| **AI / ML** | `@huggingface/transformers` | Client-side Quantized Qwen SLM for transaction categorization |
-| **Document Processing** | `pdfjs-dist`, `jspdf` | Client-side bank statement extraction and PDF generation |
+| **AI / ML** | `@huggingface/transformers` | Client-side Quantized 
 | **Backend API** | Node.js, Express 5, TypeScript | REST API with layered/clean architecture |
 | **Database ORM** | Prisma 7 (`@prisma/client`, `@prisma/adapter-pg`) | Type-safe queries, migrations, and connection pooling |
 | **Database** | PostgreSQL / Neon Serverless | Cloud-native relational database |
@@ -198,7 +195,7 @@ personal-finance-tracker/
 │   │   │   ├── categories/         # Categories & subcategories management
 │   │   │   ├── categorization/     # Categorization rules & suggestions
 │   │   │   ├── dashboard/          # Analytics, summary cards & charts
-│   │   │   ├── import/             # Statement import, PDF/CSV parser & SLM
+│   │   │   ├── import/             # Statement import, CSV parser & SLM
 │   │   │   └── transactions/       # Transaction CRUD, filters & modals
 │   │   ├── hooks/                  # Shared React hooks
 │   │   ├── layouts/                # App layout wrappers (Sidebar, Shell)
