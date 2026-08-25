@@ -770,7 +770,7 @@ function FileUpload({
                   </p>
                 </div>
 
-                <div>
+                {/* <div>
                   <p
                     style={{
                       fontFamily: "var(--font-body)",
@@ -793,7 +793,7 @@ function FileUpload({
                   >
                     {transactionSummary.account}
                   </p>
-                </div>
+                </div> */}
 
                 <div
                   style={{

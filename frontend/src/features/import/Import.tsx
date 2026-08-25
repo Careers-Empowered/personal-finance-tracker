@@ -21,6 +21,9 @@ import { suggestCategory } from "./categorization/categorySuggestionService";
 
 import api from "../../shared/utils/api";
 
+import { parseBankStatement } from "./utils/bankStatementParser";
+
+
 interface DatabaseDuplicateMatch {
   row: number;
   exists: boolean;
@@ -42,438 +45,6 @@ interface AccountOption {
   id: string;
   name: string;
   currency?: string;
-}
-
-
-/*
- * ============================================================
- * TRANSACTION DATA CSV HELPERS
- * ============================================================
- *
- * Transaction Data / Bank Statement mode is intentionally kept
- * separate from the normal CSV mapping flow.
- *
- * The selected account from the first screen is always used as
- * the database account for the complete file.
- */
-
-function normalizeImportHeader(header: string): string {
-  return header
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_-]+/g, "");
-}
-
-function findImportColumn(
-  headers: string[],
-  possibleNames: string[]
-): string | undefined {
-  const normalizedNames = possibleNames.map(
-    normalizeImportHeader
-  );
-
-  return headers.find((header) =>
-    normalizedNames.includes(
-      normalizeImportHeader(header)
-    )
-  );
-}
-
-function parseImportCSVLine(line: string): string[] {
-  const values: string[] = [];
-  let current = "";
-  let insideQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const character = line[i];
-
-    if (character === '"') {
-      if (
-        insideQuotes &&
-        line[i + 1] === '"'
-      ) {
-        current += '"';
-        i++;
-      } else {
-        insideQuotes = !insideQuotes;
-      }
-    } else if (
-      character === "," &&
-      !insideQuotes
-    ) {
-      values.push(current.trim());
-      current = "";
-    } else {
-      current += character;
-    }
-  }
-
-  values.push(current.trim());
-  return values;
-}
-
-function parseImportDate(value: string): string | null {
-  const trimmed = value.trim();
-
-  if (!trimmed) {
-    return null;
-  }
-
-  // DD/MM/YYYY or DD-MM-YYYY
-  const dayMonthYear = trimmed.match(
-    /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/
-  );
-
-  if (dayMonthYear) {
-    const day = Number(dayMonthYear[1]);
-    const month = Number(dayMonthYear[2]);
-    const year = Number(dayMonthYear[3]);
-
-    const date = new Date(
-      year,
-      month - 1,
-      day
-    );
-
-    if (
-      date.getFullYear() !== year ||
-      date.getMonth() !== month - 1 ||
-      date.getDate() !== day
-    ) {
-      return null;
-    }
-
-    return `${year.toString().padStart(4, "0")}-${month
-      .toString()
-      .padStart(2, "0")}-${day
-      .toString()
-      .padStart(2, "0")}`;
-  }
-
-  // ISO-style dates and other browser-readable dates.
-  const parsed = new Date(trimmed);
-
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-
-  return parsed
-    .toISOString()
-    .split("T")[0];
-}
-
-function parseImportAmount(value: string): number {
-  const cleaned = value
-    .replace(/,/g, "")
-    .replace(/[₹$€£]/g, "")
-    .replace(/\s/g, "")
-    .trim();
-
-  if (!cleaned) {
-    return 0;
-  }
-
-  // Supports accounting-style negative values: (123.45)
-  if (
-    cleaned.startsWith("(") &&
-    cleaned.endsWith(")")
-  ) {
-    const numberValue = Number(
-      cleaned.slice(1, -1)
-    );
-
-    return Number.isFinite(numberValue)
-      ? -numberValue
-      : 0;
-  }
-
-  const numberValue = Number(cleaned);
-
-  return Number.isFinite(numberValue)
-    ? numberValue
-    : 0;
-}
-
-function parseTransactionDataCSV(
-  csvText: string
-): ImportedTransaction[] {
-  const lines = csvText
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (lines.length < 2) {
-    throw new Error(
-      "The transaction CSV does not contain any data."
-    );
-  }
-
-  const headers = parseImportCSVLine(
-    lines[0]
-  );
-
-  const dateColumn = findImportColumn(
-    headers,
-    [
-      "date",
-      "transaction date",
-      "transaction_date",
-      "txn date",
-      "txn_date",
-      "value date",
-      "value_date",
-      "posting date",
-      "posting_date",
-    ]
-  );
-
-  const titleColumn = findImportColumn(
-    headers,
-    [
-      "description",
-      "transaction description",
-      "transaction_description",
-      "narration",
-      "remarks",
-      "remark",
-      "details",
-      "transaction details",
-      "transaction",
-      "title",
-      "merchant",
-      "payee",
-      "particulars",
-      "particular",
-    ]
-  );
-
-  const amountColumn = findImportColumn(
-    headers,
-    [
-      "amount",
-      "transaction amount",
-      "transaction_amount",
-      "value",
-    ]
-  );
-
-  const debitColumn = findImportColumn(
-    headers,
-    [
-      "debit",
-      "debit amount",
-      "debit_amount",
-      "withdrawal",
-      "withdrawal amount",
-      "withdrawals",
-    ]
-  );
-
-  const creditColumn = findImportColumn(
-    headers,
-    [
-      "credit",
-      "credit amount",
-      "credit_amount",
-      "deposit",
-      "deposit amount",
-      "deposits",
-    ]
-  );
-
-  const typeColumn = findImportColumn(
-    headers,
-    [
-      "type",
-      "transaction type",
-      "transaction_type",
-      "txn type",
-      "txn_type",
-      "debit credit",
-      "debit/credit",
-    ]
-  );
-
-  const categoryColumn = findImportColumn(
-    headers,
-    [
-      "category",
-      "transaction category",
-      "transaction_category",
-    ]
-  );
-
-  if (!dateColumn) {
-    throw new Error(
-      "Could not find a transaction date column in the CSV."
-    );
-  }
-
-  if (!titleColumn) {
-    throw new Error(
-      "Could not find a transaction description/title column in the CSV."
-    );
-  }
-
-  if (
-    !amountColumn &&
-    !debitColumn &&
-    !creditColumn
-  ) {
-    throw new Error(
-      "Could not find an amount, debit, or credit column in the CSV."
-    );
-  }
-
-  const dateIndex = headers.indexOf(dateColumn);
-  const titleIndex = headers.indexOf(titleColumn);
-  const amountIndex = amountColumn
-    ? headers.indexOf(amountColumn)
-    : -1;
-  const debitIndex = debitColumn
-    ? headers.indexOf(debitColumn)
-    : -1;
-  const creditIndex = creditColumn
-    ? headers.indexOf(creditColumn)
-    : -1;
-  const typeIndex = typeColumn
-    ? headers.indexOf(typeColumn)
-    : -1;
-  const categoryIndex = categoryColumn
-    ? headers.indexOf(categoryColumn)
-    : -1;
-
-  const transactions: ImportedTransaction[] = [];
-  const skippedRows: number[] = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const rowNumber = i + 1;
-    const values = parseImportCSVLine(lines[i]);
-
-    const rawDate =
-      values[dateIndex]?.trim() ?? "";
-
-    const date = parseImportDate(rawDate);
-
-    if (!date) {
-      skippedRows.push(rowNumber);
-      continue;
-    }
-
-    const title =
-      values[titleIndex]?.trim() ?? "";
-
-    if (!title) {
-      skippedRows.push(rowNumber);
-      continue;
-    }
-
-    let amount = 0;
-    let type: "income" | "expense";
-
-    if (amountIndex !== -1) {
-      const rawAmount =
-        values[amountIndex]?.trim() ?? "";
-
-      const parsedAmount =
-        parseImportAmount(rawAmount);
-
-      if (!Number.isFinite(parsedAmount) || parsedAmount === 0) {
-        skippedRows.push(rowNumber);
-        continue;
-      }
-
-      amount = Math.abs(parsedAmount);
-
-      if (typeIndex !== -1) {
-        const rawType =
-          values[typeIndex]
-            ?.trim()
-            .toLowerCase() ?? "";
-
-        if (
-          rawType === "income" ||
-          rawType === "credit" ||
-          rawType === "cr" ||
-          rawType === "deposit"
-        ) {
-          type = "income";
-        } else if (
-          rawType === "expense" ||
-          rawType === "debit" ||
-          rawType === "dr" ||
-          rawType === "withdrawal"
-        ) {
-          type = "expense";
-        } else {
-          type =
-            parsedAmount >= 0
-              ? "income"
-              : "expense";
-        }
-      } else {
-        type =
-          parsedAmount >= 0
-            ? "income"
-            : "expense";
-      }
-    } else {
-      const debit =
-        debitIndex !== -1
-          ? parseImportAmount(
-              values[debitIndex] ?? ""
-            )
-          : 0;
-
-      const credit =
-        creditIndex !== -1
-          ? parseImportAmount(
-              values[creditIndex] ?? ""
-            )
-          : 0;
-
-      if (credit !== 0) {
-        amount = Math.abs(credit);
-        type = "income";
-      } else if (debit !== 0) {
-        amount = Math.abs(debit);
-        type = "expense";
-      } else {
-        skippedRows.push(rowNumber);
-        continue;
-      }
-    }
-
-    const category =
-      categoryIndex !== -1
-        ? values[categoryIndex]?.trim() || undefined
-        : undefined;
-
-    transactions.push({
-      date,
-      title,
-      amount,
-      type,
-      account: "",
-      category,
-    });
-  }
-
-  if (transactions.length === 0) {
-    throw new Error(
-      "No valid transactions could be read from the selected transaction data CSV."
-    );
-  }
-
-  console.log(
-    "Transaction Data CSV parsed successfully:",
-    {
-      transactionCount: transactions.length,
-      skippedRows,
-    }
-  );
-
-  return transactions;
 }
 
 function Import() {
@@ -772,8 +343,12 @@ function Import() {
    * TRANSACTION DATA / BANK STATEMENT CONTINUE
    * ============================================================
    *
-   * The account is already selected on the first screen.
-   * The CSV account column, if present, is informational only.
+   * Bank Statement / Transaction Data has its own parser.
+   * It does NOT use the normal CSV mapping or the old
+   * transactionDataParser.
+   *
+   * The account selected on the first screen is always used
+   * for every transaction in this file.
    */
 
   const handleTransactionDataContinue = async (
@@ -789,17 +364,22 @@ function Import() {
     try {
       setIsImporting(true);
 
-      const csvText =
-        await selectedFile.text();
+      const csvText = await selectedFile.text();
 
+      // Dedicated parser for Transaction Data / Bank Statement.
       const parsedTransactions =
-        parseTransactionDataCSV(csvText);
+        parseBankStatement(csvText);
 
-      const selectedAccount =
-        accounts.find(
-          (account) =>
-            account.id === selectedAccountId
+      if (parsedTransactions.length === 0) {
+        throw new Error(
+          "There are no transactions in the selected bank statement."
         );
+      }
+
+      const selectedAccount = accounts.find(
+        (account) =>
+          account.id === selectedAccountId
+      );
 
       if (!selectedAccount) {
         throw new Error(
@@ -808,12 +388,12 @@ function Import() {
       }
 
       /*
-       * Transaction Data mode does not go through the normal
-       * CSV mapping/validation screens. We create the same
-       * ValidatedTransaction structure directly.
+       * Transaction Data / Bank Statement bypasses the
+       * normal CSV mapping and validation screens.
        *
-       * If the CSV already contains a category, preserve it.
-       * Otherwise use the existing rule-based categorizer.
+       * Category handling is still performed here because
+       * category selection belongs to the import workflow,
+       * not to the bank-statement parser.
        */
       const transactionsForDatabaseCheck:
         ValidatedTransaction[] =
@@ -824,12 +404,30 @@ function Import() {
                 transaction.category?.trim();
 
               if (!category) {
-                const suggestedCategory =
-                  await Promise.resolve(
-                    suggestCategoryByRules(
+                try {
+                  const suggestedCategory =
+                    await suggestCategory(
                       transaction.title,
                       transaction.type
-                    )
+                    );
+
+                  if (suggestedCategory) {
+                    category =
+                      String(suggestedCategory).trim();
+                  }
+                } catch (error) {
+                  console.warn(
+                    "SLM category suggestion failed for bank statement row. Falling back to rules.",
+                    error
+                  );
+                }
+              }
+
+              if (!category) {
+                const suggestedCategory =
+                  suggestCategoryByRules(
+                    transaction.title,
+                    transaction.type
                   );
 
                 if (suggestedCategory) {
@@ -842,8 +440,7 @@ function Import() {
                 row: index + 1,
                 data: {
                   ...transaction,
-                  account:
-                    selectedAccount.name,
+                  account: selectedAccount.name,
                   category,
                 },
                 errors: [],
@@ -862,7 +459,7 @@ function Import() {
 
       if (missingCategories.length > 0) {
         throw new Error(
-          `Could not automatically determine a category for row ${missingCategories[0].row} ("${missingCategories[0].data.title}"). Please add a Category column to the transaction CSV or use the normal CSV import flow.`
+          `Could not automatically determine a category for row ${missingCategories[0].row} ("${missingCategories[0].data.title}"). Please update the bank statement category mapping or use the normal CSV import flow.`
         );
       }
 
@@ -870,19 +467,21 @@ function Import() {
         transactionsForDatabaseCheck
       );
 
+      // Immediately perform the database duplicate check
+      // using the exact array that was just parsed.
       await handleAccountMappingContinue(
         selectedAccountId,
         transactionsForDatabaseCheck
       );
     } catch (error: any) {
       console.error(
-        "Transaction data processing failed:",
+        "Bank statement processing failed:",
         error
       );
 
       alert(
         error?.message ||
-          "Failed to read transaction data."
+          "Failed to read bank statement."
       );
     } finally {
       setIsImporting(false);
